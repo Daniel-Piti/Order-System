@@ -1,6 +1,5 @@
-package com.pt.ordersystem.ordersystem.dbEntity
+package com.pt.ordersystem.ordersystem.user
 
-import com.pt.ordersystem.ordersystem.dto.UserDto
 import jakarta.persistence.*
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -39,13 +38,4 @@ data class User(
 
   @Column(name = "updated_at", nullable = false)
   val updatedAt: LocalDateTime = LocalDateTime.now()
-)
-
-fun User.toDto(): UserDto = UserDto(
-  firstName = this.firstName,
-  lastName = this.lastName,
-  email = this.email,
-  phoneNumber = this.phoneNumber,
-  dateOfBirth = this.dateOfBirth,
-  mainAddress = this.mainAddress,
 )
