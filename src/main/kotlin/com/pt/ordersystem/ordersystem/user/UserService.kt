@@ -14,6 +14,10 @@ class UserService(
   private val passwordEncoder: BCryptPasswordEncoder,
 ) {
 
+  companion object {
+    const val DEFAULT_PASSWORD = "Aa123456!"
+  }
+
   fun getUserByEmail(email: String): User =
     userRepository.findByEmail(email) ?: throw ServiceException(
       status = HttpStatus.NOT_FOUND,
@@ -162,4 +166,16 @@ class UserService(
     return lengthCheck && upperCheck && lowerCheck && digitCheck && specialCheck
   }
 
+  fun resetPassword(email: String) {
+    val user = userRepository.findByEmail(email)
+      ?: throw ServiceException(
+        status = HttpStatus.NOT_FOUND,
+        userMessage = UserFailureReason.NOT_FOUND.userMessage,
+        technicalMessage = "User not found with email=$email",
+        severity = SeverityLevel.INFO
+      )
+
+    user.password = passwordEncoder.encode(DEFAULT_PASSWORD)
+    userRepository.save(user)
+  }
 }

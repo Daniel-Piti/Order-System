@@ -65,4 +65,11 @@ class UserController(
       return if (isValid) ResponseEntity.ok("Password matches")
              else ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Password does not match")
     }
+
+  @PreAuthorize("hasAuthority('ADMIN')")
+  @PostMapping("/users/reset-password")
+  fun resetPassword(@RequestBody email: String): ResponseEntity<String> {
+    userService.resetPassword(email)
+    return ResponseEntity.ok("Password reset successfully")
+  }
 }
