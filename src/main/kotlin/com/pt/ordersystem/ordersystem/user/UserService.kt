@@ -85,7 +85,7 @@ class UserService(
       userRepository.delete(user)
   }
 
-  fun validatePasswordForUser(email: String, password: String): Boolean {
+  fun validatePassword(email: String, password: String): Boolean {
     val user = userRepository.findByEmail(email) ?: throw ServiceException(
       status = HttpStatus.NOT_FOUND,
       userMessage = UserFailureReason.NOT_FOUND.userMessage,

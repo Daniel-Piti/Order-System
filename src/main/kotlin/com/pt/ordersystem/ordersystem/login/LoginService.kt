@@ -1,5 +1,7 @@
-package com.pt.ordersystem.ordersystem.auth
+package com.pt.ordersystem.ordersystem.login
 
+import com.pt.ordersystem.ordersystem.auth.JwtUtil
+import com.pt.ordersystem.ordersystem.auth.Roles
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.user.UserFailureReason
@@ -9,7 +11,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 
 @Service
-class AuthService(
+class LoginService(
   private val userRepository: UserRepository,
   private val passwordEncoder: BCryptPasswordEncoder,
   private val jwtUtil: JwtUtil

@@ -1,4 +1,4 @@
-package com.pt.ordersystem.ordersystem.auth
+package com.pt.ordersystem.ordersystem.login
 
 data class LoginRequest(
   val email: String,

@@ -1,9 +1,8 @@
-package com.pt.ordersystem.ordersystem.admin
+package com.pt.ordersystem.ordersystem.login
 
-import com.pt.ordersystem.ordersystem.auth.JwtResponse
 import com.pt.ordersystem.ordersystem.auth.JwtUtil
-import com.pt.ordersystem.ordersystem.auth.LoginRequest
 import com.pt.ordersystem.ordersystem.auth.Roles
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
@@ -13,8 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/admin")
-class AdminAuthController(
+@Tag(name = "Admin authentication")
+@RequestMapping("/auth/admin")
+class AdminLoginController(
   private val passwordEncoder: BCryptPasswordEncoder,
   private val jwtUtil: JwtUtil
 ) {

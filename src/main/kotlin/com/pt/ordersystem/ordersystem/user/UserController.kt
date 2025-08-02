@@ -61,7 +61,7 @@ class UserController(
     @RequestParam email: String,
     @RequestParam password: String
   ): ResponseEntity<String> {
-      val isValid = userService.validatePasswordForUser(email, password)
+      val isValid = userService.validatePassword(email, password)
       return if (isValid) ResponseEntity.ok("Password matches")
              else ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Password does not match")
     }
