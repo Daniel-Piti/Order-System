@@ -6,7 +6,7 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "users")
-data class User(
+data class UserDbEntity(
 
   @Id
   @Column(nullable = false, length = 255)

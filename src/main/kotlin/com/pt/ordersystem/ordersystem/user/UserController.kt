@@ -1,5 +1,7 @@
 package com.pt.ordersystem.ordersystem.user
 
+import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_ADMIN
+import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
@@ -15,17 +17,17 @@ class UserController(
   private val userService: UserService,
 ) {
 
-  @PreAuthorize("hasAuthority('ADMIN') or hasAuthority('USER')")
+  @PreAuthorize(AUTH_USER)
   @GetMapping("/{email}")
   fun getUser(@PathVariable email: String): ResponseEntity<UserDto> =
     ResponseEntity.ok(userService.getUserByEmail(email).toDto())
 
-  @PreAuthorize("hasAuthority('ADMIN')")
+  @PreAuthorize(AUTH_ADMIN)
   @PostMapping("/create")
   fun createUser(@RequestBody newUserRequest: NewUserRequest): ResponseEntity<String> =
     ResponseEntity.ok(userService.createUser(newUserRequest))
 
-  @PreAuthorize("hasAuthority('USER')")
+  @PreAuthorize(AUTH_USER)
   @PutMapping("/update")
   fun updateUser(
     @RequestParam email: String,
@@ -33,7 +35,7 @@ class UserController(
   ): ResponseEntity<String> =
     ResponseEntity.ok(userService.updateUserDetails(email, updatedDetails))
 
-  @PreAuthorize("hasAuthority('ADMIN')")
+  @PreAuthorize(AUTH_ADMIN)
   @DeleteMapping("/delete")
   fun deleteUser(
     @RequestParam id: String,
@@ -43,7 +45,7 @@ class UserController(
     return ResponseEntity.ok("User with deleted successfully | email=$email")
   }
 
-  @PreAuthorize("hasAuthority('USER')")
+  @PreAuthorize(AUTH_USER)
   @PostMapping("/update_password")
   fun updatePassword(
     @RequestParam email: String,
@@ -55,7 +57,7 @@ class UserController(
     return ResponseEntity.ok("Password updated successfully | email=$email")
   }
 
-  @PreAuthorize("hasAuthority('ADMIN')")
+  @PreAuthorize(AUTH_ADMIN)
   @PostMapping("/validate_password")
   fun validatePassword(
     @RequestParam email: String,
@@ -66,7 +68,7 @@ class UserController(
              else ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Password does not match")
     }
 
-  @PreAuthorize("hasAuthority('ADMIN')")
+  @PreAuthorize(AUTH_ADMIN)
   @PostMapping("/users/reset-password")
   fun resetPassword(@RequestBody email: String): ResponseEntity<String> {
     userService.resetPassword(email)

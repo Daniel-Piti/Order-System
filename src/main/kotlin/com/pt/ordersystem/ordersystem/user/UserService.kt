@@ -18,7 +18,7 @@ class UserService(
     const val DEFAULT_PASSWORD = "Aa123456!"
   }
 
-  fun getUserByEmail(email: String): User =
+  fun getUserByEmail(email: String): UserDbEntity =
     userRepository.findByEmail(email) ?: throw ServiceException(
       status = HttpStatus.NOT_FOUND,
       userMessage = UserFailureReason.NOT_FOUND.userMessage,
@@ -35,8 +35,8 @@ class UserService(
         severity = SeverityLevel.WARN
       )
 
-    val newUser = User(
-      id = genId(7),
+    val newUserDbEntity = UserDbEntity(
+      id = genId(),
       firstName = newUserRequest.firstName,
       lastName = newUserRequest.lastName,
       email = newUserRequest.email,
@@ -48,7 +48,7 @@ class UserService(
       updatedAt = LocalDateTime.now()
     )
 
-    val user = userRepository.save(newUser)
+    val user = userRepository.save(newUserDbEntity)
 
     return user.id
   }

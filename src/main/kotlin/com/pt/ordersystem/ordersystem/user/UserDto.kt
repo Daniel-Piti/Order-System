@@ -29,7 +29,7 @@ data class UpdateUserRequest(
   val mainAddress: String,
 )
 
-fun User.toDto(): UserDto = UserDto(
+fun UserDbEntity.toDto(): UserDto = UserDto(
   firstName = this.firstName,
   lastName = this.lastName,
   email = this.email,
