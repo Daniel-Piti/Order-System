@@ -1,6 +1,7 @@
 package com.pt.ordersystem.ordersystem.location
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
+import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
@@ -16,9 +17,10 @@ class LocationController(
 ) {
 
   @PreAuthorize(AUTH_USER)
-  @GetMapping("/{userId}")
-  fun getUserLocations(@PathVariable userId: String): ResponseEntity<List<LocationDto>> =
-    ResponseEntity.ok(locationService.getUserLocations(userId))
+  @GetMapping("/")
+  fun getUserLocations(): ResponseEntity<List<LocationDto>> {
+    return ResponseEntity.ok(locationService.getUserLocations(AuthUtils.getCurrentUserId()))
+  }
 
   @PreAuthorize(AUTH_USER)
   @GetMapping("/location/{id}")
@@ -28,7 +30,7 @@ class LocationController(
   @PreAuthorize(AUTH_USER)
   @PostMapping
   fun createLocation(@RequestBody request: NewLocationRequest): ResponseEntity<String> =
-    ResponseEntity.ok(locationService.createLocation(request))
+    ResponseEntity.ok(locationService.createLocation(AuthUtils.getCurrentUserId(), request))
 
   @PreAuthorize(AUTH_USER)
   @PutMapping("/{locationId}")

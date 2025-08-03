@@ -27,7 +27,7 @@ class AdminLoginController(
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials")
     }
 
-    val token = jwtUtil.generateToken(adminEmail, Roles.ADMIN)
+    val token = jwtUtil.generateToken(adminEmail, "ADMIN", Roles.ADMIN)
     return ResponseEntity.ok(JwtResponse(token))
   }
 }

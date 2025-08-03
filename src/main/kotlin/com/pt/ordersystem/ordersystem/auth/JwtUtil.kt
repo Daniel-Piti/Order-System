@@ -13,9 +13,10 @@ class JwtUtil {
   private val SECRET_KEY: SecretKey = Keys.hmacShaKeyFor("your-very-secret-and-long-key-123123123123123".toByteArray())
   private val EXPIRATION_TIME_MS = 1000 * 60 * 60 * 24 // 24 hours
 
-  fun generateToken(email: String, role: Roles): String {
+  fun generateToken(email: String, id: String, role: Roles): String {
     return Jwts.builder()
       .setSubject(email)
+      .claim("userId", id)
       .claim("role", role.name)
       .setIssuedAt(Date())
       .setExpiration(Date(System.currentTimeMillis() + EXPIRATION_TIME_MS))
@@ -48,15 +49,15 @@ class JwtUtil {
     }
   }
 
-  fun extractRole(token: String): Roles? {
+  fun extractClaim(token: String, claimName: String): String? {
     return try {
-      val roleName = Jwts.parserBuilder()
+      val claim = Jwts.parserBuilder()
         .setSigningKey(SECRET_KEY)
         .build()
         .parseClaimsJws(token)
         .body
-        .get("role", String::class.java)
-      Roles.valueOf(roleName)
+        .get(claimName, String::class.java)
+      claim
     } catch (e: Exception) {
       null
     }

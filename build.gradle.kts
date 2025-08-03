@@ -32,7 +32,6 @@ dependencies {
 	implementation("com.aventrix.jnanoid:jnanoid:2.0.0")
 	implementation("org.springframework.boot:spring-boot-starter-security")
 
-
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")

@@ -1,9 +1,11 @@
 package com.pt.ordersystem.ordersystem.user
 
+import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.utils.genId
 import org.springframework.http.HttpStatus
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -54,6 +56,14 @@ class UserService(
   }
 
   fun updateUserDetails(email: String, updatedDetails: UpdateUserRequest): String {
+    println(SecurityContextHolder.getContext().authentication)
+    println(SecurityContextHolder.getContext().authentication.details)
+    println(SecurityContextHolder.getContext().authentication.authorities)
+    println(SecurityContextHolder.getContext().authentication.credentials)
+    println(SecurityContextHolder.getContext().authentication.principal)
+    println(SecurityContextHolder.getContext().authentication.isAuthenticated)
+    println(SecurityContextHolder.getContext().authentication.name)
+
     val user = userRepository.findByEmail(email) ?: throw ServiceException(
       status = HttpStatus.NOT_FOUND,
       userMessage = UserFailureReason.NOT_FOUND.userMessage,

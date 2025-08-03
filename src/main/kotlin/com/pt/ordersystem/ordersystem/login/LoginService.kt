@@ -33,7 +33,8 @@ class LoginService(
         severity = SeverityLevel.INFO,
       )
 
-    val token = jwtUtil.generateToken(user.email, Roles.USER)
+    val token = jwtUtil.generateToken(user.email, user.id, Roles.USER)
+
     return JwtResponse(token)
   }
 }

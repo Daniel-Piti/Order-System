@@ -8,7 +8,6 @@ data class LocationDto(
 )
 
 data class NewLocationRequest(
-  val userId: String,
   val name: String,
   val address: String
 )
