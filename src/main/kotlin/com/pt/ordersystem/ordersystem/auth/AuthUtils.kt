@@ -8,12 +8,8 @@ import org.springframework.security.core.context.SecurityContextHolder
 
 object AuthUtils {
 
-  private fun getAuthentication() =
-    SecurityContextHolder.getContext().authentication
-      ?: throw IllegalStateException("No authentication present")
-
   private fun getDetailsMap(): Map<*, *> =
-    getAuthentication().details as? Map<*, *>
+    SecurityContextHolder.getContext().authentication.details as? Map<*, *>
       ?: throw IllegalStateException("Authentication details missing or invalid")
 
   fun getCurrentUserId(): String =
