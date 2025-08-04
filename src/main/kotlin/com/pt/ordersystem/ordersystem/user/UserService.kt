@@ -1,9 +1,8 @@
 package com.pt.ordersystem.ordersystem.user
 
-import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
-import com.pt.ordersystem.ordersystem.utils.genId
+import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
@@ -38,7 +37,7 @@ class UserService(
       )
 
     val newUserDbEntity = UserDbEntity(
-      id = genId(),
+      id = GeneralUtils.genId(),
       firstName = newUserRequest.firstName,
       lastName = newUserRequest.lastName,
       email = newUserRequest.email,
