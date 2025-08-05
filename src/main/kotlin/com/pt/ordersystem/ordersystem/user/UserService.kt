@@ -2,6 +2,10 @@ package com.pt.ordersystem.ordersystem.user
 
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
+import com.pt.ordersystem.ordersystem.user.models.UserDbEntity
+import com.pt.ordersystem.ordersystem.user.models.UserFailureReason
+import com.pt.ordersystem.ordersystem.user.models.NewUserRequest
+import com.pt.ordersystem.ordersystem.user.models.UpdateUserRequest
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.context.SecurityContextHolder

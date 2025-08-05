@@ -1,4 +1,4 @@
-package com.pt.ordersystem.ordersystem.location
+package com.pt.ordersystem.ordersystem.location.models
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity

@@ -1,4 +1,4 @@
-package com.pt.ordersystem.ordersystem.location
+package com.pt.ordersystem.ordersystem.location.models
 
 enum class LocationFailureReason(val userMessage: String, val technical: String) {
   NOT_FOUND(

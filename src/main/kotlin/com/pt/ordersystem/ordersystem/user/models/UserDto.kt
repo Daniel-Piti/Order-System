@@ -1,4 +1,4 @@
-package com.pt.ordersystem.ordersystem.user
+package com.pt.ordersystem.ordersystem.user.models
 
 import java.time.LocalDate
 
@@ -6,24 +6,6 @@ data class UserDto(
   val firstName: String,
   val lastName: String,
   val email: String,
-  val phoneNumber: String,
-  val dateOfBirth: LocalDate,
-  val mainAddress: String,
-)
-
-data class NewUserRequest(
-  val firstName: String,
-  val lastName: String,
-  val email: String,
-  val password: String,
-  val phoneNumber: String,
-  val dateOfBirth: LocalDate,
-  val mainAddress: String,
-)
-
-data class UpdateUserRequest(
-  val firstName: String,
-  val lastName: String,
   val phoneNumber: String,
   val dateOfBirth: LocalDate,
   val mainAddress: String,

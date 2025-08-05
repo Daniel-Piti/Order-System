@@ -1,4 +1,4 @@
-package com.pt.ordersystem.ordersystem.user
+package com.pt.ordersystem.ordersystem.user.models
 
 import jakarta.persistence.*
 import java.time.LocalDate

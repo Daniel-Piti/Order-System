@@ -4,8 +4,10 @@ import com.pt.ordersystem.ordersystem.auth.JwtUtil
 import com.pt.ordersystem.ordersystem.auth.Roles
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
-import com.pt.ordersystem.ordersystem.user.UserFailureReason
+import com.pt.ordersystem.ordersystem.user.models.UserFailureReason
+import com.pt.ordersystem.ordersystem.login.models.LoginResponse
 import com.pt.ordersystem.ordersystem.user.UserRepository
+import com.pt.ordersystem.ordersystem.user.models.UserLoginRequest
 import org.springframework.http.HttpStatus
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
@@ -17,7 +19,7 @@ class LoginService(
   private val jwtUtil: JwtUtil
 ) {
 
-  fun login(request: LoginRequest): JwtResponse {
+  fun login(request: UserLoginRequest): LoginResponse {
     val user = userRepository.findByEmail(request.email) ?: throw ServiceException(
       status = HttpStatus.NOT_FOUND,
       userMessage = UserFailureReason.NOT_FOUND.userMessage,
@@ -35,6 +37,6 @@ class LoginService(
 
     val token = jwtUtil.generateToken(user.email, user.id, Roles.USER)
 
-    return JwtResponse(token)
+    return LoginResponse(token)
   }
 }

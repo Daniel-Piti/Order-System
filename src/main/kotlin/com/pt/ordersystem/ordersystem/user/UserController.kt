@@ -3,6 +3,10 @@ package com.pt.ordersystem.ordersystem.user
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_ADMIN
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
 import com.pt.ordersystem.ordersystem.auth.AuthUtils
+import com.pt.ordersystem.ordersystem.user.models.UserDto
+import com.pt.ordersystem.ordersystem.user.models.NewUserRequest
+import com.pt.ordersystem.ordersystem.user.models.UpdateUserRequest
+import com.pt.ordersystem.ordersystem.user.models.toDto
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus

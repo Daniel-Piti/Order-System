@@ -1,4 +1,4 @@
-package com.pt.ordersystem.ordersystem.product
+package com.pt.ordersystem.ordersystem.product.models
 
 import java.math.BigDecimal
 
@@ -9,10 +9,10 @@ data class ProductDto(
   val picture: String?,
 )
 
-data class ProductRequest(
-  val name: String,
+data class ProductDataForOrder(
+  val id: String,
+  val quantity: Int,
   val price: BigDecimal,
-  val picture: String?
 )
 
 fun ProductDbEntity.toDto() = ProductDto(

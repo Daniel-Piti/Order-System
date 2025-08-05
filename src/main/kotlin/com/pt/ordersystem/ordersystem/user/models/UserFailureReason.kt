@@ -1,4 +1,4 @@
-package com.pt.ordersystem.ordersystem.user
+package com.pt.ordersystem.ordersystem.user.models
 
 enum class UserFailureReason(val userMessage: String, val technical: String) {
   NOT_FOUND(

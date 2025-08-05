@@ -2,6 +2,9 @@ package com.pt.ordersystem.ordersystem.location
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
 import com.pt.ordersystem.ordersystem.auth.AuthUtils
+import com.pt.ordersystem.ordersystem.location.models.LocationDto
+import com.pt.ordersystem.ordersystem.location.models.NewLocationRequest
+import com.pt.ordersystem.ordersystem.location.models.UpdateLocationRequest
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus

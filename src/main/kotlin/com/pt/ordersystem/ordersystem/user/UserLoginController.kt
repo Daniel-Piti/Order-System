@@ -1,5 +1,7 @@
-package com.pt.ordersystem.ordersystem.login
+package com.pt.ordersystem.ordersystem.user
 
+import com.pt.ordersystem.ordersystem.login.LoginService
+import com.pt.ordersystem.ordersystem.user.models.UserLoginRequest
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
@@ -15,7 +17,7 @@ class UserLoginController(
 ) {
 
   @PostMapping("/login")
-  fun login(@RequestBody request: LoginRequest): ResponseEntity<Any> {
+  fun login(@RequestBody request: UserLoginRequest): ResponseEntity<Any> {
     return ResponseEntity.ok(authService.login(request))
   }
 
