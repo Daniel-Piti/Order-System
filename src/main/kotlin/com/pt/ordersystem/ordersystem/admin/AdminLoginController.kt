@@ -5,7 +5,6 @@ import com.pt.ordersystem.ordersystem.auth.JwtUtil
 import com.pt.ordersystem.ordersystem.auth.Roles
 import com.pt.ordersystem.ordersystem.user.UserService
 import com.pt.ordersystem.ordersystem.login.models.LoginResponse
-import com.pt.ordersystem.ordersystem.user.models.UserDto
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
