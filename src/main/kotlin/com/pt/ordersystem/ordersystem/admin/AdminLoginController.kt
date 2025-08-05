@@ -24,16 +24,26 @@ class AdminLoginController(
   private val userService: UserService,
 ) {
 
+  companion object {
+    // You can move these to application config or env variables
+    private const val ADMIN_USERNAME_HASH = "\$2a\$10\$iKrrfrYNuyfyDTCDIdOgquXgIoT6nK8TJ40Gltux/5p14sS2Im3Li"
+    private const val ADMIN_PASSWORD_HASH = "\$2a\$10\$iKrrfrYNuyfyDTCDIdOgquXgIoT6nK8TJ40Gltux/5p14sS2Im3Li"
+  }
+
   @PostMapping("/login")
   fun login(@RequestBody request: AdminLoginRequest): ResponseEntity<Any> {
-    val hashedAdminUserName = "\$2a\$10\$iKrrfrYNuyfyDTCDIdOgquXgIoT6nK8TJ40Gltux/5p14sS2Im3Li"
-    val hashedPassword = "\$2a\$10\$iKrrfrYNuyfyDTCDIdOgquXgIoT6nK8TJ40Gltux/5p14sS2Im3Li"
-    if(
-      !passwordEncoder.matches(request.adminUserName, hashedAdminUserName) ||
-      !passwordEncoder.matches(request.password, hashedPassword)
-    ){ return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credential1s") }
 
-    val user = if(request.userEmail != "") userService.getUserByEmail(request.userEmail) else null
+    val isUsernameValid = passwordEncoder.matches(request.adminUserName, ADMIN_USERNAME_HASH)
+    val isPasswordValid = passwordEncoder.matches(request.password, ADMIN_PASSWORD_HASH)
+
+    if (!isUsernameValid || !isPasswordValid) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+        .body("Invalid credentials")
+    }
+
+    val user = request.userEmail.takeIf { it.isNotBlank() }?.let {
+      userService.getUserByEmail(it)
+    }
 
     val userId = user?.id ?: "ADMIN"
     val userEmail = user?.email ?: "ADMIN"
