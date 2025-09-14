@@ -43,10 +43,11 @@ class AdminLoginController(
       userService.getUserByEmail(request.userEmail)
     } else { null }
 
-    val userId = user?.id ?: "ADMIN"
-    val userEmail = user?.email ?: "ADMIN"
-
-    val token = jwtUtil.generateToken(userId, userEmail, Roles.ADMIN)
+    val token = if(user == null) {
+      jwtUtil.generateToken("ADMIN", "ADMIN", listOf(Roles.ADMIN))
+    } else {
+      jwtUtil.generateToken(user.id, user.email, listOf(Roles.ADMIN, Roles.USER))
+    }
     return ResponseEntity.ok(LoginResponse(token))
   }
 

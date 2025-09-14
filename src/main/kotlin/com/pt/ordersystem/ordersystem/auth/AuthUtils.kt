@@ -8,29 +8,23 @@ import org.springframework.security.core.context.SecurityContextHolder
 
 object AuthUtils {
 
-  private fun getDetailsMap(): Map<*, *> =
-    SecurityContextHolder.getContext().authentication.details as? Map<*, *>
-      ?: throw IllegalStateException("Authentication details missing or invalid")
+  private fun getPrincipal(): AuthUser =
+    SecurityContextHolder.getContext().authentication?.principal as? AuthUser
+      ?: throw IllegalStateException("Authentication principal missing or invalid")
 
-  fun getCurrentUserId(): String =
-    getDetailsMap()["userId"] as? String
-      ?: throw IllegalStateException("User ID missing in authentication details")
+  fun getCurrentUserId(): String = getPrincipal().userId
 
-  fun getCurrentUserEmail(): String =
-    getDetailsMap()["email"] as? String
-      ?: throw IllegalStateException("Email missing in authentication details")
+  fun getCurrentUserEmail(): String = getPrincipal().email
 
-  fun getCurrentUserRole(): String =
-    getDetailsMap()["role"] as? String
-      ?: throw IllegalStateException("Role missing in authentication details")
+  fun getCurrentUserRoles(): List<String> = getPrincipal().roles
 
   fun checkOwnership(candidateUserId: String) {
     val currentUserId = getCurrentUserId()
     if (candidateUserId != currentUserId) {
       throw ServiceException(
         status = HttpStatus.FORBIDDEN,
-        userMessage = UserFailureReason.UNAUTHORIZED_ACCESS.userMessage,
-        technicalMessage = "${UserFailureReason.UNAUTHORIZED_ACCESS.technical} currentUserId=$currentUserId, candidateUserId=$candidateUserId",
+        userMessage = "You are not authorized to access this resource",
+        technicalMessage = "currentUserId=$currentUserId, candidateUserId=$candidateUserId",
         severity = SeverityLevel.WARN
       )
     }

@@ -18,11 +18,11 @@ import org.springframework.web.bind.annotation.*
 @SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/users")
+@PreAuthorize(AUTH_USER)
 class UserController(
   private val userService: UserService,
 ) {
 
-  @PreAuthorize(AUTH_USER)
   @GetMapping("/me")
   fun getCurrentUser(): ResponseEntity<UserDto> {
     val email = AuthUtils.getCurrentUserEmail()
@@ -34,7 +34,6 @@ class UserController(
   fun createUser(@RequestBody newUserRequest: NewUserRequest): ResponseEntity<String> =
     ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(newUserRequest))
 
-  @PreAuthorize(AUTH_USER)
   @PutMapping("/update")
   fun updateCurrentUser(@RequestBody updatedDetails: UpdateUserRequest): ResponseEntity<String> {
     val email = AuthUtils.getCurrentUserEmail()
@@ -51,7 +50,6 @@ class UserController(
     return ResponseEntity.ok("User deleted successfully | email=$email")
   }
 
-  @PreAuthorize(AUTH_USER)
   @PostMapping("/update_password")
   fun updateCurrentUserPassword(
     @RequestParam("old_password") oldPassword: String,

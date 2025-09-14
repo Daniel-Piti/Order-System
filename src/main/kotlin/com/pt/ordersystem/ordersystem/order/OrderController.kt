@@ -16,11 +16,11 @@ import org.springframework.web.bind.annotation.*
 @SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/orders")
+@PreAuthorize(AUTH_USER)
 class OrderController(
   private val orderService: OrderService
 ) {
 
-  @PreAuthorize(AUTH_USER)
   @GetMapping
   fun getAllMyOrders(): ResponseEntity<List<OrderDto>> {
     val userId = AuthUtils.getCurrentUserId()
@@ -28,12 +28,10 @@ class OrderController(
     return ResponseEntity.ok(orders)
   }
 
-  @PreAuthorize(AUTH_USER)
   @GetMapping("/{orderId}")
   fun getOrder(@PathVariable orderId: String): ResponseEntity<OrderDto> =
     ResponseEntity.ok(orderService.getOrderById(orderId))
 
-  @PreAuthorize(AUTH_USER)
   @PostMapping
   fun createOrder(@RequestBody request: CreateOrderRequest): ResponseEntity<String> {
     val userId = AuthUtils.getCurrentUserId()
@@ -41,7 +39,6 @@ class OrderController(
     return ResponseEntity.status(HttpStatus.CREATED).body(newOrderId)
   }
 
-  @PreAuthorize(AUTH_USER)
   @DeleteMapping("/{orderId}")
   fun deleteOrder(@PathVariable orderId: String): ResponseEntity<String> {
     orderService.deleteOrder(orderId)

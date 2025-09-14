@@ -15,11 +15,11 @@ import org.springframework.web.bind.annotation.*
 @SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/product-overrides")
+@PreAuthorize(AUTH_USER)
 class ProductOverrideController(
   private val productOverrideService: ProductOverrideService
 ) {
 
-  @PreAuthorize(AUTH_USER)
   @PostMapping
   fun createProductOverride(
     @RequestBody request: CreateProductOverrideRequest
@@ -33,7 +33,6 @@ class ProductOverrideController(
     }
   }
 
-  @PreAuthorize(AUTH_USER)
   @GetMapping
   fun getProductOverrides(): ResponseEntity<List<ProductOverrideDto>> {
     val userId = AuthUtils.getCurrentUserId()
@@ -41,7 +40,6 @@ class ProductOverrideController(
     return ResponseEntity.ok(overrides)
   }
 
-  @PreAuthorize(AUTH_USER)
   @GetMapping("/{overrideId}")
   fun getProductOverride(
     @PathVariable overrideId: String
@@ -55,7 +53,6 @@ class ProductOverrideController(
     }
   }
 
-  @PreAuthorize(AUTH_USER)
   @GetMapping("/product/{productId}")
   fun getProductOverridesByProduct(
     @PathVariable productId: String
@@ -65,7 +62,6 @@ class ProductOverrideController(
     return ResponseEntity.ok(overrides)
   }
 
-  @PreAuthorize(AUTH_USER)
   @PutMapping("/{overrideId}")
   fun updateProductOverride(
     @PathVariable overrideId: String,
@@ -80,7 +76,6 @@ class ProductOverrideController(
     }
   }
 
-  @PreAuthorize(AUTH_USER)
   @DeleteMapping("/{overrideId}")
   fun deleteProductOverride(
     @PathVariable overrideId: String

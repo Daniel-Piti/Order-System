@@ -15,11 +15,11 @@ import org.springframework.web.bind.annotation.*
 @SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/customers")
+@PreAuthorize(AUTH_USER)
 class CustomerController(
   private val customerService: CustomerService
 ) {
 
-  @PreAuthorize(AUTH_USER)
   @PostMapping
   fun createCustomer(
     @RequestBody request: CreateCustomerRequest
@@ -33,7 +33,6 @@ class CustomerController(
     }
   }
 
-  @PreAuthorize(AUTH_USER)
   @GetMapping
   fun getCustomers(): ResponseEntity<List<CustomerDto>> {
     val userId = AuthUtils.getCurrentUserId()
@@ -41,7 +40,6 @@ class CustomerController(
     return ResponseEntity.ok(customers)
   }
 
-  @PreAuthorize(AUTH_USER)
   @GetMapping("/{customerId}")
   fun getCustomer(
     @PathVariable customerId: String
@@ -55,7 +53,6 @@ class CustomerController(
     }
   }
 
-  @PreAuthorize(AUTH_USER)
   @PutMapping("/{customerId}")
   fun updateCustomer(
     @PathVariable customerId: String,
@@ -70,7 +67,6 @@ class CustomerController(
     }
   }
 
-  @PreAuthorize(AUTH_USER)
   @DeleteMapping("/{customerId}")
   fun deleteCustomer(
     @PathVariable customerId: String

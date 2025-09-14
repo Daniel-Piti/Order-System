@@ -26,19 +26,23 @@ class JwtAuthFilter(
 
       if (jwtUtil.isTokenValid(token)) {
         val email = jwtUtil.extractEmail(token)
-        val role = jwtUtil.extractClaim(token, "role")
-        val userId = jwtUtil.extractClaim(token, "userId")
-        if (email != null && role != null) {
+        val roles = jwtUtil.extractClaim(token, "roles") as? List<String>
+        val userId = jwtUtil.extractClaim(token, "userId") as? String
+
+        if (email != null && !roles.isNullOrEmpty() && userId != null) {
+          val principal = AuthUser(
+            userId = userId.toString(),
+            email = email.toString(),
+            roles = roles
+          )
+
+          // Create authentication with AuthUser as the principal
           val auth = UsernamePasswordAuthenticationToken(
-            email,
+            principal,
             null,
-            listOf(SimpleGrantedAuthority(role))
+            principal.roles.map { SimpleGrantedAuthority("ROLE_$it") }
           )
-          auth.details = mapOf(
-            "userId" to userId,
-            "email" to email,
-            "role" to role
-          )
+
           SecurityContextHolder.getContext().authentication = auth
         }
       }

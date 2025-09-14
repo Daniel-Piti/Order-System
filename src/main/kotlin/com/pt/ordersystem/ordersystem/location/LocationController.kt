@@ -16,29 +16,26 @@ import org.springframework.web.bind.annotation.*
 @SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/locations")
+@PreAuthorize(AUTH_USER)
 class LocationController(
   private val locationService: LocationService
 ) {
 
-  @PreAuthorize(AUTH_USER)
   @GetMapping
   fun getUserLocations(): ResponseEntity<List<LocationDto>> {
     return ResponseEntity.ok(locationService.getUserLocations(AuthUtils.getCurrentUserId()))
   }
 
-  @PreAuthorize(AUTH_USER)
   @GetMapping("/location/{id}")
   fun getLocationById(@PathVariable id: String): ResponseEntity<LocationDto> =
     ResponseEntity.ok(locationService.getLocationById(id))
 
-  @PreAuthorize(AUTH_USER)
   @PostMapping
   fun createLocation(@RequestBody request: NewLocationRequest): ResponseEntity<String> {
     val createdId = locationService.createLocation(AuthUtils.getCurrentUserId(), request)
     return ResponseEntity.status(HttpStatus.CREATED).body(createdId)
   }
 
-  @PreAuthorize(AUTH_USER)
   @PutMapping("/{locationId}")
   fun updateLocation(
     @PathVariable locationId: String,
@@ -46,7 +43,6 @@ class LocationController(
   ): ResponseEntity<String> =
     ResponseEntity.ok(locationService.updateLocation(locationId, request))
 
-  @PreAuthorize(AUTH_USER)
   @DeleteMapping("/{locationId}")
   fun deleteLocation(@PathVariable locationId: String): ResponseEntity<String> {
     locationService.deleteLocation(locationId)
