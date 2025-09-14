@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Locations", description = "User location management API")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
-@RequestMapping("/locations")
+@RequestMapping("/api/locations")
 class LocationController(
   private val locationService: LocationService
 ) {

@@ -1,10 +1,10 @@
 package com.pt.ordersystem.ordersystem.admin
 
-import com.pt.ordersystem.ordersystem.admin.models.AdminLoginRequest
 import com.pt.ordersystem.ordersystem.auth.JwtUtil
 import com.pt.ordersystem.ordersystem.auth.Roles
 import com.pt.ordersystem.ordersystem.user.UserService
 import com.pt.ordersystem.ordersystem.login.models.LoginResponse
+import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @Tag(name = "Admin authentication")
-@RequestMapping("/auth/admin")
+@RequestMapping("/api/auth/admin")
 class AdminLoginController(
   private val passwordEncoder: BCryptPasswordEncoder,
   private val jwtUtil: JwtUtil,
@@ -36,13 +36,12 @@ class AdminLoginController(
     val isPasswordValid = passwordEncoder.matches(request.password, ADMIN_PASSWORD_HASH)
 
     if (!isUsernameValid || !isPasswordValid) {
-      return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-        .body("Invalid credentials")
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials")
     }
 
-    val user = request.userEmail.takeIf { it.isNotBlank() }?.let {
-      userService.getUserByEmail(it)
-    }
+    val user = if(request.userEmail != null) {
+      userService.getUserByEmail(request.userEmail)
+    } else { null }
 
     val userId = user?.id ?: "ADMIN"
     val userEmail = user?.email ?: "ADMIN"
@@ -52,3 +51,14 @@ class AdminLoginController(
   }
 
 }
+
+data class AdminLoginRequest(
+  @field:Schema(example = "admin")
+  val adminUserName: String,
+
+  @field:Schema(example = "admin")
+  val password: String,
+
+  @field:Schema(example = "@gmail.com")
+  val userEmail: String?,
+)

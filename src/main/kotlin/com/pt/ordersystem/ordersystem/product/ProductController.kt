@@ -3,7 +3,8 @@ package com.pt.ordersystem.ordersystem.product
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
 import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.product.models.ProductDto
-import com.pt.ordersystem.ordersystem.product.models.ProductRequest
+import com.pt.ordersystem.ordersystem.product.models.CreateProductRequest
+import com.pt.ordersystem.ordersystem.product.models.UpdateProductRequest
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Products", description = "Product management API")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
-@RequestMapping("/products")
+@RequestMapping("/api/products")
 class ProductController(
   private val productService: ProductService
 ) {
@@ -37,7 +38,7 @@ class ProductController(
 
   @PreAuthorize(AUTH_USER)
   @PostMapping
-  fun createProduct(@RequestBody request: ProductRequest): ResponseEntity<String> {
+  fun createProduct(@RequestBody request: CreateProductRequest): ResponseEntity<String> {
     val userId = AuthUtils.getCurrentUserId()
     val newProductId = productService.createProduct(userId, request)
     return ResponseEntity.status(HttpStatus.CREATED).body(newProductId)
@@ -47,7 +48,7 @@ class ProductController(
   @PutMapping("/{productId}")
   fun updateProduct(
     @PathVariable productId: String,
-    @RequestBody request: ProductRequest
+    @RequestBody request: UpdateProductRequest
   ): ResponseEntity<String> {
     val updatedProductId = productService.updateProduct(productId, request)
     return ResponseEntity.ok(updatedProductId)

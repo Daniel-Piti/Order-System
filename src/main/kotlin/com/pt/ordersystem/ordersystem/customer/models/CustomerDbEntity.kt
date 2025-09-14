@@ -1,15 +1,14 @@
-package com.pt.ordersystem.ordersystem.product.models
+package com.pt.ordersystem.ordersystem.customer.models
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
-import java.math.BigDecimal
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "products")
-data class ProductDbEntity(
+@Table(name = "customers")
+data class CustomerDbEntity(
   @Id
   val id: String,
 
@@ -19,18 +18,13 @@ data class ProductDbEntity(
   @Column(nullable = false)
   val name: String,
 
-  @Column(name = "original_price", nullable = false)
-  val originalPrice: BigDecimal,
-
-  @Column(name = "special_price", nullable = false)
-  val specialPrice: BigDecimal,
-
-  @Column(name = "picture_url")
-  val pictureUrl: String? = null,
+  @Column(name = "phone_number", nullable = false)
+  val phoneNumber: String,
 
   @Column(name = "created_at", nullable = false, updatable = false)
   val createdAt: LocalDateTime = LocalDateTime.now(),
 
   @Column(name = "updated_at", nullable = false)
-  var updatedAt: LocalDateTime = LocalDateTime.now(),
+  var updatedAt: LocalDateTime = LocalDateTime.now()
 )
+

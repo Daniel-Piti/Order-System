@@ -17,15 +17,15 @@ CREATE TABLE users (
 CREATE TABLE users_history (
     history_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     id VARCHAR(255) NOT NULL,
-    first_name VARCHAR(255),
-    last_name VARCHAR(255),
-    email VARCHAR(255),
-    password VARCHAR(255),
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
     phone_number VARCHAR(20) NOT NULL,
-    date_of_birth DATE,
-    main_address VARCHAR(255),
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP
+    date_of_birth DATE NOT NULL,
+    main_address VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
 );
 
 CREATE TRIGGER trg_users_after_insert

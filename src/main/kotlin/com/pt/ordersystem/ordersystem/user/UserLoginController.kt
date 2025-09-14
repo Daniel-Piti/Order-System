@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @Tag(name = "Authentication", description = "Login and auth-related endpoints")
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 class UserLoginController(
   private val authService: LoginService
 ) {

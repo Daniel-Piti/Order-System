@@ -8,29 +8,27 @@ import java.math.BigDecimal
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "products")
-data class ProductDbEntity(
+@Table(name = "product_overrides")
+data class ProductOverrideDbEntity(
   @Id
   val id: String,
+
+  @Column(name = "product_id", nullable = false)
+  val productId: String,
 
   @Column(name = "user_id", nullable = false)
   val userId: String,
 
-  @Column(nullable = false)
-  val name: String,
+  @Column(name = "customer_id", nullable = false)
+  val customerId: String,
 
-  @Column(name = "original_price", nullable = false)
-  val originalPrice: BigDecimal,
-
-  @Column(name = "special_price", nullable = false)
-  val specialPrice: BigDecimal,
-
-  @Column(name = "picture_url")
-  val pictureUrl: String? = null,
+  @Column(name = "override_price", nullable = false)
+  val overridePrice: BigDecimal,
 
   @Column(name = "created_at", nullable = false, updatable = false)
   val createdAt: LocalDateTime = LocalDateTime.now(),
 
   @Column(name = "updated_at", nullable = false)
-  var updatedAt: LocalDateTime = LocalDateTime.now(),
+  var updatedAt: LocalDateTime = LocalDateTime.now()
 )
+

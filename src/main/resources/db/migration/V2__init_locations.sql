@@ -16,10 +16,10 @@ CREATE TABLE locations_history (
     history_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     id VARCHAR(255) NOT NULL,
     user_id VARCHAR(255) NOT NULL,
-    name VARCHAR(255),
-    address VARCHAR(255),
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP
+    name VARCHAR(255) NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
 );
 
 -- Trigger for INSERT

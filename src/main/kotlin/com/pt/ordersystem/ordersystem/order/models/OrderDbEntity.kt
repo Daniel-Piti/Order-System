@@ -20,14 +20,17 @@ data class OrderDbEntity(
   @Column(name = "location_id", nullable = false)
   val locationId: String,
 
-  @Column(name = "customer_name")
-  val customerName: String? = null,
+  @Column(name = "customer_name", nullable = false)
+  val customerName: String,
 
-  @Column(name = "customer_phone")
-  val customerPhone: String? = null,
+  @Column(name = "customer_phone", nullable = false)
+  val customerPhone: String,
 
-  @Column(name = "customer_address")
-  val customerAddress: String? = null,
+  @Column(name = "customer_city", nullable = false)
+  val customerCity: String,
+
+  @Column(name = "customer_address", nullable = false)
+  val customerAddress: String,
 
   @Column(nullable = false)
   val status: String,

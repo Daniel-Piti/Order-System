@@ -1,12 +1,15 @@
 package com.pt.ordersystem.ordersystem.product.models
 
 import java.math.BigDecimal
+import java.time.LocalDateTime
 
 data class ProductDto(
   val id: String,
+  val userId: String,
   val name: String,
-  val price: BigDecimal,
-  val picture: String?,
+  val originalPrice: BigDecimal,
+  val specialPrice: BigDecimal,
+  val pictureUrl: String?,
 )
 
 data class ProductDataForOrder(
@@ -17,7 +20,9 @@ data class ProductDataForOrder(
 
 fun ProductDbEntity.toDto() = ProductDto(
   id = id,
+  userId = userId,
   name = name,
-  price = price,
-  picture = picture
+  originalPrice = originalPrice,
+  specialPrice = specialPrice,
+  pictureUrl = pictureUrl,
 )

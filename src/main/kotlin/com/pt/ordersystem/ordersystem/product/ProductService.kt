@@ -32,20 +32,21 @@ class ProductService(
     return product.toDto()
   }
 
-  fun createProduct(userId: String, request: ProductRequest): String {
+  fun createProduct(userId: String, request: CreateProductRequest): String {
     val product = ProductDbEntity(
       id = GeneralUtils.genId(),
       userId = userId,
       name = request.name,
-      price = request.price,
-      picture = request.picture,
+      originalPrice = request.originalPrice,
+      specialPrice = request.specialPrice,
+      pictureUrl = request.pictureUrl,
       createdAt = LocalDateTime.now(),
       updatedAt = LocalDateTime.now()
     )
     return productRepository.save(product).id
   }
 
-  fun updateProduct(productId: String, request: ProductRequest): String {
+  fun updateProduct(productId: String, request: UpdateProductRequest): String {
     val product = productRepository.findById(productId).orElseThrow {
       ServiceException(
         status = HttpStatus.NOT_FOUND,
@@ -58,9 +59,10 @@ class ProductService(
     AuthUtils.checkOwnership(product.userId)
 
     val updated = product.copy(
-      name = request.name,
-      price = request.price,
-      picture = request.picture,
+      name = request.name ?: product.name,
+      originalPrice = request.originalPrice ?: product.originalPrice,
+      specialPrice = request.specialPrice ?: product.specialPrice,
+      pictureUrl = request.pictureUrl ?: product.pictureUrl,
       updatedAt = LocalDateTime.now()
     )
 

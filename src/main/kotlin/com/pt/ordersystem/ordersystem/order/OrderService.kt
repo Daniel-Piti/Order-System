@@ -34,16 +34,17 @@ class OrderService(
     return order.toDto()
   }
 
-  fun createEmptyOrder(userId: String, request: EmptyOrderRequest): String {
+  fun createOrder(userId: String, request: CreateOrderRequest): String {
     val now = LocalDateTime.now()
 
     val order = OrderDbEntity(
       id = GeneralUtils.genId(),
       userId = userId,
       locationId = request.locationId,
-      customerName = null,
-      customerPhone = null,
-      customerAddress = null,
+      customerName = request.customerName,
+      customerPhone = request.customerPhone,
+      customerCity = request.customerCity,
+      customerAddress = request.customerAddress,
       status = OrderStatus.EMPTY.name,
       products = null,
       totalPrice = BigDecimal.ZERO,
