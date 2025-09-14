@@ -1,6 +1,6 @@
-package com.pt.ordersystem.ordersystem.product
+package com.pt.ordersystem.ordersystem.productOverrides
 
-import com.pt.ordersystem.ordersystem.product.models.ProductOverrideDbEntity
+import com.pt.ordersystem.ordersystem.productOverrides.models.ProductOverrideDbEntity
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 

@@ -19,6 +19,9 @@ data class ProductDbEntity(
   @Column(nullable = false)
   val name: String,
 
+  @Column(nullable = true)
+  val category: String? = null,
+
   @Column(name = "original_price", nullable = false)
   val originalPrice: BigDecimal,
 

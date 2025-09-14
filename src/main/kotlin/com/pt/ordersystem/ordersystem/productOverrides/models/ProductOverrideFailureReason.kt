@@ -1,4 +1,4 @@
-package com.pt.ordersystem.ordersystem.product.models
+package com.pt.ordersystem.ordersystem.productOverrides.models
 
 enum class ProductOverrideFailureReason {
   PRODUCT_OVERRIDE_NOT_FOUND,

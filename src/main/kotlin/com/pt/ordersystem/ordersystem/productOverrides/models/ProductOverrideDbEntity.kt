@@ -1,4 +1,4 @@
-package com.pt.ordersystem.ordersystem.product.models
+package com.pt.ordersystem.ordersystem.productOverrides.models
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity

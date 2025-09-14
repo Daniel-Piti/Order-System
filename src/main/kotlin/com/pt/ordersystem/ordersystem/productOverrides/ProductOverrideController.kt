@@ -1,9 +1,11 @@
-package com.pt.ordersystem.ordersystem.product
+package com.pt.ordersystem.ordersystem.productOverrides
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
 import com.pt.ordersystem.ordersystem.auth.AuthUtils
-import com.pt.ordersystem.ordersystem.product.models.*
 import com.pt.ordersystem.ordersystem.exception.ServiceException
+import com.pt.ordersystem.ordersystem.productOverrides.models.CreateProductOverrideRequest
+import com.pt.ordersystem.ordersystem.productOverrides.models.ProductOverrideDto
+import com.pt.ordersystem.ordersystem.productOverrides.models.UpdateProductOverrideRequest
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
@@ -25,12 +27,8 @@ class ProductOverrideController(
     @RequestBody request: CreateProductOverrideRequest
   ): ResponseEntity<ProductOverrideDto> {
     val userId = AuthUtils.getCurrentUserId()
-    return try {
-      val override = productOverrideService.createProductOverride(userId, request)
-      ResponseEntity.ok(override)
-    } catch (e: ServiceException) {
-      ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
-    }
+    val override = productOverrideService.createProductOverride(userId, request)
+    return ResponseEntity.ok(override)
   }
 
   @GetMapping
@@ -45,12 +43,8 @@ class ProductOverrideController(
     @PathVariable overrideId: String
   ): ResponseEntity<ProductOverrideDto> {
     val userId = AuthUtils.getCurrentUserId()
-    return try {
-      val override = productOverrideService.getProductOverrideById(userId, overrideId)
-      ResponseEntity.ok(override)
-    } catch (e: ServiceException) {
-      ResponseEntity.status(HttpStatus.NOT_FOUND).build()
-    }
+    val override = productOverrideService.getProductOverrideById(userId, overrideId)
+    return ResponseEntity.ok(override)
   }
 
   @GetMapping("/product/{productId}")
@@ -68,12 +62,8 @@ class ProductOverrideController(
     @RequestBody request: UpdateProductOverrideRequest
   ): ResponseEntity<ProductOverrideDto> {
     val userId = AuthUtils.getCurrentUserId()
-    return try {
-      val override = productOverrideService.updateProductOverride(userId, overrideId, request)
-      ResponseEntity.ok(override)
-    } catch (e: ServiceException) {
-      ResponseEntity.status(HttpStatus.NOT_FOUND).build()
-    }
+    val override = productOverrideService.updateProductOverride(userId, overrideId, request)
+    return ResponseEntity.ok(override)
   }
 
   @DeleteMapping("/{overrideId}")
@@ -81,11 +71,7 @@ class ProductOverrideController(
     @PathVariable overrideId: String
   ): ResponseEntity<Void> {
     val userId = AuthUtils.getCurrentUserId()
-    return try {
-      productOverrideService.deleteProductOverride(userId, overrideId)
-      ResponseEntity.ok().build()
-    } catch (e: ServiceException) {
-      ResponseEntity.status(HttpStatus.NOT_FOUND).build()
-    }
+    productOverrideService.deleteProductOverride(userId, overrideId)
+    return ResponseEntity.ok().build()
   }
 }

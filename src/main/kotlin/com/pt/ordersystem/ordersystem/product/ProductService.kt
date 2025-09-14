@@ -37,6 +37,7 @@ class ProductService(
       id = GeneralUtils.genId(),
       userId = userId,
       name = request.name,
+      category = request.category,
       originalPrice = request.originalPrice,
       specialPrice = request.specialPrice,
       pictureUrl = request.pictureUrl,

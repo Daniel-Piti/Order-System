@@ -99,7 +99,8 @@ class UserService(
         severity = SeverityLevel.WARN
       )
     }
-      userRepository.delete(user)
+
+    userRepository.delete(user)
   }
 
   fun validatePassword(email: String, password: String): Boolean {

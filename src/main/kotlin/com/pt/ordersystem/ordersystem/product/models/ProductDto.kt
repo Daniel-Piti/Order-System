@@ -7,9 +7,10 @@ data class ProductDto(
   val id: String,
   val userId: String,
   val name: String,
+  val category: String?,
   val originalPrice: BigDecimal,
   val specialPrice: BigDecimal,
-  val pictureUrl: String?,
+  val pictureUrl: String?
 )
 
 data class ProductDataForOrder(
@@ -22,6 +23,7 @@ fun ProductDbEntity.toDto() = ProductDto(
   id = id,
   userId = userId,
   name = name,
+  category = category,
   originalPrice = originalPrice,
   specialPrice = specialPrice,
   pictureUrl = pictureUrl,

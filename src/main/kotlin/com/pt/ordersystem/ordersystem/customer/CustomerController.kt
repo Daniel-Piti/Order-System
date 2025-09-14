@@ -25,12 +25,8 @@ class CustomerController(
     @RequestBody request: CreateCustomerRequest
   ): ResponseEntity<CustomerDto> {
     val userId = AuthUtils.getCurrentUserId()
-    return try {
-      val customer = customerService.createCustomer(userId, request)
-      ResponseEntity.ok(customer)
-    } catch (e: ServiceException) {
-      ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
-    }
+    val customer = customerService.createCustomer(userId, request)
+    return ResponseEntity.ok(customer)
   }
 
   @GetMapping
@@ -45,12 +41,8 @@ class CustomerController(
     @PathVariable customerId: String
   ): ResponseEntity<CustomerDto> {
     val userId = AuthUtils.getCurrentUserId()
-    return try {
-      val customer = customerService.getCustomerById(userId, customerId)
-      ResponseEntity.ok(customer)
-    } catch (e: ServiceException) {
-      ResponseEntity.status(HttpStatus.NOT_FOUND).build()
-    }
+    val customer = customerService.getCustomerById(userId, customerId)
+    return ResponseEntity.ok(customer)
   }
 
   @PutMapping("/{customerId}")
@@ -59,12 +51,8 @@ class CustomerController(
     @RequestBody request: UpdateCustomerRequest
   ): ResponseEntity<CustomerDto> {
     val userId = AuthUtils.getCurrentUserId()
-    return try {
-      val customer = customerService.updateCustomer(userId, customerId, request)
-      ResponseEntity.ok(customer)
-    } catch (e: ServiceException) {
-      ResponseEntity.status(HttpStatus.NOT_FOUND).build()
-    }
+    val customer = customerService.updateCustomer(userId, customerId, request)
+    return ResponseEntity.ok(customer)
   }
 
   @DeleteMapping("/{customerId}")
@@ -72,11 +60,7 @@ class CustomerController(
     @PathVariable customerId: String
   ): ResponseEntity<Void> {
     val userId = AuthUtils.getCurrentUserId()
-    return try {
-      customerService.deleteCustomer(userId, customerId)
-      ResponseEntity.ok().build()
-    } catch (e: ServiceException) {
-      ResponseEntity.status(HttpStatus.NOT_FOUND).build()
-    }
+    customerService.deleteCustomer(userId, customerId)
+    return ResponseEntity.ok().build()
   }
 }

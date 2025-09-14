@@ -3,6 +3,7 @@ CREATE TABLE products (
     id VARCHAR(255) NOT NULL,
     user_id VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
+    category VARCHAR(255),
     original_price DECIMAL(10, 2) NOT NULL CHECK (original_price >= 0),
     special_price DECIMAL(10, 2) NOT NULL CHECK (special_price >= 0),
     picture_url VARCHAR(1024),
@@ -19,6 +20,7 @@ CREATE TABLE products_history (
     id VARCHAR(255) NOT NULL,
     user_id VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
+    category VARCHAR(255),
     original_price DECIMAL(10, 2) NOT NULL CHECK (original_price >= 0),
     special_price DECIMAL(10, 2) NOT NULL CHECK (special_price >= 0),
     picture_url VARCHAR(1024),
@@ -26,12 +28,13 @@ CREATE TABLE products_history (
     updated_at TIMESTAMP
 );
 
+-- TRIGGERS
 CREATE TRIGGER trg_products_after_insert
 AFTER INSERT ON products FOR EACH ROW
-INSERT INTO products_history (id, user_id, name, original_price, special_price, picture_url, created_at, updated_at)
-VALUES (NEW.id, NEW.user_id, NEW.name, NEW.original_price, NEW.special_price, NEW.picture_url, NEW.created_at, NEW.updated_at);
+INSERT INTO products_history (id, user_id, name, category, original_price, special_price, picture_url, created_at, updated_at)
+VALUES (NEW.id, NEW.user_id, NEW.name, NEW.category, NEW.original_price, NEW.special_price, NEW.picture_url, NEW.created_at, NEW.updated_at);
 
 CREATE TRIGGER trg_products_after_update
 AFTER UPDATE ON products FOR EACH ROW
-INSERT INTO products_history (id, user_id, name, original_price, special_price, picture_url, created_at, updated_at)
-VALUES (NEW.id, NEW.user_id, NEW.name, NEW.original_price, NEW.special_price, NEW.picture_url, NEW.created_at, NEW.updated_at);
+INSERT INTO products_history (id, user_id, name, category, original_price, special_price, picture_url, created_at, updated_at)
+VALUES (NEW.id, NEW.user_id, NEW.name, NEW.category, NEW.original_price, NEW.special_price, NEW.picture_url, NEW.created_at, NEW.updated_at);
