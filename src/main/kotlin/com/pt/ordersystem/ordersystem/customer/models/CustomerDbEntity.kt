@@ -28,3 +28,9 @@ data class CustomerDbEntity(
   var updatedAt: LocalDateTime = LocalDateTime.now()
 )
 
+fun CustomerDbEntity.toDto() = CustomerDto(
+  id = id,
+  userId = userId,
+  name = name,
+  phoneNumber = phoneNumber,
+)

@@ -82,10 +82,4 @@ class CustomerService(
     customerRepository.delete(customer)
   }
 
-  private fun CustomerDbEntity.toDto() = CustomerDto(
-    id = id,
-    userId = userId,
-    name = name,
-    phoneNumber = phoneNumber,
-  )
 }
