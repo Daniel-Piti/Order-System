@@ -2,6 +2,7 @@ package com.pt.ordersystem.ordersystem.user
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_ADMIN
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
+import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.user.models.UserDto
 import com.pt.ordersystem.ordersystem.user.models.NewUserRequest
@@ -12,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Users", description = "User management API")
@@ -24,9 +26,8 @@ class UserController(
 ) {
 
   @GetMapping("/me")
-  fun getCurrentUser(): ResponseEntity<UserDto> {
-    val email = AuthUtils.getCurrentUserEmail()
-    return ResponseEntity.ok(userService.getUserByEmail(email).toDto())
+  fun getCurrentUser(@AuthenticationPrincipal user: AuthUser): ResponseEntity<UserDto> {
+    return ResponseEntity.ok(userService.getUserByEmail(user.email).toDto())
   }
 
   @PreAuthorize(AUTH_ADMIN)
@@ -35,10 +36,11 @@ class UserController(
     ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(newUserRequest))
 
   @PutMapping("/update")
-  fun updateCurrentUser(@RequestBody updatedDetails: UpdateUserDetailsRequest): ResponseEntity<String> {
-    val email = AuthUtils.getCurrentUserEmail()
-    return ResponseEntity.ok(userService.updateUserDetails(email, updatedDetails))
-  }
+  fun updateCurrentUser(
+    @RequestBody updatedDetails: UpdateUserDetailsRequest,
+    @AuthenticationPrincipal user: AuthUser
+  ): ResponseEntity<String> =
+    ResponseEntity.ok(userService.updateUserDetails(user.email, updatedDetails))
 
   @PreAuthorize(AUTH_ADMIN)
   @DeleteMapping("/delete")
@@ -54,10 +56,10 @@ class UserController(
   fun updateCurrentUserPassword(
     @RequestParam("old_password") oldPassword: String,
     @RequestParam("new_password") newPassword: String,
-    @RequestParam("new_password_confirmation") newPasswordConfirmation: String
+    @RequestParam("new_password_confirmation") newPasswordConfirmation: String,
+    @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<String> {
-    val email = AuthUtils.getCurrentUserEmail()
-    userService.updatePassword(email, oldPassword, newPassword, newPasswordConfirmation)
+    userService.updatePassword(user.email, oldPassword, newPassword, newPasswordConfirmation)
     return ResponseEntity.ok("Password updated successfully")
   }
 
