@@ -37,8 +37,8 @@ class ProductController(
 
   @PostMapping
   fun createProduct(
-    @AuthenticationPrincipal user: AuthUser,
-    @RequestBody request: CreateProductRequest
+    @RequestBody request: CreateProductRequest,
+    @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<String> {
     val newProductId = productService.createProduct(user.userId, request)
     return ResponseEntity.status(HttpStatus.CREATED).body(newProductId)

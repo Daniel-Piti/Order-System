@@ -1,6 +1,7 @@
 package com.pt.ordersystem.ordersystem.order
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
+import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.order.models.CreateOrderRequest
 import com.pt.ordersystem.ordersystem.order.models.OrderDto
@@ -9,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
 
@@ -22,9 +24,8 @@ class OrderController(
 ) {
 
   @GetMapping
-  fun getAllMyOrders(): ResponseEntity<List<OrderDto>> {
-    val userId = AuthUtils.getCurrentUserId()
-    val orders = orderService.getAllOrdersForUser(userId)
+  fun getAllMyOrders(@AuthenticationPrincipal user: AuthUser): ResponseEntity<List<OrderDto>> {
+    val orders = orderService.getAllOrdersForUser(user.userId)
     return ResponseEntity.ok(orders)
   }
 
@@ -33,9 +34,11 @@ class OrderController(
     ResponseEntity.ok(orderService.getOrderById(orderId))
 
   @PostMapping
-  fun createOrder(@RequestBody request: CreateOrderRequest): ResponseEntity<String> {
-    val userId = AuthUtils.getCurrentUserId()
-    val newOrderId = orderService.createOrder(userId, request)
+  fun createOrder(
+    @RequestBody request: CreateOrderRequest,
+    @AuthenticationPrincipal user: AuthUser
+  ): ResponseEntity<String> {
+    val newOrderId = orderService.createOrder(user.userId, request)
     return ResponseEntity.status(HttpStatus.CREATED).body(newOrderId)
   }
 

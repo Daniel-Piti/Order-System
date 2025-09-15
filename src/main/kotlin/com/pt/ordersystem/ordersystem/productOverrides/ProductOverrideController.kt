@@ -1,6 +1,7 @@
 package com.pt.ordersystem.ordersystem.productOverrides
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
+import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.productOverrides.models.CreateProductOverrideRequest
@@ -8,9 +9,11 @@ import com.pt.ordersystem.ordersystem.productOverrides.models.ProductOverrideDto
 import com.pt.ordersystem.ordersystem.productOverrides.models.UpdateProductOverrideRequest
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.apache.logging.log4j.util.StringMap
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Product overrides", description = "Product overrides API")
@@ -24,54 +27,53 @@ class ProductOverrideController(
 
   @PostMapping
   fun createProductOverride(
-    @RequestBody request: CreateProductOverrideRequest
+    @RequestBody request: CreateProductOverrideRequest,
+    @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<ProductOverrideDto> {
-    val userId = AuthUtils.getCurrentUserId()
-    val override = productOverrideService.createProductOverride(userId, request)
+    val override = productOverrideService.createProductOverride(user.userId, request)
     return ResponseEntity.ok(override)
   }
 
   @GetMapping
-  fun getProductOverrides(): ResponseEntity<List<ProductOverrideDto>> {
-    val userId = AuthUtils.getCurrentUserId()
-    val overrides = productOverrideService.getProductOverridesByUserId(userId)
+  fun getProductOverrides(@AuthenticationPrincipal user: AuthUser): ResponseEntity<List<ProductOverrideDto>> {
+    val overrides = productOverrideService.getProductOverridesByUserId(user.userId)
     return ResponseEntity.ok(overrides)
   }
 
   @GetMapping("/{overrideId}")
   fun getProductOverride(
-    @PathVariable overrideId: String
+    @PathVariable overrideId: String,
+    @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<ProductOverrideDto> {
-    val userId = AuthUtils.getCurrentUserId()
-    val override = productOverrideService.getProductOverrideById(userId, overrideId)
+    val override = productOverrideService.getProductOverrideById(user.userId, overrideId)
     return ResponseEntity.ok(override)
   }
 
   @GetMapping("/product/{productId}")
   fun getProductOverridesByProduct(
-    @PathVariable productId: String
+    @PathVariable productId: String,
+    @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<List<ProductOverrideDto>> {
-    val userId = AuthUtils.getCurrentUserId()
-    val overrides = productOverrideService.getProductOverridesByProductId(userId, productId)
+    val overrides = productOverrideService.getProductOverridesByProductId(user.userId, productId)
     return ResponseEntity.ok(overrides)
   }
 
   @PutMapping("/{overrideId}")
   fun updateProductOverride(
     @PathVariable overrideId: String,
-    @RequestBody request: UpdateProductOverrideRequest
+    @RequestBody request: UpdateProductOverrideRequest,
+    @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<ProductOverrideDto> {
-    val userId = AuthUtils.getCurrentUserId()
-    val override = productOverrideService.updateProductOverride(userId, overrideId, request)
+    val override = productOverrideService.updateProductOverride(user.userId, overrideId, request)
     return ResponseEntity.ok(override)
   }
 
   @DeleteMapping("/{overrideId}")
   fun deleteProductOverride(
-    @PathVariable overrideId: String
+    @PathVariable overrideId: String,
+    @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<Void> {
-    val userId = AuthUtils.getCurrentUserId()
-    productOverrideService.deleteProductOverride(userId, overrideId)
+    productOverrideService.deleteProductOverride(user.userId, overrideId)
     return ResponseEntity.ok().build()
   }
 }
