@@ -3,6 +3,7 @@ package com.pt.ordersystem.ordersystem.fieldValidators
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import org.springframework.http.HttpStatus
+import java.math.BigDecimal
 import java.time.LocalDate
 
 object FieldValidators {
@@ -72,4 +73,27 @@ object FieldValidators {
       )
     }
   }
+
+  fun validateDateNotFuture(date: LocalDate, fieldName: String = "Date") {
+    if (date.isAfter(LocalDate.now())) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "$fieldName cannot be in the future",
+        technicalMessage = "$fieldName `$date` is after today",
+        severity = SeverityLevel.WARN
+      )
+    }
+  }
+
+  fun validatePrice(price: BigDecimal) {
+    if (price < BigDecimal.ZERO) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Price must be greater than or equal to 0",
+        technicalMessage = "Price `$price` is negative",
+        severity = SeverityLevel.WARN
+      )
+    }
+  }
+
 }

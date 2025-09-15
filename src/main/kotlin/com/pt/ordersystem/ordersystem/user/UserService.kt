@@ -40,7 +40,7 @@ class UserService(
       FieldValidators.validateEmail(email)
       FieldValidators.validateStrongPassword(password)
       FieldValidators.validatePhoneNumber(phoneNumber)
-      FieldValidators.validateNotPastDate(dateOfBirth)
+      FieldValidators.validateDateNotFuture(dateOfBirth)
       FieldValidators.validateNonEmpty(mainAddress, "'address'")
     }
 
@@ -68,7 +68,7 @@ class UserService(
       FieldValidators.validateNonEmpty(firstName, "'first name'")
       FieldValidators.validateNonEmpty(lastName, "'last name'")
       FieldValidators.validatePhoneNumber(phoneNumber)
-      FieldValidators.validateNotPastDate(dateOfBirth)
+      FieldValidators.validateDateNotFuture(dateOfBirth)
       FieldValidators.validateNonEmpty(mainAddress, "'address'")
     }
 

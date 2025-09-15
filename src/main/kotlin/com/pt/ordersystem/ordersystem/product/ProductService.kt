@@ -3,6 +3,7 @@ package com.pt.ordersystem.ordersystem.product
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
+import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.product.models.*
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.http.HttpStatus
@@ -33,6 +34,13 @@ class ProductService(
   }
 
   fun createProduct(userId: String, request: CreateProductRequest): String {
+
+    with(request) {
+      FieldValidators.validateNonEmpty(name, "'name'")
+      FieldValidators.validatePrice(originalPrice)
+      FieldValidators.validatePrice(specialPrice)
+    }
+
     val product = ProductDbEntity(
       id = GeneralUtils.genId(),
       userId = userId,
@@ -44,10 +52,18 @@ class ProductService(
       createdAt = LocalDateTime.now(),
       updatedAt = LocalDateTime.now()
     )
+
     return productRepository.save(product).id
   }
 
   fun updateProduct(productId: String, request: UpdateProductRequest): String {
+
+    with(request) {
+      FieldValidators.validateNonEmpty(name, "'name'")
+      FieldValidators.validatePrice(originalPrice)
+      FieldValidators.validatePrice(specialPrice)
+    }
+
     val product = productRepository.findById(productId).orElseThrow {
       ServiceException(
         status = HttpStatus.NOT_FOUND,
@@ -60,11 +76,11 @@ class ProductService(
     AuthUtils.checkOwnership(product.userId)
 
     val updated = product.copy(
-      name = request.name ?: product.name,
-      originalPrice = request.originalPrice ?: product.originalPrice,
-      specialPrice = request.specialPrice ?: product.specialPrice,
-      pictureUrl = request.pictureUrl ?: product.pictureUrl,
-      updatedAt = LocalDateTime.now()
+      name = request.name,
+      originalPrice = request.originalPrice,
+      specialPrice = request.specialPrice,
+      pictureUrl = request.pictureUrl,
+      updatedAt = LocalDateTime.now(),
     )
 
     return productRepository.save(updated).id
@@ -81,6 +97,7 @@ class ProductService(
     }
 
     AuthUtils.checkOwnership(product.userId)
+
     productRepository.delete(product)
   }
 }

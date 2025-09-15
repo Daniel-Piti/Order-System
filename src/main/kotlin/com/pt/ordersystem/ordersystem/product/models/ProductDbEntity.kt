@@ -20,7 +20,7 @@ data class ProductDbEntity(
   val name: String,
 
   @Column(nullable = true)
-  val category: String? = null,
+  val category: String?,
 
   @Column(name = "original_price", nullable = false)
   val originalPrice: BigDecimal,
@@ -29,7 +29,7 @@ data class ProductDbEntity(
   val specialPrice: BigDecimal,
 
   @Column(name = "picture_url")
-  val pictureUrl: String? = null,
+  val pictureUrl: String,
 
   @Column(name = "created_at", nullable = false, updatable = false)
   val createdAt: LocalDateTime = LocalDateTime.now(),

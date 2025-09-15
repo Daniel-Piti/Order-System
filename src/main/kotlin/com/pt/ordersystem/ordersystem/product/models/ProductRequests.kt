@@ -4,15 +4,15 @@ import java.math.BigDecimal
 
 data class CreateProductRequest(
   val name: String,
-  val category: String,
+  val category: String?,
   val originalPrice: BigDecimal,
   val specialPrice: BigDecimal,
-  val pictureUrl: String? = null
+  val pictureUrl: String,
 )
 
 data class UpdateProductRequest(
-  val name: String? = null,
-  val originalPrice: BigDecimal? = null,
-  val specialPrice: BigDecimal? = null,
-  val pictureUrl: String? = null
+  val name: String,
+  val originalPrice: BigDecimal,
+  val specialPrice: BigDecimal,
+  val pictureUrl: String,
 )

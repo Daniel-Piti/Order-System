@@ -6,7 +6,7 @@ CREATE TABLE products (
     category VARCHAR(255),
     original_price DECIMAL(10, 2) NOT NULL CHECK (original_price >= 0),
     special_price DECIMAL(10, 2) NOT NULL CHECK (special_price >= 0),
-    picture_url VARCHAR(1024),
+    picture_url VARCHAR(1024) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
@@ -23,7 +23,7 @@ CREATE TABLE products_history (
     category VARCHAR(255),
     original_price DECIMAL(10, 2) NOT NULL CHECK (original_price >= 0),
     special_price DECIMAL(10, 2) NOT NULL CHECK (special_price >= 0),
-    picture_url VARCHAR(1024),
+    picture_url VARCHAR(1024) NOT NULL,
     created_at TIMESTAMP,
     updated_at TIMESTAMP
 );
