@@ -34,7 +34,7 @@ class OrderService(
     return order.toDto()
   }
 
-  fun createOrder(userId: String, request: CreateOrderRequest): String {
+  fun createEmptyOrder(userId: String, request: CreateOrderRequest): String {
     val now = LocalDateTime.now()
 
     val order = OrderDbEntity(

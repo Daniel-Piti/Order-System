@@ -2,7 +2,6 @@ package com.pt.ordersystem.ordersystem.order
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
-import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.order.models.CreateOrderRequest
 import com.pt.ordersystem.ordersystem.order.models.OrderDto
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
@@ -38,7 +37,7 @@ class OrderController(
     @RequestBody request: CreateOrderRequest,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<String> {
-    val newOrderId = orderService.createOrder(user.userId, request)
+    val newOrderId = orderService.createEmptyOrder(user.userId, request)
     return ResponseEntity.status(HttpStatus.CREATED).body(newOrderId)
   }
 

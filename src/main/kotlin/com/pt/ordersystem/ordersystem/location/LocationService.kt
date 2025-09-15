@@ -3,6 +3,7 @@ package com.pt.ordersystem.ordersystem.location
 import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
+import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.location.models.*
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.http.HttpStatus
@@ -39,6 +40,11 @@ class LocationService(
   fun createLocation(userId: String, request: NewLocationRequest): String {
     val usersLocationCount = locationRepository.countByUserId(userId)
 
+    with(request) {
+      FieldValidators.validateNonEmpty(name, "'name'")
+      FieldValidators.validateNonEmpty(name, "'address'")
+    }
+
     if (usersLocationCount >= MAXIMUM_LOCATIONS) {
       throw ServiceException(
         status = HttpStatus.BAD_REQUEST,
@@ -61,6 +67,12 @@ class LocationService(
   }
 
   fun updateLocation(locationId: String, request: UpdateLocationRequest): String {
+
+    with(request) {
+      FieldValidators.validateNonEmpty(name, "'name'")
+      FieldValidators.validateNonEmpty(address, "'name'")
+    }
+
     val location = locationRepository.findById(locationId).orElseThrow {
       ServiceException(
         status = HttpStatus.NOT_FOUND,

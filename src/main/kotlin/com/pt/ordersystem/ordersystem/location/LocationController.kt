@@ -1,6 +1,7 @@
 package com.pt.ordersystem.ordersystem.location
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
+import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.location.models.LocationDto
 import com.pt.ordersystem.ordersystem.location.models.NewLocationRequest
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Locations", description = "User location management API")
@@ -22,8 +24,8 @@ class LocationController(
 ) {
 
   @GetMapping
-  fun getUserLocations(): ResponseEntity<List<LocationDto>> {
-    return ResponseEntity.ok(locationService.getUserLocations(AuthUtils.getCurrentUserId()))
+  fun getUserLocations(@AuthenticationPrincipal user: AuthUser): ResponseEntity<List<LocationDto>> {
+    return ResponseEntity.ok(locationService.getUserLocations(user.userId))
   }
 
   @GetMapping("/location/{id}")
@@ -31,8 +33,11 @@ class LocationController(
     ResponseEntity.ok(locationService.getLocationById(id))
 
   @PostMapping
-  fun createLocation(@RequestBody request: NewLocationRequest): ResponseEntity<String> {
-    val createdId = locationService.createLocation(AuthUtils.getCurrentUserId(), request)
+  fun createLocation(
+    @RequestBody request: NewLocationRequest,
+    @AuthenticationPrincipal user: AuthUser
+  ): ResponseEntity<String> {
+    val createdId = locationService.createLocation(user.userId, request)
     return ResponseEntity.status(HttpStatus.CREATED).body(createdId)
   }
 
