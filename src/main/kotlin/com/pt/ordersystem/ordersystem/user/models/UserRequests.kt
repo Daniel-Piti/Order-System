@@ -21,7 +21,7 @@ data class NewUserRequest(
   val mainAddress: String,
 )
 
-data class UpdateUserRequest(
+data class UpdateUserDetailsRequest(
   val firstName: String,
   val lastName: String,
   val phoneNumber: String,

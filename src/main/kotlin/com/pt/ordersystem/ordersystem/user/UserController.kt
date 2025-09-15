@@ -5,7 +5,7 @@ import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
 import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.user.models.UserDto
 import com.pt.ordersystem.ordersystem.user.models.NewUserRequest
-import com.pt.ordersystem.ordersystem.user.models.UpdateUserRequest
+import com.pt.ordersystem.ordersystem.user.models.UpdateUserDetailsRequest
 import com.pt.ordersystem.ordersystem.user.models.toDto
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -35,7 +35,7 @@ class UserController(
     ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(newUserRequest))
 
   @PutMapping("/update")
-  fun updateCurrentUser(@RequestBody updatedDetails: UpdateUserRequest): ResponseEntity<String> {
+  fun updateCurrentUser(@RequestBody updatedDetails: UpdateUserDetailsRequest): ResponseEntity<String> {
     val email = AuthUtils.getCurrentUserEmail()
     return ResponseEntity.ok(userService.updateUserDetails(email, updatedDetails))
   }
@@ -67,7 +67,7 @@ class UserController(
     @RequestParam email: String,
     @RequestParam password: String
   ): ResponseEntity<String> {
-      val isValid = userService.validatePassword(email, password)
+      val isValid = userService.validateMatchingPassword(email, password)
       return if (isValid) ResponseEntity.ok("Password matches")
              else ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Password does not match")
     }

@@ -2,13 +2,14 @@ package com.pt.ordersystem.ordersystem.user
 
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
+import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
+import com.pt.ordersystem.ordersystem.main
 import com.pt.ordersystem.ordersystem.user.models.UserDbEntity
 import com.pt.ordersystem.ordersystem.user.models.UserFailureReason
 import com.pt.ordersystem.ordersystem.user.models.NewUserRequest
-import com.pt.ordersystem.ordersystem.user.models.UpdateUserRequest
+import com.pt.ordersystem.ordersystem.user.models.UpdateUserDetailsRequest
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.http.HttpStatus
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -32,13 +33,16 @@ class UserService(
     )
 
   fun createUser(newUserRequest: NewUserRequest): String {
-    if (!isPasswordStrong(newUserRequest.password))
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = UserFailureReason.PASSWORD_TOO_WEAK.userMessage,
-        technicalMessage = UserFailureReason.PASSWORD_TOO_WEAK.technical + newUserRequest.mainAddress,
-        severity = SeverityLevel.WARN
-      )
+
+    with(newUserRequest) {
+      FieldValidators.validateNonEmpty(firstName, "'first name'")
+      FieldValidators.validateNonEmpty(lastName, "'last name'")
+      FieldValidators.validateEmail(email)
+      FieldValidators.validateStrongPassword(password)
+      FieldValidators.validatePhoneNumber(phoneNumber)
+      FieldValidators.validateNotPastDate(dateOfBirth)
+      FieldValidators.validateNonEmpty(mainAddress, "'address'")
+    }
 
     val newUserDbEntity = UserDbEntity(
       id = GeneralUtils.genId(),
@@ -58,14 +62,15 @@ class UserService(
     return user.id
   }
 
-  fun updateUserDetails(email: String, updatedDetails: UpdateUserRequest): String {
-    println(SecurityContextHolder.getContext().authentication)
-    println(SecurityContextHolder.getContext().authentication.details)
-    println(SecurityContextHolder.getContext().authentication.authorities)
-    println(SecurityContextHolder.getContext().authentication.credentials)
-    println(SecurityContextHolder.getContext().authentication.principal)
-    println(SecurityContextHolder.getContext().authentication.isAuthenticated)
-    println(SecurityContextHolder.getContext().authentication.name)
+  fun updateUserDetails(email: String, updatedUserDetails: UpdateUserDetailsRequest): String {
+
+    with(updatedUserDetails) {
+      FieldValidators.validateNonEmpty(firstName, "'first name'")
+      FieldValidators.validateNonEmpty(lastName, "'last name'")
+      FieldValidators.validatePhoneNumber(phoneNumber)
+      FieldValidators.validateNotPastDate(dateOfBirth)
+      FieldValidators.validateNonEmpty(mainAddress, "'address'")
+    }
 
     val user = userRepository.findByEmail(email) ?: throw ServiceException(
       status = HttpStatus.NOT_FOUND,
@@ -75,11 +80,11 @@ class UserService(
     )
 
     val userToSave = user.copy(
-      firstName = updatedDetails.firstName,
-      lastName = updatedDetails.lastName,
-      phoneNumber = updatedDetails.phoneNumber,
-      dateOfBirth = updatedDetails.dateOfBirth,
-      mainAddress = updatedDetails.mainAddress,
+      firstName = updatedUserDetails.firstName,
+      lastName = updatedUserDetails.lastName,
+      phoneNumber = updatedUserDetails.phoneNumber,
+      dateOfBirth = updatedUserDetails.dateOfBirth,
+      mainAddress = updatedUserDetails.mainAddress,
       updatedAt = LocalDateTime.now()
     )
 
@@ -103,7 +108,7 @@ class UserService(
     userRepository.delete(user)
   }
 
-  fun validatePassword(email: String, password: String): Boolean {
+  fun validateMatchingPassword(email: String, password: String): Boolean {
     val user = userRepository.findByEmail(email) ?: throw ServiceException(
       status = HttpStatus.NOT_FOUND,
       userMessage = UserFailureReason.NOT_FOUND.userMessage,
@@ -137,14 +142,7 @@ class UserService(
       )
     }
 
-    if (!isPasswordStrong(newPassword)) {
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = UserFailureReason.PASSWORD_TOO_WEAK.userMessage,
-        technicalMessage = UserFailureReason.PASSWORD_TOO_WEAK.technical + "email=$email",
-        severity = SeverityLevel.INFO
-      )
-    }
+    FieldValidators.validateStrongPassword(newPassword)
 
     val user = userRepository.findByEmail(email)
       ?: throw ServiceException(
@@ -168,16 +166,6 @@ class UserService(
       updatedAt = LocalDateTime.now()
     )
     userRepository.save(updatedUser)
-  }
-
-  fun isPasswordStrong(password: String): Boolean {
-    val lengthCheck = password.length >= 8
-    val upperCheck = password.any { it.isUpperCase() }
-    val lowerCheck = password.any { it.isLowerCase() }
-    val digitCheck = password.any { it.isDigit() }
-    val specialCheck = password.any { !it.isLetterOrDigit() }
-
-    return lengthCheck && upperCheck && lowerCheck && digitCheck && specialCheck
   }
 
   fun resetPassword(email: String) {
