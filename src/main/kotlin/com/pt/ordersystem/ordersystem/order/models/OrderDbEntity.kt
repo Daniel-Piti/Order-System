@@ -20,6 +20,9 @@ data class OrderDbEntity(
   @Column(name = "location_id", nullable = false)
   val locationId: String,
 
+  @Column(name = "customer_id", nullable = false)
+  val customerId: String,
+
   @Column(name = "customer_name", nullable = false)
   val customerName: String,
 
@@ -36,7 +39,7 @@ data class OrderDbEntity(
   val status: String,
 
   @Column(name = "products", columnDefinition = "json")
-  val products: String? = null,  // JSON string of product list
+  val products: String? = null, // JSON string of product list
 
   @Column(name = "total_price", nullable = false)
   val totalPrice: BigDecimal,

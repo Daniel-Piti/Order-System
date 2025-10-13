@@ -41,6 +41,7 @@ class OrderService(
       id = GeneralUtils.genId(),
       userId = userId,
       locationId = request.locationId,
+      customerId = request.customerId,
       customerName = request.customerName,
       customerPhone = request.customerPhone,
       customerCity = request.customerCity,

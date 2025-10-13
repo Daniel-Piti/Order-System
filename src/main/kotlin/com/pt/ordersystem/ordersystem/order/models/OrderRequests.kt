@@ -4,6 +4,7 @@ import com.pt.ordersystem.ordersystem.product.models.ProductDataForOrder
 
 data class CreateOrderRequest(
   val locationId: String,
+  val customerId: String,
   val customerName: String,
   val customerPhone: String,
   val customerCity: String,

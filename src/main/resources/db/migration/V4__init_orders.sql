@@ -3,6 +3,7 @@ CREATE TABLE orders (
     id VARCHAR(255) NOT NULL,
     user_id VARCHAR(255) NOT NULL,
     location_id VARCHAR(255) NOT NULL,
+    customer_id VARCHAR(255) NOT NULL,
     customer_name VARCHAR(255) NOT NULL,
     customer_phone VARCHAR(20) NOT NULL,
     customer_city VARCHAR(255) NOT NULL,
@@ -16,6 +17,7 @@ CREATE TABLE orders (
 );
 
 CREATE INDEX idx_orders_user_id ON orders (user_id);
+CREATE INDEX idx_orders_customer_id ON orders (customer_id);
 
 -- ORDERS HISTORY TABLE
 CREATE TABLE orders_history (
@@ -23,6 +25,7 @@ CREATE TABLE orders_history (
     id VARCHAR(255) NOT NULL,
     user_id VARCHAR(255) NOT NULL,
     location_id VARCHAR(255) NOT NULL,
+    customer_id VARCHAR(255) NOT NULL,
     customer_name VARCHAR(255) NOT NULL,
     customer_phone VARCHAR(20) NOT NULL,
     customer_city VARCHAR(255) NOT NULL,
@@ -37,15 +40,15 @@ CREATE TABLE orders_history (
 -- INSERT TRIGGER
 CREATE TRIGGER trg_orders_after_insert
 AFTER INSERT ON orders FOR EACH ROW
-INSERT INTO orders_history(id, user_id, location_id, customer_name, customer_phone, customer_city,
+INSERT INTO orders_history(id, user_id, location_id, customer_id, customer_name, customer_phone, customer_city,
                            customer_address, status, products, total_price, created_at, updated_at)
-VALUES (NEW.id, NEW.user_id, NEW.location_id, NEW.customer_name, NEW.customer_phone, NEW.customer_city,
+VALUES (NEW.id, NEW.user_id, NEW.location_id, NEW.customer_id, NEW.customer_name, NEW.customer_phone, NEW.customer_city,
         NEW.customer_address, NEW.status, NEW.products, NEW.total_price, NEW.created_at, NEW.updated_at);
 
 -- UPDATE TRIGGER
 CREATE TRIGGER trg_orders_after_update
 AFTER UPDATE ON orders FOR EACH ROW
-INSERT INTO orders_history(id, user_id, location_id, customer_name, customer_phone, customer_city,
+INSERT INTO orders_history(id, user_id, location_id, customer_id, customer_name, customer_phone, customer_city,
                            customer_address, status, products, total_price, created_at, updated_at)
-VALUES (NEW.id, NEW.user_id, NEW.location_id, NEW.customer_name, NEW.customer_phone, NEW.customer_city,
+VALUES (NEW.id, NEW.user_id, NEW.location_id, NEW.customer_id, NEW.customer_name, NEW.customer_phone, NEW.customer_city,
         NEW.customer_address, NEW.status, NEW.products, NEW.total_price, NEW.created_at, NEW.updated_at);

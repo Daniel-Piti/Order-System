@@ -4,7 +4,9 @@ import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
+import com.pt.ordersystem.ordersystem.order.OrderRepository
 import com.pt.ordersystem.ordersystem.product.models.*
+import com.pt.ordersystem.ordersystem.productOverrides.ProductOverrideRepository
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -12,11 +14,37 @@ import java.time.LocalDateTime
 
 @Service
 class ProductService(
-  private val productRepository: ProductRepository
+  private val productRepository: ProductRepository,
+  private val productOverrideRepository: ProductOverrideRepository,
+  private val orderRepository: OrderRepository,
 ) {
 
   fun getAllProductsForUser(userId: String): List<ProductDto> =
     productRepository.findAllByUserId(userId).map { it.toDto() }
+
+  fun getAllProductsForOrder(orderId: String): List<ProductDto> {
+    val order = orderRepository.findById(orderId).orElseThrow {
+      ServiceException(
+        status = HttpStatus.NOT_FOUND,
+        userMessage = ProductFailureReason.NOT_FOUND.userMessage,
+        technicalMessage = ProductFailureReason.NOT_FOUND.technical + "order=$orderId",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    val products = productRepository.findAllByUserId(order.userId)
+
+    val productOverrides = productOverrideRepository
+      .findByUserIdAndCustomerId(order.userId, order.customerId)
+      .associateBy{ it.productId }
+
+    return products.map { product ->
+      val override = productOverrides[product.id]
+      product.copy(
+        specialPrice = override?.overridePrice ?: product.specialPrice,
+      ).toDto()
+    }
+  }
 
   fun getProductById(productId: String): ProductDto {
     val product = productRepository.findById(productId).orElseThrow {

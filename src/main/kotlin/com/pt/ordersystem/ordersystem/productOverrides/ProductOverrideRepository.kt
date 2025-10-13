@@ -10,5 +10,6 @@ interface ProductOverrideRepository : JpaRepository<ProductOverrideDbEntity, Str
   fun findByUserIdAndId(userId: String, id: String): ProductOverrideDbEntity?
   fun findByProductIdAndCustomerId(productId: String, customerId: String): ProductOverrideDbEntity?
   fun findByUserIdAndProductId(userId: String, productId: String): List<ProductOverrideDbEntity>
+  fun findByUserIdAndCustomerId(userId: String, customerId: String): List<ProductOverrideDbEntity>
 }
 
