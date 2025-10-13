@@ -15,7 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 
 @Service
-class AuthenticationService(
+class LoginService(
   private val userRepository: UserRepository,
   private val passwordEncoder: BCryptPasswordEncoder,
   private val userService: UserService,

@@ -14,15 +14,15 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/auth/login")
 class LoginController(
-  private val authenticationService: AuthenticationService,
+  private val loginService: LoginService,
 ) {
 
   @PostMapping
   fun userLogin(@RequestBody request: UserLoginRequest): ResponseEntity<LoginResponse> =
-    ResponseEntity.ok(authenticationService.loginUser(request))
+    ResponseEntity.ok(loginService.loginUser(request))
 
   @PostMapping("/admin")
   fun adminLogin(@RequestBody request: AdminLoginRequest): ResponseEntity<LoginResponse> =
-    ResponseEntity.ok(authenticationService.loginAdmin(request))
+    ResponseEntity.ok(loginService.loginAdmin(request))
 
 }
