@@ -23,6 +23,9 @@ data class LocationDbEntity(
   @Column(nullable = false)
   val address: String,
 
+  @Column(name = "phone_number", nullable = false)
+  val phoneNumber: String,
+
   @Column(name = "created_at", nullable = false)
   val createdAt: LocalDateTime = LocalDateTime.now(),
 

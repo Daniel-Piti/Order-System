@@ -43,6 +43,7 @@ class LocationService(
     with(request) {
       FieldValidators.validateNonEmpty(name, "'name'")
       FieldValidators.validateNonEmpty(name, "'address'")
+      FieldValidators.validatePhoneNumber(phoneNumber)
     }
 
     if (usersLocationCount >= MAXIMUM_LOCATIONS) {
@@ -59,6 +60,7 @@ class LocationService(
       userId = userId,
       name = request.name,
       address = request.address,
+      phoneNumber = request.phoneNumber,
       createdAt = LocalDateTime.now(),
       updatedAt = LocalDateTime.now()
     )
@@ -71,6 +73,7 @@ class LocationService(
     with(request) {
       FieldValidators.validateNonEmpty(name, "'name'")
       FieldValidators.validateNonEmpty(address, "'name'")
+      FieldValidators.validatePhoneNumber(phoneNumber)
     }
 
     val location = locationRepository.findById(locationId).orElseThrow {
@@ -87,6 +90,7 @@ class LocationService(
     val updatedLocation = location.copy(
       name = request.name,
       address = request.address,
+      phoneNumber = request.phoneNumber,
       updatedAt = LocalDateTime.now()
     )
 

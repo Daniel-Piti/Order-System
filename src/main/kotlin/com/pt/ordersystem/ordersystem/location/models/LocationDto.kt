@@ -4,12 +4,14 @@ data class LocationDto(
   val id: String,
   val userId: String,
   val name: String,
-  val address: String
+  val address: String,
+  val phoneNumber: String,
 )
 
 fun LocationDbEntity.toDto() = LocationDto(
   id = id,
   userId = userId,
   name = name,
-  address = address
+  address = address,
+  phoneNumber = phoneNumber
 )
