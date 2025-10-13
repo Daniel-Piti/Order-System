@@ -3,7 +3,6 @@ package com.pt.ordersystem.ordersystem.user
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_ADMIN
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
-import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.user.models.UserDto
 import com.pt.ordersystem.ordersystem.user.models.NewUserRequest
 import com.pt.ordersystem.ordersystem.user.models.UpdateUserDetailsRequest
@@ -15,7 +14,6 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
-
 @Tag(name = "Users", description = "User management API")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
@@ -26,9 +24,8 @@ class UserController(
 ) {
 
   @GetMapping("/me")
-  fun getCurrentUser(@AuthenticationPrincipal user: AuthUser): ResponseEntity<UserDto> {
-    return ResponseEntity.ok(userService.getUserByEmail(user.email).toDto())
-  }
+  fun getCurrentUser(@AuthenticationPrincipal user: AuthUser): ResponseEntity<UserDto> =
+    ResponseEntity.ok(userService.getUserByEmail(user.email).toDto())
 
   @PreAuthorize(AUTH_ADMIN)
   @PostMapping("/create")
@@ -42,18 +39,8 @@ class UserController(
   ): ResponseEntity<String> =
     ResponseEntity.ok(userService.updateUserDetails(user.email, updatedDetails))
 
-  @PreAuthorize(AUTH_ADMIN)
-  @DeleteMapping("/delete")
-  fun deleteUser(
-    @RequestParam id: String,
-    @RequestParam email: String
-  ): ResponseEntity<String> {
-    userService.deleteUserByIdAndEmail(id, email)
-    return ResponseEntity.ok("User deleted successfully | email=$email")
-  }
-
-  @PostMapping("/update_password")
-  fun updateCurrentUserPassword(
+  @PostMapping("/update-password")
+  fun updateUserPassword(
     @RequestParam("old_password") oldPassword: String,
     @RequestParam("new_password") newPassword: String,
     @RequestParam("new_password_confirmation") newPasswordConfirmation: String,
@@ -64,20 +51,33 @@ class UserController(
   }
 
   @PreAuthorize(AUTH_ADMIN)
-  @PostMapping("/validate_password")
-  fun validatePassword(
+  @PostMapping("/validate-password")
+  fun validateUserPassword(
     @RequestParam email: String,
     @RequestParam password: String
   ): ResponseEntity<String> {
-      val isValid = userService.validateMatchingPassword(email, password)
-      return if (isValid) ResponseEntity.ok("Password matches")
-             else ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Password does not match")
-    }
+    val isValid = userService.validateMatchingPassword(email, password)
+    return if (isValid)
+      ResponseEntity.ok("Password matches")
+    else
+      ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Password does not match")
+  }
 
   @PreAuthorize(AUTH_ADMIN)
   @PostMapping("/reset-password")
-  fun resetPassword(@RequestBody email: String): ResponseEntity<String> {
+  fun resetUserPassword(@RequestBody email: String): ResponseEntity<String> {
     userService.resetPassword(email)
     return ResponseEntity.ok("Password reset successfully")
   }
+
+  @PreAuthorize(AUTH_ADMIN)
+  @DeleteMapping
+  fun deleteUser(
+    @RequestParam id: String,
+    @RequestParam email: String
+  ): ResponseEntity<String> {
+    userService.deleteUserByIdAndEmail(id, email)
+    return ResponseEntity.ok("User deleted successfully | email=$email")
+  }
+
 }
