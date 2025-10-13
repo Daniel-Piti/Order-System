@@ -4,6 +4,7 @@ import com.pt.ordersystem.ordersystem.auth.JwtUtil
 import com.pt.ordersystem.ordersystem.auth.Roles
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
+import com.pt.ordersystem.ordersystem.login.models.AdminLoginRequest
 import com.pt.ordersystem.ordersystem.user.models.UserFailureReason
 import com.pt.ordersystem.ordersystem.login.models.LoginResponse
 import com.pt.ordersystem.ordersystem.user.UserRepository
@@ -22,12 +23,12 @@ class AuthenticationService(
 ) {
 
   companion object {
-    // You can move these to application config or env variables
+    // We can move these to application config or env variables
     private const val ADMIN_USERNAME_HASH = "\$2a\$10\$iKrrfrYNuyfyDTCDIdOgquXgIoT6nK8TJ40Gltux/5p14sS2Im3Li" // 'admin'
     private const val ADMIN_PASSWORD_HASH = "\$2a\$10\$iKrrfrYNuyfyDTCDIdOgquXgIoT6nK8TJ40Gltux/5p14sS2Im3Li" // 'admin'
   }
 
-  fun authenticateUser(request: UserLoginRequest): LoginResponse {
+  fun loginUser(request: UserLoginRequest): LoginResponse {
     val user = userRepository.findByEmail(request.email) ?: throw ServiceException(
       status = HttpStatus.NOT_FOUND,
       userMessage = UserFailureReason.NOT_FOUND.userMessage,
@@ -48,7 +49,7 @@ class AuthenticationService(
     return LoginResponse(token)
   }
 
-  fun authenticateAdmin(request: AdminLoginRequest): LoginResponse {
+  fun loginAdmin(request: AdminLoginRequest): LoginResponse {
     val isUsernameValid = passwordEncoder.matches(request.adminUserName, ADMIN_USERNAME_HASH)
     val isPasswordValid = passwordEncoder.matches(request.password, ADMIN_PASSWORD_HASH)
 
@@ -71,4 +72,5 @@ class AuthenticationService(
 
     return LoginResponse(token)
   }
+
 }
