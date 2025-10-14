@@ -34,8 +34,7 @@ class SecurityConfig(
           "/webjars/**",
           "/api/products/user/**",
           "/api/products/product/**",
-          "/api/products/order/**",
-          "/api/orders/*"
+          "/api/products/order/**"
         ).permitAll()
         it.anyRequest().authenticated()
       }

@@ -21,12 +21,21 @@ class OrderService(
     return orderRepository.findAllByUserId(userId).map { it.toDto() }
   }
 
-  fun getOrderById(orderId: String): OrderDto {
+  fun getOrderById(orderId: String, userId: String? = null): OrderDto {
     val order = orderRepository.findById(orderId).orElseThrow {
       throw ServiceException(
         status = HttpStatus.NOT_FOUND,
         userMessage = OrderFailureReason.NOT_FOUND.userMessage,
         technicalMessage = OrderFailureReason.NOT_FOUND.technical + "orderId=$orderId",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    if (userId != null && order.userId != userId) {
+      throw ServiceException(
+        status = HttpStatus.FORBIDDEN,
+        userMessage = "You are not authorized to access this order",
+        technicalMessage = "User $userId tried to access order owned by ${order.userId}",
         severity = SeverityLevel.WARN
       )
     }
