@@ -71,18 +71,4 @@ class OrderService(
     return orderRepository.save(order).id
   }
 
-  fun deleteOrder(orderId: String) {
-    val order = orderRepository.findById(orderId).orElseThrow {
-      throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = OrderFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = OrderFailureReason.NOT_FOUND.technical + "orderId=$orderId",
-        severity = SeverityLevel.WARN
-      )
-    }
-
-    AuthUtils.checkOwnership(order.userId)
-
-    orderRepository.delete(order)
-  }
 }

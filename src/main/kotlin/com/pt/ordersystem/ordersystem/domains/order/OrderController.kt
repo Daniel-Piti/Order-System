@@ -23,13 +23,13 @@ class OrderController(
 ) {
 
   @GetMapping
-  fun getAllMyOrders(@AuthenticationPrincipal user: AuthUser): ResponseEntity<List<OrderDto>> {
+  fun getAllOrders(@AuthenticationPrincipal user: AuthUser): ResponseEntity<List<OrderDto>> {
     val orders = orderService.getAllOrdersForUser(user.userId)
     return ResponseEntity.ok(orders)
   }
 
   @GetMapping("/{orderId}")
-  fun getOrder(
+  fun getOrderById(
     @PathVariable orderId: String,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<OrderDto> =
@@ -44,9 +44,4 @@ class OrderController(
     return ResponseEntity.status(HttpStatus.CREATED).body(newOrderId)
   }
 
-  @DeleteMapping("/{orderId}")
-  fun deleteOrder(@PathVariable orderId: String): ResponseEntity<String> {
-    orderService.deleteOrder(orderId)
-    return ResponseEntity.ok("Order deleted successfully")
-  }
 }
