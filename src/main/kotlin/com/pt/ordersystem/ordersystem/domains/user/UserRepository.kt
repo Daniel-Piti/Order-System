@@ -1,0 +1,10 @@
+package com.pt.ordersystem.ordersystem.domains.user
+
+import com.pt.ordersystem.ordersystem.domains.user.models.UserDbEntity
+import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.stereotype.Repository
+
+@Repository
+interface UserRepository : JpaRepository<UserDbEntity, String> {
+  fun findByEmail(email: String): UserDbEntity?
+}

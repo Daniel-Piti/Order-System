@@ -2,7 +2,6 @@ package com.pt.ordersystem.ordersystem.auth
 
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
-import com.pt.ordersystem.ordersystem.user.models.UserFailureReason
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.context.SecurityContextHolder
 
