@@ -114,6 +114,11 @@ class ProductOverrideService(
     productOverrideRepository.delete(override)
   }
 
+  fun deleteAllOverridesForProduct(userId: String, productId: String) {
+    val overrides = productOverrideRepository.findByUserIdAndProductId(userId, productId)
+    productOverrideRepository.deleteAll(overrides)
+  }
+
   private fun ProductOverrideDbEntity.toDto() = ProductOverrideDto(
     id = id,
     productId = productId,

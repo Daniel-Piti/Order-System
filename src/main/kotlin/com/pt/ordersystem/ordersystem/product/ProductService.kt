@@ -134,6 +134,8 @@ class ProductService(
 
     AuthUtils.checkOwnership(product.userId)
 
+    productOverrideService.deleteAllOverridesForProduct(product.userId, productId)
+
     productRepository.delete(product)
   }
 
