@@ -29,19 +29,19 @@ class UserController(
     ResponseEntity.ok(userService.getUserByEmail(user.email).toDto())
 
   @PreAuthorize(AUTH_ADMIN)
-  @PostMapping("/create")
+  @PostMapping
   fun createUser(@RequestBody newUserRequest: NewUserRequest): ResponseEntity<String> =
     ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(newUserRequest))
 
-  @PutMapping("/update")
-  fun updateCurrentUser(
+  @PutMapping
+  fun updateCurrentUserPersonalDetails(
     @RequestBody updatedDetails: UpdateUserDetailsRequest,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<String> =
     ResponseEntity.ok(userService.updateUserDetails(user.email, updatedDetails))
 
   @PostMapping("/update-password")
-  fun updateUserPassword(
+  fun updateCurrentUserPassword(
     @RequestParam("old_password") oldPassword: String,
     @RequestParam("new_password") newPassword: String,
     @RequestParam("new_password_confirmation") newPasswordConfirmation: String,
