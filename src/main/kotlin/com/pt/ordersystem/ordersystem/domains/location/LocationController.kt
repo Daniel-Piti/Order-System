@@ -22,18 +22,18 @@ class LocationController(
   private val locationService: LocationService
 ) {
 
-  @GetMapping("/{id}")
+  @GetMapping("/{locationId}")
   fun getLocationById(
     @PathVariable locationId: String,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<LocationDto> =
     ResponseEntity.ok(locationService.getLocationById(user.userId, locationId))
 
-  @GetMapping("/all")
-  fun getUserLocations(@AuthenticationPrincipal user: AuthUser): ResponseEntity<List<LocationDto>> =
+  @GetMapping
+  fun getAllLocations(@AuthenticationPrincipal user: AuthUser): ResponseEntity<List<LocationDto>> =
     ResponseEntity.ok(locationService.getUserLocations(user.userId))
 
-  @PostMapping("/create")
+  @PostMapping
   fun createLocation(
     @RequestBody request: NewLocationRequest,
     @AuthenticationPrincipal user: AuthUser
@@ -42,7 +42,7 @@ class LocationController(
     return ResponseEntity.status(HttpStatus.CREATED).body(createdId)
   }
 
-  @PutMapping("/update/{locationId}")
+  @PutMapping("/{locationId}")
   fun updateLocation(
     @PathVariable locationId: String,
     @RequestBody request: UpdateLocationRequest,
@@ -50,7 +50,7 @@ class LocationController(
   ): ResponseEntity<String> =
     ResponseEntity.ok(locationService.updateLocation(user.userId, locationId, request))
 
-  @DeleteMapping("/delete/{locationId}")
+  @DeleteMapping("/{locationId}")
   fun deleteLocation(
     @PathVariable locationId: String,
     @AuthenticationPrincipal user: AuthUser
