@@ -56,8 +56,6 @@ class ProductService(
       )
     }
 
-    AuthUtils.checkOwnership(product.userId)
-
     return product.toDto()
   }
 
@@ -95,7 +93,7 @@ class ProductService(
     return productRepository.save(product).id
   }
 
-  fun updateProduct(productId: String, request: UpdateProductRequest): String {
+  fun updateProduct(userId: String, productId: String, request: UpdateProductRequest): String {
 
     with(request) {
       FieldValidators.validateNonEmpty(name, "'name'")
@@ -103,16 +101,13 @@ class ProductService(
       FieldValidators.validatePrice(specialPrice)
     }
 
-    val product = productRepository.findById(productId).orElseThrow {
-      ServiceException(
+    val product = productRepository.findByUserIdAndId(userId, productId)
+      ?: throw ServiceException(
         status = HttpStatus.NOT_FOUND,
         userMessage = ProductFailureReason.NOT_FOUND.userMessage,
         technicalMessage = ProductFailureReason.NOT_FOUND.technical + "productId=$productId",
         severity = SeverityLevel.WARN
       )
-    }
-
-    AuthUtils.checkOwnership(product.userId)
 
     val updated = product.copy(
       name = request.name,
@@ -125,19 +120,16 @@ class ProductService(
     return productRepository.save(updated).id
   }
 
-  fun deleteProduct(productId: String) {
-    val product = productRepository.findById(productId).orElseThrow {
-      ServiceException(
+  fun deleteProduct(userId: String, productId: String) {
+    val product = productRepository.findByUserIdAndId(userId, productId)
+      ?: throw ServiceException(
         status = HttpStatus.NOT_FOUND,
         userMessage = ProductFailureReason.NOT_FOUND.userMessage,
         technicalMessage = ProductFailureReason.NOT_FOUND.technical + "productId=$productId",
         severity = SeverityLevel.WARN
       )
-    }
 
-    AuthUtils.checkOwnership(product.userId)
-
-    productOverrideService.deleteAllOverridesForProduct(product.userId, productId)
+    productOverrideService.deleteAllOverridesForProduct(userId, productId)
 
     productRepository.delete(product)
   }
