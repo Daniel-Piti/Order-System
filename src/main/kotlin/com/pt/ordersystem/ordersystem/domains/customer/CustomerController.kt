@@ -7,6 +7,7 @@ import com.pt.ordersystem.ordersystem.domains.customer.models.CustomerDto
 import com.pt.ordersystem.ordersystem.domains.customer.models.UpdateCustomerRequest
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -21,7 +22,7 @@ class CustomerController(
   private val customerService: CustomerService
 ) {
 
-  @GetMapping("/customer/{customerId}")
+  @GetMapping("/{customerId}")
   fun getCustomerById(
     @PathVariable customerId: String,
     @AuthenticationPrincipal user: AuthUser
@@ -31,7 +32,7 @@ class CustomerController(
   }
 
   @GetMapping
-  fun getCustomers(@AuthenticationPrincipal user: AuthUser): ResponseEntity<List<CustomerDto>> {
+  fun getAllCustomers(@AuthenticationPrincipal user: AuthUser): ResponseEntity<List<CustomerDto>> {
     val customers = customerService.getCustomersByUserId(user.userId)
     return ResponseEntity.ok(customers)
   }
@@ -42,10 +43,10 @@ class CustomerController(
     @AuthenticationPrincipal user: AuthUser,
   ): ResponseEntity<CustomerDto> {
     val customer = customerService.createCustomer(user.userId, request)
-    return ResponseEntity.ok(customer)
+    return ResponseEntity.status(HttpStatus.CREATED).body(customer)
   }
 
-  @PutMapping("/customer/{customerId}")
+  @PutMapping("/{customerId}")
   fun updateCustomer(
     @PathVariable customerId: String,
     @RequestBody request: UpdateCustomerRequest,
@@ -55,12 +56,12 @@ class CustomerController(
     return ResponseEntity.ok(customer)
   }
 
-  @DeleteMapping("/customer/{customerId}")
+  @DeleteMapping("/{customerId}")
   fun deleteCustomer(
     @PathVariable customerId: String,
     @AuthenticationPrincipal user: AuthUser
-  ): ResponseEntity<Void> {
+  ): ResponseEntity<String> {
     customerService.deleteCustomer(user.userId, customerId)
-    return ResponseEntity.ok().build()
+    return ResponseEntity.ok("Customer deleted successfully")
   }
 }
