@@ -28,19 +28,14 @@ class UserController(
   fun getCurrentUser(@AuthenticationPrincipal user: AuthUser): ResponseEntity<UserDto> =
     ResponseEntity.ok(userService.getUserByEmail(user.email).toDto())
 
-  @PreAuthorize(AUTH_ADMIN)
-  @PostMapping
-  fun createUser(@RequestBody newUserRequest: NewUserRequest): ResponseEntity<String> =
-    ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(newUserRequest))
-
-  @PutMapping
-  fun updateCurrentUserPersonalDetails(
+  @PutMapping("/me")
+  fun updateCurrentUser(
     @RequestBody updatedDetails: UpdateUserDetailsRequest,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<String> =
     ResponseEntity.ok(userService.updateUserDetails(user.email, updatedDetails))
 
-  @PostMapping("/update-password")
+  @PutMapping("/me/update-password")
   fun updateCurrentUserPassword(
     @RequestParam("old_password") oldPassword: String,
     @RequestParam("new_password") newPassword: String,
@@ -50,6 +45,11 @@ class UserController(
     userService.updatePassword(user.email, oldPassword, newPassword, newPasswordConfirmation)
     return ResponseEntity.ok("Password updated successfully")
   }
+
+  @PreAuthorize(AUTH_ADMIN)
+  @PostMapping
+  fun createUser(@RequestBody newUserRequest: NewUserRequest): ResponseEntity<String> =
+    ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(newUserRequest))
 
   @PreAuthorize(AUTH_ADMIN)
   @PostMapping("/validate-password")
@@ -65,8 +65,8 @@ class UserController(
   }
 
   @PreAuthorize(AUTH_ADMIN)
-  @PostMapping("/reset-password")
-  fun resetUserPassword(@RequestBody email: String): ResponseEntity<String> {
+  @PutMapping("/reset-password")
+  fun resetUserPassword(@RequestParam email: String): ResponseEntity<String> {
     userService.resetPassword(email)
     return ResponseEntity.ok("Password reset successfully")
   }
