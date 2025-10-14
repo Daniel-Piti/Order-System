@@ -19,12 +19,12 @@ class CustomerController(
   private val customerService: CustomerService
 ) {
 
-  @PostMapping
-  fun createCustomer(
-    @RequestBody request: CreateCustomerRequest,
-    @AuthenticationPrincipal user: AuthUser,
+  @GetMapping("/customer/{customerId}")
+  fun getCustomerById(
+    @PathVariable customerId: String,
+    @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<CustomerDto> {
-    val customer = customerService.createCustomer(user.userId, request)
+    val customer = customerService.getCustomerById(user.userId, customerId)
     return ResponseEntity.ok(customer)
   }
 
@@ -34,16 +34,16 @@ class CustomerController(
     return ResponseEntity.ok(customers)
   }
 
-  @GetMapping("/{customerId}")
-  fun getCustomer(
-    @PathVariable customerId: String,
-    @AuthenticationPrincipal user: AuthUser
+  @PostMapping
+  fun createCustomer(
+    @RequestBody request: CreateCustomerRequest,
+    @AuthenticationPrincipal user: AuthUser,
   ): ResponseEntity<CustomerDto> {
-    val customer = customerService.getCustomerById(user.userId, customerId)
+    val customer = customerService.createCustomer(user.userId, request)
     return ResponseEntity.ok(customer)
   }
 
-  @PutMapping("/{customerId}")
+  @PutMapping("/customer/{customerId}")
   fun updateCustomer(
     @PathVariable customerId: String,
     @RequestBody request: UpdateCustomerRequest,
@@ -53,7 +53,7 @@ class CustomerController(
     return ResponseEntity.ok(customer)
   }
 
-  @DeleteMapping("/{customerId}")
+  @DeleteMapping("/customer/{customerId}")
   fun deleteCustomer(
     @PathVariable customerId: String,
     @AuthenticationPrincipal user: AuthUser
