@@ -40,7 +40,7 @@ class CustomerService(
     return customerRepository.findByUserId(userId).map { it.toDto() }
   }
 
-  fun getCustomerById(userId: String, customerId: String): CustomerDto {
+  fun getCustomerByIdAndUserId(userId: String, customerId: String): CustomerDto {
     val customer = customerRepository.findByUserIdAndId(userId, customerId)
       ?: throw ServiceException(
         status = org.springframework.http.HttpStatus.NOT_FOUND,

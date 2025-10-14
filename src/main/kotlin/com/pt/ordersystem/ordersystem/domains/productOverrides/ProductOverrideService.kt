@@ -28,7 +28,7 @@ class ProductOverrideService(
     }
 
     try {
-      customerService.getCustomerById(userId, request.customerId)
+      customerService.getCustomerByIdAndUserId(userId, request.customerId)
     } catch (e: Exception) {
       throw ServiceException(
         status = org.springframework.http.HttpStatus.NOT_FOUND,

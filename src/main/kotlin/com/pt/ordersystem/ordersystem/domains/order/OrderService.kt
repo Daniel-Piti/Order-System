@@ -1,6 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.order
 
 import com.pt.ordersystem.ordersystem.auth.AuthUtils
+import com.pt.ordersystem.ordersystem.domains.customer.CustomerService
 import com.pt.ordersystem.ordersystem.domains.order.models.*
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.exception.ServiceException
@@ -12,7 +13,8 @@ import java.time.LocalDateTime
 
 @Service
 class OrderService(
-  private val orderRepository: OrderRepository
+  private val orderRepository: OrderRepository,
+  private val customerService: CustomerService,
 ) {
 
   fun getAllOrdersForUser(userId: String): List<OrderDto> {
@@ -34,18 +36,19 @@ class OrderService(
     return order.toDto()
   }
 
-  fun createEmptyOrder(userId: String, request: CreateOrderRequest): String {
+  fun createEmptyOrder(userId: String, request: CreateEmptyOrderRequest): String {
+    val customer = customerService.getCustomerByIdAndUserId(userId, request.customerId)
     val now = LocalDateTime.now()
 
     val order = OrderDbEntity(
       id = GeneralUtils.genId(),
       userId = userId,
-      locationId = request.locationId,
-      customerId = request.customerId,
-      customerName = request.customerName,
-      customerPhone = request.customerPhone,
-      customerCity = request.customerCity,
-      customerAddress = request.customerAddress,
+      customerId = customer.id,
+      customerName = customer.name,
+      customerPhone = customer.phoneNumber,
+      customerCity = null,
+      customerAddress = null,
+      locationId = null,
       status = OrderStatus.EMPTY.name,
       products = null,
       totalPrice = BigDecimal.ZERO,

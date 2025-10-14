@@ -2,7 +2,7 @@ package com.pt.ordersystem.ordersystem.domains.order
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
-import com.pt.ordersystem.ordersystem.domains.order.models.CreateOrderRequest
+import com.pt.ordersystem.ordersystem.domains.order.models.CreateEmptyOrderRequest
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDto
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -34,7 +34,7 @@ class OrderController(
 
   @PostMapping
   fun createOrder(
-    @RequestBody request: CreateOrderRequest,
+    @RequestBody request: CreateEmptyOrderRequest,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<String> {
     val newOrderId = orderService.createEmptyOrder(user.userId, request)

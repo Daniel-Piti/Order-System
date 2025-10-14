@@ -26,7 +26,7 @@ class CustomerController(
     @PathVariable customerId: String,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<CustomerDto> {
-    val customer = customerService.getCustomerById(user.userId, customerId)
+    val customer = customerService.getCustomerByIdAndUserId(user.userId, customerId)
     return ResponseEntity.ok(customer)
   }
 

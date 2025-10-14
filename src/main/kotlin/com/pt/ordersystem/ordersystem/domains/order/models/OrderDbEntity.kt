@@ -17,9 +17,6 @@ data class OrderDbEntity(
   @Column(name = "user_id", nullable = false)
   val userId: String,
 
-  @Column(name = "location_id", nullable = false)
-  val locationId: String,
-
   @Column(name = "customer_id", nullable = false)
   val customerId: String,
 
@@ -29,11 +26,14 @@ data class OrderDbEntity(
   @Column(name = "customer_phone", nullable = false)
   val customerPhone: String,
 
-  @Column(name = "customer_city", nullable = false)
-  val customerCity: String,
+  @Column(name = "customer_city")
+  val customerCity: String?,
 
-  @Column(name = "customer_address", nullable = false)
-  val customerAddress: String,
+  @Column(name = "customer_address")
+  val customerAddress: String?,
+
+  @Column(name = "location_id")
+  val locationId: String?,
 
   @Column(nullable = false)
   val status: String,
