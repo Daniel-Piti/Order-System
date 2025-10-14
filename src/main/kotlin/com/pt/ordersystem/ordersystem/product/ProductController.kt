@@ -21,6 +21,12 @@ class ProductController(
   // Public endpoints
   // ----------------------
 
+  @GetMapping("/product/{productId}")
+  fun getProduct(@PathVariable productId: String): ResponseEntity<ProductDto> {
+    val product = productService.getProductById(productId)
+    return ResponseEntity.ok(product)
+  }
+
   @GetMapping("/user/{userId}")
   fun getAllUserProducts(@PathVariable userId: String): ResponseEntity<List<ProductDto>> {
     val products = productService.getAllProductsForUser(userId)
@@ -31,12 +37,6 @@ class ProductController(
   fun getAllProductsForOrder(@PathVariable orderId: String): ResponseEntity<List<ProductDto>> {
     val products = productService.getAllProductsForOrder(orderId)
     return ResponseEntity.ok(products)
-  }
-
-  @GetMapping("/product/{productId}")
-  fun getProduct(@PathVariable productId: String): ResponseEntity<ProductDto> {
-    val product = productService.getProductById(productId)
-    return ResponseEntity.ok(product)
   }
 
   // ----------------------
@@ -61,7 +61,7 @@ class ProductController(
   }
 
   @PreAuthorize(AUTH_USER)
-  @PutMapping("/{productId}")
+  @PutMapping("/product/{productId}")
   fun updateProduct(
     @PathVariable productId: String,
     @RequestBody request: UpdateProductRequest
@@ -71,9 +71,10 @@ class ProductController(
   }
 
   @PreAuthorize(AUTH_USER)
-  @DeleteMapping("/{productId}")
+  @DeleteMapping("/product/{productId}")
   fun deleteProduct(@PathVariable productId: String): ResponseEntity<String> {
     productService.deleteProduct(productId)
     return ResponseEntity.ok("Product deleted successfully")
   }
+
 }
