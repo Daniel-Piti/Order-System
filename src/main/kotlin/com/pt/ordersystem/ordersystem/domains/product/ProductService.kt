@@ -28,12 +28,15 @@ class ProductService(
 
   fun getAllProductsForOrder(orderId: String): List<ProductDto> {
     val order = orderService.getOrderById(orderId)
-
     val products = productRepository.findAllByUserId(order.userId)
 
+    // If no customer assigned, return products with default prices
+    val customerId = order.customerId ?: return products.map { it.toDto() }
+
+    // Apply customer-specific price overrides
     val productOverrides = productOverrideService
-      .getProductOverridesByCustomerId(order.userId, order.customerId)
-      .associateBy{ it.productId }
+      .getProductOverridesByCustomerId(order.userId, customerId)
+      .associateBy { it.productId }
 
     return products.map { product ->
       val override = productOverrides[product.id]

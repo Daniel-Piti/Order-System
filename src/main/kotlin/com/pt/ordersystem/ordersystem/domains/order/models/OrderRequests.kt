@@ -4,7 +4,7 @@ import com.pt.ordersystem.ordersystem.domains.product.models.ProductDataForOrder
 import java.math.BigDecimal
 
 data class CreateEmptyOrderRequest(
-  val customerId: String,
+  val customerId: String?,
 )
 
 data class UpdateOrderRequest(

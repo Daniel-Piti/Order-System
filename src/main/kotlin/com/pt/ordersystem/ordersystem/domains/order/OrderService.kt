@@ -31,22 +31,24 @@ class OrderService(
       )
     }
 
-    AuthUtils.checkOwnership(order.userId)
-
     return order.toDto()
   }
 
   fun createEmptyOrder(userId: String, request: CreateEmptyOrderRequest): String {
-    val customer = customerService.getCustomerByIdAndUserId(userId, request.customerId)
     val now = LocalDateTime.now()
+
+    // If customerId is provided, fetch customer data and pre-fill the order
+    val customer = request.customerId?.let { customerId ->
+      customerService.getCustomerByIdAndUserId(userId, customerId)
+    }
 
     val order = OrderDbEntity(
       id = GeneralUtils.genId(),
       userId = userId,
-      customerId = customer.id,
-      customerName = customer.name,
-      customerPhone = customer.phoneNumber,
-      customerEmail = customer.email,
+      customerId = customer?.id,
+      customerName = customer?.name,
+      customerPhone = customer?.phoneNumber,
+      customerEmail = customer?.email,
       customerCity = null,
       customerAddress = null,
       locationId = null,

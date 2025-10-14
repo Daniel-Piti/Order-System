@@ -17,17 +17,17 @@ data class OrderDbEntity(
   @Column(name = "user_id", nullable = false)
   val userId: String,
 
-  @Column(name = "customer_id", nullable = false)
-  val customerId: String,
+  @Column(name = "customer_id")
+  val customerId: String?,
 
-  @Column(name = "customer_name", nullable = false)
-  val customerName: String,
+  @Column(name = "customer_name")
+  val customerName: String?,
 
-  @Column(name = "customer_phone", nullable = false)
-  val customerPhone: String,
+  @Column(name = "customer_phone")
+  val customerPhone: String?,
 
-  @Column(name = "customer_email", nullable = false)
-  val customerEmail: String,
+  @Column(name = "customer_email")
+  val customerEmail: String?,
 
   @Column(name = "customer_city")
   val customerCity: String?,
