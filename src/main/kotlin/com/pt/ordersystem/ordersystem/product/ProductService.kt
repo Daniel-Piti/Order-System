@@ -7,6 +7,7 @@ import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.order.OrderRepository
 import com.pt.ordersystem.ordersystem.product.models.*
 import com.pt.ordersystem.ordersystem.productOverrides.ProductOverrideRepository
+import com.pt.ordersystem.ordersystem.productOverrides.ProductOverrideService
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -18,6 +19,10 @@ class ProductService(
   private val productOverrideRepository: ProductOverrideRepository,
   private val orderRepository: OrderRepository,
 ) {
+
+  companion object {
+    const val MAXIMUM_PRODUCTS_FOR_CUSTOMER = 1000
+  }
 
   fun getAllProductsForUser(userId: String): List<ProductDto> =
     productRepository.findAllByUserId(userId).map { it.toDto() }
@@ -67,6 +72,17 @@ class ProductService(
       FieldValidators.validateNonEmpty(name, "'name'")
       FieldValidators.validatePrice(originalPrice)
       FieldValidators.validatePrice(specialPrice)
+    }
+
+    val numberOfProducts = productRepository.findAllByUserId(userId).size
+
+    if(numberOfProducts >= MAXIMUM_PRODUCTS_FOR_CUSTOMER) {
+      throw ServiceException(
+        status = HttpStatus.CONFLICT,
+        userMessage = "You have reached the product limit ($MAXIMUM_PRODUCTS_FOR_CUSTOMER)",
+        technicalMessage = "User ($userId) has reached $MAXIMUM_PRODUCTS_FOR_CUSTOMER products",
+        severity = SeverityLevel.WARN
+      )
     }
 
     val product = ProductDbEntity(
@@ -128,4 +144,5 @@ class ProductService(
 
     productRepository.delete(product)
   }
+
 }
