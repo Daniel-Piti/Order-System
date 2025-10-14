@@ -26,6 +26,9 @@ data class OrderDbEntity(
   @Column(name = "customer_phone", nullable = false)
   val customerPhone: String,
 
+  @Column(name = "customer_email", nullable = false)
+  val customerEmail: String,
+
   @Column(name = "customer_city")
   val customerCity: String?,
 

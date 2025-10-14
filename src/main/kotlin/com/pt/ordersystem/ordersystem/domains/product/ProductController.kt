@@ -5,6 +5,7 @@ import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.product.models.CreateProductRequest
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductDto
 import com.pt.ordersystem.ordersystem.domains.product.models.UpdateProductRequest
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -45,6 +46,7 @@ class ProductController(
   // Authenticated endpoints (only for the logged-in user)
   // ----------------------
 
+  @SecurityRequirement(name = "bearerAuth")
   @PreAuthorize(AUTH_USER)
   @GetMapping("/me")
   fun getAllMyProducts(@AuthenticationPrincipal user: AuthUser): ResponseEntity<List<ProductDto>> {
@@ -52,6 +54,7 @@ class ProductController(
     return ResponseEntity.ok(products)
   }
 
+  @SecurityRequirement(name = "bearerAuth")
   @PreAuthorize(AUTH_USER)
   @PostMapping
   fun createProduct(
@@ -62,6 +65,7 @@ class ProductController(
     return ResponseEntity.status(HttpStatus.CREATED).body(newProductId)
   }
 
+  @SecurityRequirement(name = "bearerAuth")
   @PreAuthorize(AUTH_USER)
   @PutMapping("/product/{productId}")
   fun updateProduct(
@@ -72,6 +76,7 @@ class ProductController(
     return ResponseEntity.ok(updatedProductId)
   }
 
+  @SecurityRequirement(name = "bearerAuth")
   @PreAuthorize(AUTH_USER)
   @DeleteMapping("/product/{productId}")
   fun deleteProduct(@PathVariable productId: String): ResponseEntity<String> {

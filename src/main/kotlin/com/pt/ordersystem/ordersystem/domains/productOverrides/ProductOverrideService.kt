@@ -1,8 +1,8 @@
 package com.pt.ordersystem.ordersystem.domains.productOverrides
 
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerService
+import com.pt.ordersystem.ordersystem.domains.product.ProductRepository
 import com.pt.ordersystem.ordersystem.exception.ServiceException
-import com.pt.ordersystem.ordersystem.domains.product.ProductService
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.*
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.stereotype.Service
@@ -11,13 +11,13 @@ import java.time.LocalDateTime
 @Service
 class ProductOverrideService(
   private val productOverrideRepository: ProductOverrideRepository,
-  private val productService: ProductService,
+  private val productRepository: ProductRepository,
   private val customerService: CustomerService
 ) {
 
   fun createProductOverride(userId: String, request: CreateProductOverrideRequest): ProductOverrideDto {
     try {
-      productService.getProductById(request.productId)
+      productRepository.findById(request.productId)
     } catch (e: Exception) {
       throw ServiceException(
         status = org.springframework.http.HttpStatus.NOT_FOUND,

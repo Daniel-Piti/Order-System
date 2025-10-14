@@ -99,6 +99,16 @@ class LocationService(
         severity = SeverityLevel.WARN
       )
 
+    val locationCount = locationRepository.countByUserId(userId)
+    if (locationCount <= 1) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Cannot delete the last location. You must have at least one location.",
+        technicalMessage = "User $userId attempted to delete their last location",
+        severity = SeverityLevel.INFO
+      )
+    }
+
     locationRepository.delete(location)
   }
 

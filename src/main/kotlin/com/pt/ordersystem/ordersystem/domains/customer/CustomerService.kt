@@ -28,6 +28,7 @@ class CustomerService(
       userId = userId,
       name = request.name,
       phoneNumber = request.phoneNumber,
+      email = request.email,
       createdAt = LocalDateTime.now(),
       updatedAt = LocalDateTime.now()
     )
@@ -63,6 +64,7 @@ class CustomerService(
     val updatedCustomer = customer.copy(
       name = request.name,
       phoneNumber = request.phoneNumber,
+      email = request.email,
       updatedAt = LocalDateTime.now()
     )
 

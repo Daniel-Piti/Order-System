@@ -46,6 +46,7 @@ class OrderService(
       customerId = customer.id,
       customerName = customer.name,
       customerPhone = customer.phoneNumber,
+      customerEmail = customer.email,
       customerCity = null,
       customerAddress = null,
       locationId = null,
@@ -53,7 +54,7 @@ class OrderService(
       products = null,
       totalPrice = BigDecimal.ZERO,
       createdAt = now,
-      updatedAt = now
+      updatedAt = now,
     )
 
     return orderRepository.save(order).id
