@@ -1,6 +1,5 @@
 package com.pt.ordersystem.ordersystem.domains.location
 
-import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.domains.location.models.*
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
@@ -19,17 +18,14 @@ class LocationService(
     const val MAXIMUM_LOCATIONS = 10
   }
 
-  fun getLocationById(locationId: String): LocationDto {
-    val location = locationRepository.findById(locationId).orElseThrow {
-      ServiceException(
+  fun getLocationById(userId: String, locationId: String): LocationDto {
+    val location = locationRepository.findByUserIdAndId(userId, locationId)
+      ?: throw ServiceException(
         status = HttpStatus.NOT_FOUND,
         userMessage = LocationFailureReason.NOT_FOUND.userMessage,
         technicalMessage = LocationFailureReason.NOT_FOUND.technical + "locationId=$locationId",
         severity = SeverityLevel.WARN
       )
-    }
-
-    AuthUtils.checkOwnership(location.userId)
 
     return location.toDto()
   }
@@ -68,7 +64,7 @@ class LocationService(
     return locationRepository.save(location).id
   }
 
-  fun updateLocation(locationId: String, request: UpdateLocationRequest): String {
+  fun updateLocation(userId: String, locationId: String, request: UpdateLocationRequest): String {
 
     with(request) {
       FieldValidators.validateNonEmpty(name, "'name'")
@@ -76,16 +72,13 @@ class LocationService(
       FieldValidators.validatePhoneNumber(phoneNumber)
     }
 
-    val location = locationRepository.findById(locationId).orElseThrow {
-      ServiceException(
+    val location = locationRepository.findByUserIdAndId(userId, locationId)
+      ?: throw ServiceException(
         status = HttpStatus.NOT_FOUND,
         userMessage = LocationFailureReason.NOT_FOUND.userMessage,
         technicalMessage = LocationFailureReason.NOT_FOUND.technical + "locationId=$locationId",
         severity = SeverityLevel.WARN
       )
-    }
-
-    AuthUtils.checkOwnership(location.userId)
 
     val updatedLocation = location.copy(
       name = request.name,
@@ -97,17 +90,14 @@ class LocationService(
     return locationRepository.save(updatedLocation).id
   }
 
-  fun deleteLocation(locationId: String) {
-    val location = locationRepository.findById(locationId).orElseThrow {
-      ServiceException(
+  fun deleteLocation(userId: String, locationId: String) {
+    val location = locationRepository.findByUserIdAndId(userId, locationId)
+      ?: throw ServiceException(
         status = HttpStatus.NOT_FOUND,
         userMessage = "Location not found",
         technicalMessage = "Location ID: $locationId not found",
         severity = SeverityLevel.WARN
       )
-    }
-
-    AuthUtils.checkOwnership(location.userId)
 
     locationRepository.delete(location)
   }

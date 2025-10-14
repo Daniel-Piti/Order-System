@@ -23,8 +23,11 @@ class LocationController(
 ) {
 
   @GetMapping("/{id}")
-  fun getLocationById(@PathVariable id: String): ResponseEntity<LocationDto> =
-    ResponseEntity.ok(locationService.getLocationById(id))
+  fun getLocationById(
+    @PathVariable locationId: String,
+    @AuthenticationPrincipal user: AuthUser
+  ): ResponseEntity<LocationDto> =
+    ResponseEntity.ok(locationService.getLocationById(user.userId, locationId))
 
   @GetMapping("/all")
   fun getUserLocations(@AuthenticationPrincipal user: AuthUser): ResponseEntity<List<LocationDto>> =
@@ -42,13 +45,17 @@ class LocationController(
   @PutMapping("/update/{locationId}")
   fun updateLocation(
     @PathVariable locationId: String,
-    @RequestBody request: UpdateLocationRequest
+    @RequestBody request: UpdateLocationRequest,
+    @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<String> =
-    ResponseEntity.ok(locationService.updateLocation(locationId, request))
+    ResponseEntity.ok(locationService.updateLocation(user.userId, locationId, request))
 
   @DeleteMapping("/delete/{locationId}")
-  fun deleteLocation(@PathVariable locationId: String): ResponseEntity<String> {
-    locationService.deleteLocation(locationId)
+  fun deleteLocation(
+    @PathVariable locationId: String,
+    @AuthenticationPrincipal user: AuthUser
+  ): ResponseEntity<String> {
+    locationService.deleteLocation(user.userId, locationId)
     return ResponseEntity.ok("Location deleted successfully")
   }
 
