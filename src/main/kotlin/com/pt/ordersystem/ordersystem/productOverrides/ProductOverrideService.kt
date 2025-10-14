@@ -1,7 +1,8 @@
 package com.pt.ordersystem.ordersystem.productOverrides
 
+import com.pt.ordersystem.ordersystem.customer.CustomerService
 import com.pt.ordersystem.ordersystem.exception.ServiceException
-import com.pt.ordersystem.ordersystem.product.ProductRepository
+import com.pt.ordersystem.ordersystem.product.ProductService
 import com.pt.ordersystem.ordersystem.productOverrides.models.*
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.stereotype.Service
@@ -10,28 +11,32 @@ import java.time.LocalDateTime
 @Service
 class ProductOverrideService(
   private val productOverrideRepository: ProductOverrideRepository,
-  private val productRepository: ProductRepository,
-  private val customerRepository: com.pt.ordersystem.ordersystem.customer.CustomerRepository
+  private val productService: ProductService,
+  private val customerService: CustomerService
 ) {
 
   fun createProductOverride(userId: String, request: CreateProductOverrideRequest): ProductOverrideDto {
-    // Verify product exists and belongs to user
-    productRepository.findByUserIdAndId(userId, request.productId)
-      ?: throw ServiceException(
+    try {
+      productService.getProductById(request.productId)
+    } catch (e: Exception) {
+      throw ServiceException(
         status = org.springframework.http.HttpStatus.NOT_FOUND,
         userMessage = ProductOverrideFailureReason.PRODUCT_NOT_FOUND.name,
         technicalMessage = "Product with id ${request.productId} not found for user $userId",
         severity = com.pt.ordersystem.ordersystem.exception.SeverityLevel.WARN
       )
+    }
 
-    // Verify customer exists and belongs to user
-    customerRepository.findByUserIdAndId(userId, request.customerId)
-      ?: throw ServiceException(
+    try {
+      customerService.getCustomerById(userId, request.customerId)
+    } catch (e: Exception) {
+      throw ServiceException(
         status = org.springframework.http.HttpStatus.NOT_FOUND,
         userMessage = ProductOverrideFailureReason.CUSTOMER_NOT_FOUND.name,
         technicalMessage = "Customer with id ${request.customerId} not found for user $userId",
         severity = com.pt.ordersystem.ordersystem.exception.SeverityLevel.WARN
       )
+    }
 
     // Check if override already exists
     val existingOverride = productOverrideRepository.findByProductIdAndCustomerId(request.productId, request.customerId)
@@ -58,9 +63,8 @@ class ProductOverrideService(
     return savedOverride.toDto()
   }
 
-  fun getProductOverridesByUserId(userId: String): List<ProductOverrideDto> {
-    return productOverrideRepository.findByUserId(userId).map { it.toDto() }
-  }
+  fun getProductOverridesByUserId(userId: String): List<ProductOverrideDto> =
+    productOverrideRepository.findByUserId(userId).map { it.toDto() }
 
   fun getProductOverrideById(userId: String, overrideId: String): ProductOverrideDto {
     val override = productOverrideRepository.findByUserIdAndId(userId, overrideId)
@@ -73,9 +77,12 @@ class ProductOverrideService(
     return override.toDto()
   }
 
-  fun getProductOverridesByProductId(userId: String, productId: String): List<ProductOverrideDto> {
-    return productOverrideRepository.findByUserIdAndProductId(userId, productId).map { it.toDto() }
-  }
+  fun getProductOverridesByProductId(userId: String, productId: String): List<ProductOverrideDto> =
+    productOverrideRepository.findByUserIdAndProductId(userId, productId).map { it.toDto() }
+
+
+  fun getProductOverridesByCustomerId(userId: String, customerId: String): List<ProductOverrideDto> =
+    productOverrideRepository.findByUserIdAndCustomerId(userId, customerId).map { it.toDto() }
 
   fun updateProductOverride(userId: String, overrideId: String, request: UpdateProductOverrideRequest): ProductOverrideDto {
     val override = productOverrideRepository.findByUserIdAndId(userId, overrideId)
@@ -114,4 +121,5 @@ class ProductOverrideService(
     customerId = customerId,
     overridePrice = overridePrice,
   )
+
 }

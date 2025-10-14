@@ -4,9 +4,8 @@ import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
-import com.pt.ordersystem.ordersystem.order.OrderRepository
+import com.pt.ordersystem.ordersystem.order.OrderService
 import com.pt.ordersystem.ordersystem.product.models.*
-import com.pt.ordersystem.ordersystem.productOverrides.ProductOverrideRepository
 import com.pt.ordersystem.ordersystem.productOverrides.ProductOverrideService
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.http.HttpStatus
@@ -16,8 +15,8 @@ import java.time.LocalDateTime
 @Service
 class ProductService(
   private val productRepository: ProductRepository,
-  private val productOverrideRepository: ProductOverrideRepository,
-  private val orderRepository: OrderRepository,
+  private val productOverrideService: ProductOverrideService,
+  private val orderService: OrderService,
 ) {
 
   companion object {
@@ -28,19 +27,12 @@ class ProductService(
     productRepository.findAllByUserId(userId).map { it.toDto() }
 
   fun getAllProductsForOrder(orderId: String): List<ProductDto> {
-    val order = orderRepository.findById(orderId).orElseThrow {
-      ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = ProductFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = ProductFailureReason.NOT_FOUND.technical + "order=$orderId",
-        severity = SeverityLevel.WARN
-      )
-    }
+    val order = orderService.getOrderById(orderId)
 
     val products = productRepository.findAllByUserId(order.userId)
 
-    val productOverrides = productOverrideRepository
-      .findByUserIdAndCustomerId(order.userId, order.customerId)
+    val productOverrides = productOverrideService
+      .getProductOverridesByCustomerId(order.userId, order.customerId)
       .associateBy{ it.productId }
 
     return products.map { product ->
