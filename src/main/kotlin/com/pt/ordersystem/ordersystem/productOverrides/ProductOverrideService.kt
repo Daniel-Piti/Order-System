@@ -77,7 +77,7 @@ class ProductOverrideService(
     return override.toDto()
   }
 
-  fun getProductOverridesByProductId(userId: String, productId: String): List<ProductOverrideDto> =
+  fun getProductOverridesForProductId(userId: String, productId: String): List<ProductOverrideDto> =
     productOverrideRepository.findByUserIdAndProductId(userId, productId).map { it.toDto() }
 
 
