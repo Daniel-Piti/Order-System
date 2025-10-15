@@ -1,7 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.order
 
-import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerService
+import com.pt.ordersystem.ordersystem.domains.location.LocationService
 import com.pt.ordersystem.ordersystem.domains.order.models.*
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.exception.ServiceException
@@ -15,6 +15,7 @@ import java.time.LocalDateTime
 class OrderService(
   private val orderRepository: OrderRepository,
   private val customerService: CustomerService,
+  private val locationService: LocationService,
 ) {
 
   fun getAllOrdersForUser(userId: String): List<OrderDto> {
@@ -45,6 +46,17 @@ class OrderService(
 
   fun createEmptyOrder(userId: String, request: CreateEmptyOrderRequest): String {
     val now = LocalDateTime.now()
+
+    // Check if user has at least one location
+    val userLocations = locationService.getUserLocations(userId)
+    if (userLocations.isEmpty()) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = OrderFailureReason.NO_LOCATIONS.userMessage,
+        technicalMessage = OrderFailureReason.NO_LOCATIONS.technical + "userId=$userId",
+        severity = SeverityLevel.INFO
+      )
+    }
 
     // If customerId is provided, fetch customer data and pre-fill the order
     val customer = request.customerId?.let { customerId ->
