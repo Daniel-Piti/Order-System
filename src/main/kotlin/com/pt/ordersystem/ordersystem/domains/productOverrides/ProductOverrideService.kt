@@ -4,6 +4,7 @@ import com.pt.ordersystem.ordersystem.domains.customer.CustomerService
 import com.pt.ordersystem.ordersystem.domains.product.ProductRepository
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.*
+import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -16,6 +17,8 @@ class ProductOverrideService(
 ) {
 
   fun createProductOverride(userId: String, request: CreateProductOverrideRequest): ProductOverrideDto {
+    FieldValidators.validatePrice(request.overridePrice)
+    
     try {
       productRepository.findById(request.productId)
     } catch (e: Exception) {
@@ -85,6 +88,8 @@ class ProductOverrideService(
     productOverrideRepository.findByUserIdAndCustomerId(userId, customerId).map { it.toDto() }
 
   fun updateProductOverride(userId: String, overrideId: String, request: UpdateProductOverrideRequest): ProductOverrideDto {
+    FieldValidators.validatePrice(request.overridePrice)
+    
     val override = productOverrideRepository.findByUserIdAndId(userId, overrideId)
       ?: throw ServiceException(
         status = org.springframework.http.HttpStatus.NOT_FOUND,

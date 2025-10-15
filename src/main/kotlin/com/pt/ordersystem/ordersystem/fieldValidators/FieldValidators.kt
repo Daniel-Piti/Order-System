@@ -39,14 +39,11 @@ object FieldValidators {
   }
 
   fun validatePhoneNumber(phone: String) {
-    val digitsCount = phone.count { it.isDigit() }
-    val dashCount = phone.count { it == '-' }
-
-    if (digitsCount !in 8..10 || dashCount > 2) {
+    if (!phone.matches("^[0-9]{8,10}$".toRegex())) {
       throw ServiceException(
         status = HttpStatus.BAD_REQUEST,
-        userMessage = "Phone number must have 8-10 digits and at most 2 dashes.",
-        technicalMessage = "Phone number invalid: digits=$digitsCount, dashes=$dashCount",
+        userMessage = "Phone number must contain only 8-10 digits (no dashes or special characters)",
+        technicalMessage = "Phone number `$phone` contains invalid characters or wrong length",
         severity = SeverityLevel.WARN
       )
     }

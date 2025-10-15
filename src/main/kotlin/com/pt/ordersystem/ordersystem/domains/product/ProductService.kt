@@ -7,6 +7,7 @@ import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.domains.order.OrderService
 import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideService
+import com.pt.ordersystem.ordersystem.domains.category.CategoryRepository
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -17,6 +18,7 @@ class ProductService(
   private val productRepository: ProductRepository,
   private val productOverrideService: ProductOverrideService,
   private val orderService: OrderService,
+  private val categoryRepository: CategoryRepository,
 ) {
 
   companion object {
@@ -25,6 +27,20 @@ class ProductService(
 
   fun getAllProductsForUser(userId: String): List<ProductDto> =
     productRepository.findAllByUserId(userId).map { it.toDto() }
+
+  fun getProductsByCategory(userId: String, categoryId: String): List<ProductDto> =
+    productRepository.findByUserIdAndCategoryId(userId, categoryId).map { it.toDto() }
+
+  fun removeCategoryFromProducts(userId: String, categoryId: String) {
+    val productsWithCategory = productRepository.findByUserIdAndCategoryId(userId, categoryId)
+    productsWithCategory.forEach { product ->
+      val updatedProduct = product.copy(
+        categoryId = null,
+        updatedAt = LocalDateTime.now()
+      )
+      productRepository.save(updatedProduct)
+    }
+  }
 
   fun getAllProductsForOrder(orderId: String): List<ProductDto> {
     val order = orderService.getOrderById(orderId)
@@ -67,6 +83,19 @@ class ProductService(
       FieldValidators.validatePrice(specialPrice)
     }
 
+    // Validate categoryId if provided
+    if (request.categoryId != null) {
+      val category = categoryRepository.findByUserIdAndId(userId, request.categoryId)
+      if (category == null) {
+        throw ServiceException(
+          status = HttpStatus.BAD_REQUEST,
+          userMessage = "Invalid category ID",
+          technicalMessage = "Category with id ${request.categoryId} not found for user $userId",
+          severity = SeverityLevel.WARN
+        )
+      }
+    }
+
     val numberOfProducts = productRepository.findAllByUserId(userId).size
 
     if(numberOfProducts >= MAXIMUM_PRODUCTS_FOR_CUSTOMER) {
@@ -82,7 +111,7 @@ class ProductService(
       id = GeneralUtils.genId(),
       userId = userId,
       name = request.name,
-      category = request.category,
+      categoryId = request.categoryId,
       originalPrice = request.originalPrice,
       specialPrice = request.specialPrice,
       pictureUrl = request.pictureUrl,
@@ -101,6 +130,19 @@ class ProductService(
       FieldValidators.validatePrice(specialPrice)
     }
 
+    // Validate categoryId if provided
+    if (request.categoryId != null) {
+      val category = categoryRepository.findByUserIdAndId(userId, request.categoryId)
+      if (category == null) {
+        throw ServiceException(
+          status = HttpStatus.BAD_REQUEST,
+          userMessage = "Invalid category ID",
+          technicalMessage = "Category with id ${request.categoryId} not found for user $userId",
+          severity = SeverityLevel.WARN
+        )
+      }
+    }
+
     val product = productRepository.findByUserIdAndId(userId, productId)
       ?: throw ServiceException(
         status = HttpStatus.NOT_FOUND,
@@ -111,6 +153,7 @@ class ProductService(
 
     val updated = product.copy(
       name = request.name,
+      categoryId = request.categoryId,
       originalPrice = request.originalPrice,
       specialPrice = request.specialPrice,
       pictureUrl = request.pictureUrl,

@@ -2,6 +2,7 @@ package com.pt.ordersystem.ordersystem.domains.customer
 
 import com.pt.ordersystem.ordersystem.domains.customer.models.*
 import com.pt.ordersystem.ordersystem.exception.ServiceException
+import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -12,6 +13,12 @@ class CustomerService(
 ) {
 
   fun createCustomer(userId: String, request: CreateCustomerRequest): CustomerDto {
+    with(request) {
+      FieldValidators.validateNonEmpty(name, "'name'")
+      FieldValidators.validatePhoneNumber(phoneNumber)
+      FieldValidators.validateEmail(email)
+    }
+
     // Check if customer with same phone number already exists for this user
     val existingCustomer = customerRepository.findByUserIdAndPhoneNumber(userId, request.phoneNumber)
     if (existingCustomer != null) {
@@ -53,6 +60,13 @@ class CustomerService(
   }
 
   fun updateCustomer(userId: String, customerId: String, request: UpdateCustomerRequest): CustomerDto {
+    // Validate input fields
+    with(request) {
+      FieldValidators.validateNonEmpty(name, "'name'")
+      FieldValidators.validatePhoneNumber(phoneNumber)
+      FieldValidators.validateEmail(email)
+    }
+
     val customer = customerRepository.findByUserIdAndId(userId, customerId)
       ?: throw ServiceException(
         status = org.springframework.http.HttpStatus.NOT_FOUND,

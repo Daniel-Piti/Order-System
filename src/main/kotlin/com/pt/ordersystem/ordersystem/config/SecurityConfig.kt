@@ -33,7 +33,8 @@ class SecurityConfig(
           "/swagger-resources/**",
           "/webjars/**",
           "/api/products/user/**",
-          "/api/products/order/**"
+          "/api/products/order/**",
+          "/api/categories/user/**"
         ).permitAll()
         it.anyRequest().authenticated()
       }

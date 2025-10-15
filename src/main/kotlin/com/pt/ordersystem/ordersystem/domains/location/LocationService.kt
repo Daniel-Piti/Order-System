@@ -38,7 +38,7 @@ class LocationService(
 
     with(request) {
       FieldValidators.validateNonEmpty(name, "'name'")
-      FieldValidators.validateNonEmpty(name, "'address'")
+      FieldValidators.validateNonEmpty(address, "'address'")
       FieldValidators.validatePhoneNumber(phoneNumber)
     }
 
@@ -68,7 +68,7 @@ class LocationService(
 
     with(request) {
       FieldValidators.validateNonEmpty(name, "'name'")
-      FieldValidators.validateNonEmpty(address, "'name'")
+      FieldValidators.validateNonEmpty(address, "'address'")
       FieldValidators.validatePhoneNumber(phoneNumber)
     }
 

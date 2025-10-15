@@ -24,8 +24,11 @@ class ProductController(
   // Public endpoints
   // ----------------------
 
-  @GetMapping("/{productId}")
-  fun getProduct(@PathVariable productId: String): ResponseEntity<ProductDto> {
+  @GetMapping("/user/{userId}/{productId}")
+  fun getProduct(
+    @PathVariable userId: String,
+    @PathVariable productId: String
+  ): ResponseEntity<ProductDto> {
     val product = productService.getProductById(productId)
     return ResponseEntity.ok(product)
   }
@@ -51,6 +54,15 @@ class ProductController(
   @GetMapping
   fun getAllProducts(@AuthenticationPrincipal user: AuthUser): ResponseEntity<List<ProductDto>> {
     val products = productService.getAllProductsForUser(user.userId)
+    return ResponseEntity.ok(products)
+  }
+
+  @GetMapping("/user/{userId}/category/{categoryId}")
+  fun getProductsByCategory(
+    @PathVariable userId: String,
+    @PathVariable categoryId: String
+  ): ResponseEntity<List<ProductDto>> {
+    val products = productService.getProductsByCategory(userId, categoryId)
     return ResponseEntity.ok(products)
   }
 

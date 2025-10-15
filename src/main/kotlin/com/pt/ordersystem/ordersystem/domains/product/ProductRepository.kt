@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository
 interface ProductRepository : JpaRepository<ProductDbEntity, String> {
   fun findAllByUserId(userId: String): List<ProductDbEntity>
   fun findByUserIdAndId(userId: String, id: String): ProductDbEntity?
+  fun findByUserIdAndCategoryId(userId: String, categoryId: String): List<ProductDbEntity>
 }
