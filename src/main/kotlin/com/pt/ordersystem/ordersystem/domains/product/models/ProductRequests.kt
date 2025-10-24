@@ -7,6 +7,7 @@ data class CreateProductRequest(
   val categoryId: String?,
   val originalPrice: BigDecimal,
   val specialPrice: BigDecimal,
+  val description: String,
   val pictureUrl: String,
 )
 
@@ -15,5 +16,6 @@ data class UpdateProductRequest(
   val categoryId: String?,
   val originalPrice: BigDecimal,
   val specialPrice: BigDecimal,
+  val description: String,
   val pictureUrl: String,
 )

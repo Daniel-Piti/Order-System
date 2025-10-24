@@ -7,6 +7,7 @@ import com.pt.ordersystem.ordersystem.domains.product.models.ProductDto
 import com.pt.ordersystem.ordersystem.domains.product.models.UpdateProductRequest
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.data.domain.Page
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -52,17 +53,22 @@ class ProductController(
   @SecurityRequirement(name = "bearerAuth")
   @PreAuthorize(AUTH_USER)
   @GetMapping
-  fun getAllProducts(@AuthenticationPrincipal user: AuthUser): ResponseEntity<List<ProductDto>> {
-    val products = productService.getAllProductsForUser(user.userId)
-    return ResponseEntity.ok(products)
-  }
-
-  @GetMapping("/user/{userId}/category/{categoryId}")
-  fun getProductsByCategory(
-    @PathVariable userId: String,
-    @PathVariable categoryId: String
-  ): ResponseEntity<List<ProductDto>> {
-    val products = productService.getProductsByCategory(userId, categoryId)
+  fun getAllProducts(
+    @AuthenticationPrincipal user: AuthUser,
+    @RequestParam(defaultValue = "0") page: Int,
+    @RequestParam(defaultValue = "20") size: Int,
+    @RequestParam(defaultValue = "name") sortBy: String,
+    @RequestParam(defaultValue = "ASC") sortDirection: String,
+    @RequestParam(required = false) categoryId: String?
+  ): ResponseEntity<Page<ProductDto>> {
+    val products = productService.getAllProductsForUser(
+      userId = user.userId,
+      page = page,
+      size = size,
+      sortBy = sortBy,
+      sortDirection = sortDirection,
+      categoryId = categoryId
+    )
     return ResponseEntity.ok(products)
   }
 
@@ -85,7 +91,7 @@ class ProductController(
     @RequestBody request: UpdateProductRequest,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<String> {
-    val updatedProductId = productService.updateProduct(user.userId, productId, request)
+    val updatedProductId = productService.updateProduct(productId, request)
     return ResponseEntity.ok(updatedProductId)
   }
 
@@ -96,7 +102,7 @@ class ProductController(
     @PathVariable productId: String,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<String> {
-    productService.deleteProduct(user.userId, productId)
+    productService.deleteProduct(productId)
     return ResponseEntity.ok("Product deleted successfully")
   }
 

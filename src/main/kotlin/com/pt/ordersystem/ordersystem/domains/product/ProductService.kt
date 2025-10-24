@@ -7,8 +7,10 @@ import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.domains.order.OrderService
 import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideService
-import com.pt.ordersystem.ordersystem.domains.category.CategoryRepository
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -18,18 +20,15 @@ class ProductService(
   private val productRepository: ProductRepository,
   private val productOverrideService: ProductOverrideService,
   private val orderService: OrderService,
-  private val categoryRepository: CategoryRepository,
 ) {
 
   companion object {
     const val MAXIMUM_PRODUCTS_FOR_CUSTOMER = 1000
+    const val MAX_PAGE_SIZE = 100
   }
 
   fun getAllProductsForUser(userId: String): List<ProductDto> =
     productRepository.findAllByUserId(userId).map { it.toDto() }
-
-  fun getProductsByCategory(userId: String, categoryId: String): List<ProductDto> =
-    productRepository.findByUserIdAndCategoryId(userId, categoryId).map { it.toDto() }
 
   fun removeCategoryFromProducts(userId: String, categoryId: String) {
     val productsWithCategory = productRepository.findByUserIdAndCategoryId(userId, categoryId)
@@ -39,6 +38,35 @@ class ProductService(
         updatedAt = LocalDateTime.now()
       )
       productRepository.save(updatedProduct)
+    }
+  }
+
+  fun getAllProductsForUser(
+    userId: String,
+    page: Int,
+    size: Int,
+    sortBy: String,
+    sortDirection: String,
+    categoryId: String?
+  ): Page<ProductDto> {
+    // Enforce max page size
+    val validatedSize = size.coerceAtMost(MAX_PAGE_SIZE)
+
+    // Create sort based on direction
+    val sort = if (sortDirection.uppercase() == "DESC") {
+      Sort.by(sortBy).descending()
+    } else {
+      Sort.by(sortBy).ascending()
+    }
+
+    // Create pageable with sort
+    val pageable = PageRequest.of(page, validatedSize, sort)
+
+    // Fetch products based on whether category filter is applied
+    return if (categoryId != null && categoryId.isNotBlank()) {
+      productRepository.findByUserIdAndCategoryId(userId, categoryId, pageable).map { it.toDto() }
+    } else {
+      productRepository.findAllByUserId(userId, pageable).map { it.toDto() }
     }
   }
 
@@ -72,6 +100,8 @@ class ProductService(
       )
     }
 
+    AuthUtils.checkOwnership(product.userId)
+
     return product.toDto()
   }
 
@@ -81,26 +111,13 @@ class ProductService(
       FieldValidators.validateNonEmpty(name, "'name'")
       FieldValidators.validatePrice(originalPrice)
       FieldValidators.validatePrice(specialPrice)
-      
+
       // Validate that special price is not greater than original price
       if (specialPrice > originalPrice) {
         throw ServiceException(
           status = HttpStatus.BAD_REQUEST,
           userMessage = "Special price cannot be greater than original price",
-          technicalMessage = "Special price ($specialPrice) is greater than original price ($originalPrice)",
-          severity = SeverityLevel.WARN
-        )
-      }
-    }
-
-    // Validate categoryId if provided
-    if (request.categoryId != null) {
-      val category = categoryRepository.findByUserIdAndId(userId, request.categoryId)
-      if (category == null) {
-        throw ServiceException(
-          status = HttpStatus.BAD_REQUEST,
-          userMessage = "Invalid category ID",
-          technicalMessage = "Category with id ${request.categoryId} not found for user $userId",
+          technicalMessage = "specialPrice=$specialPrice > originalPrice=$originalPrice",
           severity = SeverityLevel.WARN
         )
       }
@@ -124,6 +141,7 @@ class ProductService(
       categoryId = request.categoryId,
       originalPrice = request.originalPrice,
       specialPrice = request.specialPrice,
+      description = request.description,
       pictureUrl = request.pictureUrl,
       createdAt = LocalDateTime.now(),
       updatedAt = LocalDateTime.now()
@@ -132,50 +150,41 @@ class ProductService(
     return productRepository.save(product).id
   }
 
-  fun updateProduct(userId: String, productId: String, request: UpdateProductRequest): String {
+  fun updateProduct(productId: String, request: UpdateProductRequest): String {
 
     with(request) {
       FieldValidators.validateNonEmpty(name, "'name'")
       FieldValidators.validatePrice(originalPrice)
       FieldValidators.validatePrice(specialPrice)
-      
+
       // Validate that special price is not greater than original price
       if (specialPrice > originalPrice) {
         throw ServiceException(
           status = HttpStatus.BAD_REQUEST,
           userMessage = "Special price cannot be greater than original price",
-          technicalMessage = "Special price ($specialPrice) is greater than original price ($originalPrice)",
+          technicalMessage = "specialPrice=$specialPrice > originalPrice=$originalPrice",
           severity = SeverityLevel.WARN
         )
       }
     }
 
-    // Validate categoryId if provided
-    if (request.categoryId != null) {
-      val category = categoryRepository.findByUserIdAndId(userId, request.categoryId)
-      if (category == null) {
-        throw ServiceException(
-          status = HttpStatus.BAD_REQUEST,
-          userMessage = "Invalid category ID",
-          technicalMessage = "Category with id ${request.categoryId} not found for user $userId",
-          severity = SeverityLevel.WARN
-        )
-      }
-    }
-
-    val product = productRepository.findByUserIdAndId(userId, productId)
-      ?: throw ServiceException(
+    val product = productRepository.findById(productId).orElseThrow {
+      ServiceException(
         status = HttpStatus.NOT_FOUND,
         userMessage = ProductFailureReason.NOT_FOUND.userMessage,
         technicalMessage = ProductFailureReason.NOT_FOUND.technical + "productId=$productId",
         severity = SeverityLevel.WARN
       )
+    }
+
+    AuthUtils.checkOwnership(product.userId)
 
     val updated = product.copy(
       name = request.name,
       categoryId = request.categoryId,
       originalPrice = request.originalPrice,
       specialPrice = request.specialPrice,
+      description = request.description,
       pictureUrl = request.pictureUrl,
       updatedAt = LocalDateTime.now(),
     )
@@ -183,16 +192,19 @@ class ProductService(
     return productRepository.save(updated).id
   }
 
-  fun deleteProduct(userId: String, productId: String) {
-    val product = productRepository.findByUserIdAndId(userId, productId)
-      ?: throw ServiceException(
+  fun deleteProduct(productId: String) {
+    val product = productRepository.findById(productId).orElseThrow {
+      ServiceException(
         status = HttpStatus.NOT_FOUND,
         userMessage = ProductFailureReason.NOT_FOUND.userMessage,
         technicalMessage = ProductFailureReason.NOT_FOUND.technical + "productId=$productId",
         severity = SeverityLevel.WARN
       )
+    }
 
-    productOverrideService.deleteAllOverridesForProduct(userId, productId)
+    AuthUtils.checkOwnership(product.userId)
+
+    productOverrideService.deleteAllOverridesForProduct(product.userId, productId)
 
     productRepository.delete(product)
   }

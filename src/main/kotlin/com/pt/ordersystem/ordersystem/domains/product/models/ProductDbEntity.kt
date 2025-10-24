@@ -28,6 +28,9 @@ data class ProductDbEntity(
   @Column(name = "special_price", nullable = false)
   val specialPrice: BigDecimal,
 
+  @Column(columnDefinition = "TEXT", nullable = false)
+  val description: String,
+
   @Column(name = "picture_url")
   val pictureUrl: String,
 
