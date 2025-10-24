@@ -3,9 +3,14 @@ package com.pt.ordersystem.ordersystem.domains.productOverrides
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerService
 import com.pt.ordersystem.ordersystem.domains.product.ProductRepository
 import com.pt.ordersystem.ordersystem.exception.ServiceException
+import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.*
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
@@ -15,6 +20,10 @@ class ProductOverrideService(
   private val productRepository: ProductRepository,
   private val customerService: CustomerService
 ) {
+  
+  companion object {
+    private const val MAX_PAGE_SIZE = 100
+  }
 
   fun createProductOverride(userId: String, request: CreateProductOverrideRequest): ProductOverrideDto {
     FieldValidators.validatePrice(request.overridePrice)
@@ -23,10 +32,10 @@ class ProductOverrideService(
       productRepository.findById(request.productId)
     } catch (e: Exception) {
       throw ServiceException(
-        status = org.springframework.http.HttpStatus.NOT_FOUND,
-        userMessage = ProductOverrideFailureReason.PRODUCT_NOT_FOUND.name,
+        status = HttpStatus.NOT_FOUND,
+        userMessage = ProductOverrideFailureReason.PRODUCT_NOT_FOUND.message,
         technicalMessage = "Product with id ${request.productId} not found for user $userId",
-        severity = com.pt.ordersystem.ordersystem.exception.SeverityLevel.WARN
+        severity = SeverityLevel.WARN
       )
     }
 
@@ -34,10 +43,10 @@ class ProductOverrideService(
       customerService.getCustomerByIdAndUserId(userId, request.customerId)
     } catch (e: Exception) {
       throw ServiceException(
-        status = org.springframework.http.HttpStatus.NOT_FOUND,
-        userMessage = ProductOverrideFailureReason.CUSTOMER_NOT_FOUND.name,
+        status = HttpStatus.NOT_FOUND,
+        userMessage = ProductOverrideFailureReason.CUSTOMER_NOT_FOUND.message,
         technicalMessage = "Customer with id ${request.customerId} not found for user $userId",
-        severity = com.pt.ordersystem.ordersystem.exception.SeverityLevel.WARN
+        severity = SeverityLevel.WARN
       )
     }
 
@@ -45,10 +54,10 @@ class ProductOverrideService(
     val existingOverride = productOverrideRepository.findByProductIdAndCustomerId(request.productId, request.customerId)
     if (existingOverride != null) {
       throw ServiceException(
-        status = org.springframework.http.HttpStatus.BAD_REQUEST,
-        userMessage = ProductOverrideFailureReason.PRODUCT_OVERRIDE_ALREADY_EXISTS.name,
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = ProductOverrideFailureReason.PRODUCT_OVERRIDE_ALREADY_EXISTS.message,
         technicalMessage = "Product override already exists for product ${request.productId} and customer ${request.customerId}",
-        severity = com.pt.ordersystem.ordersystem.exception.SeverityLevel.WARN
+        severity = SeverityLevel.WARN
       )
     }
 
@@ -66,16 +75,40 @@ class ProductOverrideService(
     return savedOverride.toDto()
   }
 
-  fun getProductOverridesByUserId(userId: String): List<ProductOverrideDto> =
-    productOverrideRepository.findByUserId(userId).map { it.toDto() }
+  fun getAllOverrides(
+    userId: String,
+    page: Int,
+    size: Int,
+    sortBy: String,
+    sortDirection: String,
+    productId: String?,
+    customerId: String?
+  ): Page<ProductOverrideWithPriceDto> {
+    // Enforce max page size
+    val validatedSize = size.coerceAtMost(MAX_PAGE_SIZE)
+
+    // Create sort
+    val sort = if (sortDirection.uppercase() == "DESC") {
+      Sort.by(sortBy).descending()
+    } else {
+      Sort.by(sortBy).ascending()
+    }
+
+    // Create pageable
+    val pageable = PageRequest.of(page, validatedSize, sort)
+
+    // Fetch with JOIN to get product prices in single query
+    return productOverrideRepository.findOverridesWithPrice(userId, productId, customerId, pageable)
+      .map { it.toProductOverrideWithPriceDto() }
+  }
 
   fun getProductOverrideById(userId: String, overrideId: String): ProductOverrideDto {
     val override = productOverrideRepository.findByUserIdAndId(userId, overrideId)
       ?: throw ServiceException(
-        status = org.springframework.http.HttpStatus.NOT_FOUND,
-        userMessage = ProductOverrideFailureReason.PRODUCT_OVERRIDE_NOT_FOUND.name,
+        status = HttpStatus.NOT_FOUND,
+        userMessage = ProductOverrideFailureReason.PRODUCT_OVERRIDE_NOT_FOUND.message,
         technicalMessage = "Product override with id $overrideId not found for user $userId",
-        severity = com.pt.ordersystem.ordersystem.exception.SeverityLevel.WARN
+        severity = SeverityLevel.WARN
       )
     return override.toDto()
   }
@@ -92,10 +125,10 @@ class ProductOverrideService(
     
     val override = productOverrideRepository.findByUserIdAndId(userId, overrideId)
       ?: throw ServiceException(
-        status = org.springframework.http.HttpStatus.NOT_FOUND,
-        userMessage = ProductOverrideFailureReason.PRODUCT_OVERRIDE_NOT_FOUND.name,
+        status = HttpStatus.NOT_FOUND,
+        userMessage = ProductOverrideFailureReason.PRODUCT_OVERRIDE_NOT_FOUND.message,
         technicalMessage = "Product override with id $overrideId not found for user $userId",
-        severity = com.pt.ordersystem.ordersystem.exception.SeverityLevel.WARN
+        severity = SeverityLevel.WARN
       )
 
     val updatedOverride = override.copy(
@@ -110,10 +143,10 @@ class ProductOverrideService(
   fun deleteProductOverride(userId: String, overrideId: String) {
     val override = productOverrideRepository.findByUserIdAndId(userId, overrideId)
       ?: throw ServiceException(
-        status = org.springframework.http.HttpStatus.NOT_FOUND,
-        userMessage = ProductOverrideFailureReason.PRODUCT_OVERRIDE_NOT_FOUND.name,
+        status = HttpStatus.NOT_FOUND,
+        userMessage = ProductOverrideFailureReason.PRODUCT_OVERRIDE_NOT_FOUND.message,
         technicalMessage = "Product override with id $overrideId not found for user $userId",
-        severity = com.pt.ordersystem.ordersystem.exception.SeverityLevel.WARN
+        severity = SeverityLevel.WARN
       )
     
     productOverrideRepository.delete(override)

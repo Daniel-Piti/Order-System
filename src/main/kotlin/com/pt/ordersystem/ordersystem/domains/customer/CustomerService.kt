@@ -1,6 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.customer
 
 import com.pt.ordersystem.ordersystem.domains.customer.models.*
+import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideRepository
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
@@ -9,7 +10,8 @@ import java.time.LocalDateTime
 
 @Service
 class CustomerService(
-  private val customerRepository: CustomerRepository
+  private val customerRepository: CustomerRepository,
+  private val productOverrideRepository: ProductOverrideRepository
 ) {
 
   fun createCustomer(userId: String, request: CreateCustomerRequest): CustomerDto {
@@ -94,6 +96,10 @@ class CustomerService(
         technicalMessage = "Customer with id $customerId not found for user $userId",
         severity = com.pt.ordersystem.ordersystem.exception.SeverityLevel.WARN
       )
+    
+    // Delete all product overrides for this customer first (cascading delete)
+    val overrides = productOverrideRepository.findByUserIdAndCustomerId(userId, customerId)
+    productOverrideRepository.deleteAll(overrides)
     
     customerRepository.delete(customer)
   }
