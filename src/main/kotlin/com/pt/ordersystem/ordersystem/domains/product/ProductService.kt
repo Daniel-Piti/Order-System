@@ -81,6 +81,16 @@ class ProductService(
       FieldValidators.validateNonEmpty(name, "'name'")
       FieldValidators.validatePrice(originalPrice)
       FieldValidators.validatePrice(specialPrice)
+      
+      // Validate that special price is not greater than original price
+      if (specialPrice > originalPrice) {
+        throw ServiceException(
+          status = HttpStatus.BAD_REQUEST,
+          userMessage = "Special price cannot be greater than original price",
+          technicalMessage = "Special price ($specialPrice) is greater than original price ($originalPrice)",
+          severity = SeverityLevel.WARN
+        )
+      }
     }
 
     // Validate categoryId if provided
@@ -128,6 +138,16 @@ class ProductService(
       FieldValidators.validateNonEmpty(name, "'name'")
       FieldValidators.validatePrice(originalPrice)
       FieldValidators.validatePrice(specialPrice)
+      
+      // Validate that special price is not greater than original price
+      if (specialPrice > originalPrice) {
+        throw ServiceException(
+          status = HttpStatus.BAD_REQUEST,
+          userMessage = "Special price cannot be greater than original price",
+          technicalMessage = "Special price ($specialPrice) is greater than original price ($originalPrice)",
+          severity = SeverityLevel.WARN
+        )
+      }
     }
 
     // Validate categoryId if provided

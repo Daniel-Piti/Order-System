@@ -47,6 +47,13 @@ class UserController(
   }
 
   @PreAuthorize(AUTH_ADMIN)
+  @GetMapping
+  fun getAllUsers(): ResponseEntity<List<UserDto>> {
+    val users = userService.getAllUsers().map { it.toDto() }
+    return ResponseEntity.ok(users)
+  }
+
+  @PreAuthorize(AUTH_ADMIN)
   @PostMapping
   fun createUser(@RequestBody newUserRequest: NewUserRequest): ResponseEntity<String> =
     ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(newUserRequest))
@@ -66,8 +73,11 @@ class UserController(
 
   @PreAuthorize(AUTH_ADMIN)
   @PutMapping("/reset-password")
-  fun resetUserPassword(@RequestParam email: String): ResponseEntity<String> {
-    userService.resetPassword(email)
+  fun resetUserPassword(
+    @RequestParam email: String,
+    @RequestParam newPassword: String
+  ): ResponseEntity<String> {
+    userService.resetPassword(email, newPassword)
     return ResponseEntity.ok("Password reset successfully")
   }
 
