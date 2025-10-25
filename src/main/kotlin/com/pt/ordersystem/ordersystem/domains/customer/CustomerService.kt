@@ -14,11 +14,26 @@ class CustomerService(
   private val productOverrideRepository: ProductOverrideRepository
 ) {
 
+  companion object {
+    private const val MAX_CUSTOMERS_PER_USER = 1000
+  }
+
   fun createCustomer(userId: String, request: CreateCustomerRequest): CustomerDto {
     with(request) {
       FieldValidators.validateNonEmpty(name, "'name'")
       FieldValidators.validatePhoneNumber(phoneNumber)
       FieldValidators.validateEmail(email)
+    }
+
+    // Check if user has reached the maximum number of customers
+    val existingCustomersCount = customerRepository.findByUserId(userId).size
+    if (existingCustomersCount >= MAX_CUSTOMERS_PER_USER) {
+      throw ServiceException(
+        status = org.springframework.http.HttpStatus.BAD_REQUEST,
+        userMessage = CustomerFailureReason.CUSTOMER_LIMIT_EXCEEDED.name,
+        technicalMessage = "User $userId has reached the maximum limit of $MAX_CUSTOMERS_PER_USER customers",
+        severity = com.pt.ordersystem.ordersystem.exception.SeverityLevel.WARN
+      )
     }
 
     // Check if customer with same phone number already exists for this user
