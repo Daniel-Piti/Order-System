@@ -11,5 +11,9 @@ enum class CategoryFailureReason(
     ALREADY_EXISTS(
         userMessage = "Category already exists",
         technical = "Category already exists for userId="
+    ),
+    CATEGORY_LIMIT_EXCEEDED(
+        userMessage = "Category limit exceeded",
+        technical = "User has reached the maximum limit of categories. userId="
     )
 }

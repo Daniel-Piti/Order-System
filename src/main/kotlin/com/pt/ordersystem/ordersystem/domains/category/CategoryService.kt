@@ -16,6 +16,10 @@ class CategoryService(
     private val productService: ProductService
 ) {
 
+    companion object {
+        private const val MAX_CATEGORIES_PER_USER = 1000
+    }
+
     fun getCategoryById(userId: String, categoryId: String): CategoryDto {
         val category = categoryRepository.findByUserIdAndId(userId, categoryId)
             ?: throw ServiceException(
@@ -34,6 +38,17 @@ class CategoryService(
     fun createCategory(userId: String, request: CreateCategoryRequest): String {
         with(request) {
             FieldValidators.validateNonEmpty(category, "'category'")
+        }
+
+        // Check if user has reached the maximum number of categories
+        val existingCategoriesCount = categoryRepository.findByUserId(userId).size
+        if (existingCategoriesCount >= MAX_CATEGORIES_PER_USER) {
+            throw ServiceException(
+                status = HttpStatus.BAD_REQUEST,
+                userMessage = CategoryFailureReason.CATEGORY_LIMIT_EXCEEDED.userMessage,
+                technicalMessage = CategoryFailureReason.CATEGORY_LIMIT_EXCEEDED.technical + "userId=$userId, limit=$MAX_CATEGORIES_PER_USER",
+                severity = SeverityLevel.WARN
+            )
         }
 
         // Check if category already exists for this user
