@@ -5,7 +5,6 @@ import com.pt.ordersystem.ordersystem.auth.Roles
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.domains.login.models.AdminLoginRequest
-import com.pt.ordersystem.ordersystem.domains.user.models.UserFailureReason
 import com.pt.ordersystem.ordersystem.domains.login.models.LoginResponse
 import com.pt.ordersystem.ordersystem.domains.user.UserService
 import com.pt.ordersystem.ordersystem.domains.user.models.UserLoginRequest
@@ -27,19 +26,35 @@ class LoginService(
   }
 
   fun loginUser(request: UserLoginRequest): LoginResponse {
-    val user = userService.getUserByEmail(request.email)
+    try {
+      val user = userService.getUserByEmail(request.email)
 
-    if (!passwordEncoder.matches(request.password, user.password))
+      if (!passwordEncoder.matches(request.password, user.password)) {
+        // Log the actual reason for debugging
+        println("[AUTH] Invalid password attempt for email=${request.email}")
+        throw ServiceException(
+          status = HttpStatus.UNAUTHORIZED,
+          userMessage = "Invalid email or password",
+          technicalMessage = "Authentication failed",
+          severity = SeverityLevel.INFO,
+        )
+      }
+
+      val token = jwtUtil.generateToken(user.email, user.id, listOf(Roles.USER))
+      return LoginResponse(token)
+    } catch (e: ServiceException) {
+      // Log the actual reason for debugging
+      if (e.status == HttpStatus.NOT_FOUND) {
+        println("[AUTH] User not found attempt for email=${request.email}")
+      }
+      // Always return the same generic message for security
       throw ServiceException(
         status = HttpStatus.UNAUTHORIZED,
-        userMessage = UserFailureReason.INVALID_PASSWORD.userMessage,
-        technicalMessage = UserFailureReason.INVALID_PASSWORD.technical + "email=${request.email}",
+        userMessage = "Invalid email or password",
+        technicalMessage = "Authentication failed",
         severity = SeverityLevel.INFO,
       )
-
-    val token = jwtUtil.generateToken(user.email, user.id, listOf(Roles.USER))
-
-    return LoginResponse(token)
+    }
   }
 
   fun loginAdmin(request: AdminLoginRequest): LoginResponse {
@@ -47,10 +62,12 @@ class LoginService(
     val isPasswordValid = passwordEncoder.matches(request.password, ADMIN_PASSWORD_HASH)
 
     if (!isUsernameValid || !isPasswordValid) {
+      // Log the actual reason for debugging
+      println("[AUTH] Admin login failed for username=${request.adminUserName}")
       throw ServiceException(
         status = HttpStatus.UNAUTHORIZED,
-        userMessage = "Invalid credentials",
-        technicalMessage = "Admin login failed for username=${request.adminUserName}",
+        userMessage = "Invalid admin credentials",
+        technicalMessage = "Admin authentication failed",
         severity = SeverityLevel.INFO
       )
     }
