@@ -6,4 +6,6 @@ data class CustomerDto(
   val name: String,
   val phoneNumber: String,
   val email: String,
+  val streetAddress: String,
+  val city: String,
 )

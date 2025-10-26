@@ -5,6 +5,8 @@ CREATE TABLE customers (
     name VARCHAR(255) NOT NULL,
     phone_number VARCHAR(20) NOT NULL,
     email VARCHAR(255) NOT NULL,
+    street_address VARCHAR(255) NOT NULL,
+    city VARCHAR(100) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
@@ -20,6 +22,8 @@ CREATE TABLE customers_history (
     name VARCHAR(255) NOT NULL,
     phone_number VARCHAR(20) NOT NULL,
     email VARCHAR(255) NOT NULL,
+    street_address VARCHAR(255) NOT NULL,
+    city VARCHAR(100) NOT NULL,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL
 );
@@ -27,11 +31,11 @@ CREATE TABLE customers_history (
 -- Trigger for INSERT
 CREATE TRIGGER trg_customers_after_insert
 AFTER INSERT ON customers FOR EACH ROW
-INSERT INTO customers_history (id, user_id, name, phone_number, email, created_at, updated_at)
-VALUES (NEW.id, NEW.user_id, NEW.name, NEW.phone_number, NEW.email, NEW.created_at, NEW.updated_at);
+INSERT INTO customers_history (id, user_id, name, phone_number, email, street_address, city, created_at, updated_at)
+VALUES (NEW.id, NEW.user_id, NEW.name, NEW.phone_number, NEW.email, NEW.street_address, NEW.city, NEW.created_at, NEW.updated_at);
 
 -- Trigger for UPDATE
 CREATE TRIGGER trg_customers_after_update
 AFTER UPDATE ON customers FOR EACH ROW
-INSERT INTO customers_history (id, user_id, name, phone_number, email, created_at, updated_at)
-VALUES (NEW.id, NEW.user_id, NEW.name, NEW.phone_number, NEW.email, NEW.created_at, NEW.updated_at);
+INSERT INTO customers_history (id, user_id, name, phone_number, email, street_address, city, created_at, updated_at)
+VALUES (NEW.id, NEW.user_id, NEW.name, NEW.phone_number, NEW.email, NEW.street_address, NEW.city, NEW.created_at, NEW.updated_at);

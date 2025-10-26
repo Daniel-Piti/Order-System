@@ -24,6 +24,12 @@ data class CustomerDbEntity(
   @Column(nullable = false)
   val email: String,
 
+  @Column(name = "street_address", nullable = false)
+  val streetAddress: String,
+
+  @Column(name = "city", nullable = false)
+  val city: String,
+
   @Column(name = "created_at", nullable = false, updatable = false)
   val createdAt: LocalDateTime = LocalDateTime.now(),
 
@@ -37,4 +43,6 @@ fun CustomerDbEntity.toDto() = CustomerDto(
   name = name,
   phoneNumber = phoneNumber,
   email = email,
+  streetAddress = streetAddress,
+  city = city,
 )

@@ -23,6 +23,8 @@ class CustomerService(
       FieldValidators.validateNonEmpty(name, "'name'")
       FieldValidators.validatePhoneNumber(phoneNumber)
       FieldValidators.validateEmail(email)
+      FieldValidators.validateNonEmpty(streetAddress, "'street address'")
+      FieldValidators.validateNonEmpty(city, "'city'")
     }
 
     // Check if user has reached the maximum number of customers
@@ -30,8 +32,8 @@ class CustomerService(
     if (existingCustomersCount >= MAX_CUSTOMERS_PER_USER) {
       throw ServiceException(
         status = org.springframework.http.HttpStatus.BAD_REQUEST,
-        userMessage = CustomerFailureReason.CUSTOMER_LIMIT_EXCEEDED.name,
-        technicalMessage = "User $userId has reached the maximum limit of $MAX_CUSTOMERS_PER_USER customers",
+        userMessage = CustomerFailureReason.CUSTOMER_LIMIT_EXCEEDED.userMessage,
+        technicalMessage = CustomerFailureReason.CUSTOMER_LIMIT_EXCEEDED.technical + "UserId=$userId MAX_CUSTOMERS_PER_USER=$MAX_CUSTOMERS_PER_USER",
         severity = com.pt.ordersystem.ordersystem.exception.SeverityLevel.WARN
       )
     }
@@ -41,8 +43,8 @@ class CustomerService(
     if (existingCustomer != null) {
       throw ServiceException(
         status = org.springframework.http.HttpStatus.BAD_REQUEST,
-        userMessage = CustomerFailureReason.CUSTOMER_ALREADY_EXISTS.name,
-        technicalMessage = "Customer with phone number ${request.phoneNumber} already exists for user $userId",
+        userMessage = CustomerFailureReason.CUSTOMER_ALREADY_EXISTS.userMessage,
+        technicalMessage = CustomerFailureReason.CUSTOMER_ALREADY_EXISTS.technical + " phoneNumber=${request.phoneNumber} userId=$userId",
         severity = com.pt.ordersystem.ordersystem.exception.SeverityLevel.WARN
       )
     }
@@ -53,6 +55,8 @@ class CustomerService(
       name = request.name,
       phoneNumber = request.phoneNumber,
       email = request.email,
+      streetAddress = request.streetAddress,
+      city = request.city,
       createdAt = LocalDateTime.now(),
       updatedAt = LocalDateTime.now()
     )
@@ -69,8 +73,8 @@ class CustomerService(
     val customer = customerRepository.findByUserIdAndId(userId, customerId)
       ?: throw ServiceException(
         status = org.springframework.http.HttpStatus.NOT_FOUND,
-        userMessage = CustomerFailureReason.CUSTOMER_NOT_FOUND.name,
-        technicalMessage = "Customer with id $customerId not found for user $userId",
+        userMessage = CustomerFailureReason.CUSTOMER_NOT_FOUND.userMessage,
+        technicalMessage = CustomerFailureReason.CUSTOMER_NOT_FOUND.technical + "customerId=$customerId userId=$userId",
         severity = com.pt.ordersystem.ordersystem.exception.SeverityLevel.WARN
       )
     return customer.toDto()
@@ -82,13 +86,15 @@ class CustomerService(
       FieldValidators.validateNonEmpty(name, "'name'")
       FieldValidators.validatePhoneNumber(phoneNumber)
       FieldValidators.validateEmail(email)
+      FieldValidators.validateNonEmpty(streetAddress, "'street address'")
+      FieldValidators.validateNonEmpty(city, "'city'")
     }
 
     val customer = customerRepository.findByUserIdAndId(userId, customerId)
       ?: throw ServiceException(
         status = org.springframework.http.HttpStatus.NOT_FOUND,
-        userMessage = CustomerFailureReason.CUSTOMER_NOT_FOUND.name,
-        technicalMessage = "Customer with id $customerId not found for user $userId",
+        userMessage = CustomerFailureReason.CUSTOMER_NOT_FOUND.userMessage,
+        technicalMessage = CustomerFailureReason.CUSTOMER_NOT_FOUND.technical + "customerId=$customerId userId=$userId",
         severity = com.pt.ordersystem.ordersystem.exception.SeverityLevel.WARN
       )
 
@@ -96,6 +102,8 @@ class CustomerService(
       name = request.name,
       phoneNumber = request.phoneNumber,
       email = request.email,
+      streetAddress = request.streetAddress,
+      city = request.city,
       updatedAt = LocalDateTime.now()
     )
 
@@ -107,8 +115,8 @@ class CustomerService(
     val customer = customerRepository.findByUserIdAndId(userId, customerId)
       ?: throw ServiceException(
         status = org.springframework.http.HttpStatus.NOT_FOUND,
-        userMessage = CustomerFailureReason.CUSTOMER_NOT_FOUND.name,
-        technicalMessage = "Customer with id $customerId not found for user $userId",
+        userMessage = CustomerFailureReason.CUSTOMER_NOT_FOUND.userMessage,
+        technicalMessage = CustomerFailureReason.CUSTOMER_NOT_FOUND.technical + "customerId=$customerId userId=$userId",
         severity = com.pt.ordersystem.ordersystem.exception.SeverityLevel.WARN
       )
     
