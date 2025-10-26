@@ -1,53 +1,60 @@
 package com.pt.ordersystem.ordersystem.domains.order.models
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductDataForOrder
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.LocalDateTime
-import com.fasterxml.jackson.module.kotlin.readValue
 
 data class OrderDto(
   val id: String,
   val userId: String,
+  
+  // User location (selected by customer)
+  val userStreetAddress: String?,
+  val userCity: String?,
+  val userPhoneNumber: String?,
+  
+  // Customer data
   val customerId: String?,
   val customerName: String?,
   val customerPhone: String?,
   val customerEmail: String?,
+  val customerStreetAddress: String?,
   val customerCity: String?,
-  val customerAddress: String?,
-  val locationId: String?,
+  
+  // Order details
   val status: OrderStatus,
-  val products: List<ProductDataForOrder>? = null,
+  val products: List<ProductDataForOrder>,
+  val productsVersion: Int,
   val totalPrice: BigDecimal,
+  val deliveryDate: LocalDate?,
+  val linkExpiresAt: LocalDateTime,
   val createdAt: LocalDateTime,
   val updatedAt: LocalDateTime
 )
 
 fun OrderDbEntity.toDto(): OrderDto {
-  val mapper = jacksonObjectMapper()
-
-  // Deserialize products JSON string to List<ProductDataForOrder> or null
-  val productsJson = products
-  val productsList: List<ProductDataForOrder>? = try {
-    if (productsJson != null) mapper.readValue(productsJson) else null
-  } catch (e: Exception) { null }
-
-  // Convert status string to enum, fallback to a default if unknown
+  // Convert status string to enum
   val orderStatus = OrderStatus.valueOf(this.status)
 
   return OrderDto(
     id = this.id,
     userId = this.userId,
+    userStreetAddress = this.userStreetAddress,
+    userCity = this.userCity,
+    userPhoneNumber = this.userPhoneNumber,
     customerId = this.customerId,
     customerName = this.customerName,
     customerPhone = this.customerPhone,
     customerEmail = this.customerEmail,
+    customerStreetAddress = this.customerStreetAddress,
     customerCity = this.customerCity,
-    customerAddress = this.customerAddress,
-    locationId = this.locationId,
     status = orderStatus,
-    products = productsList,
+    products = this.products, // Already a List<ProductDataForOrder> - JPA converter handles it!
+    productsVersion = this.productsVersion,
     totalPrice = this.totalPrice,
+    deliveryDate = this.deliveryDate,
+    linkExpiresAt = this.linkExpiresAt,
     createdAt = this.createdAt,
     updatedAt = this.updatedAt
   )

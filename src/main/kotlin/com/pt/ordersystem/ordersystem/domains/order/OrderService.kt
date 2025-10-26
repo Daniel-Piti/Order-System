@@ -15,7 +15,6 @@ import java.time.LocalDateTime
 class OrderService(
   private val orderRepository: OrderRepository,
   private val customerService: CustomerService,
-  private val locationService: LocationService,
 ) {
 
   fun getAllOrdersForUser(userId: String): List<OrderDto> {
@@ -47,35 +46,35 @@ class OrderService(
   fun createEmptyOrder(userId: String, request: CreateEmptyOrderRequest): String {
     val now = LocalDateTime.now()
 
-    // Check if user has at least one location
-    val userLocations = locationService.getUserLocations(userId)
-    if (userLocations.isEmpty()) {
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = OrderFailureReason.NO_LOCATIONS.userMessage,
-        technicalMessage = OrderFailureReason.NO_LOCATIONS.technical + "userId=$userId",
-        severity = SeverityLevel.INFO
-      )
-    }
-
-    // If customerId is provided, fetch customer data and pre-fill the order
+    // If customerId is provided, fetch customer data to pre-fill
     val customer = request.customerId?.let { customerId ->
       customerService.getCustomerByIdAndUserId(userId, customerId)
     }
 
+    // Link expires in 7 days by default
+    val linkExpiresAt = now.plusDays(7)
+
     val order = OrderDbEntity(
       id = GeneralUtils.genId(),
       userId = userId,
+      // User location (will be filled by customer)
+      userStreetAddress = null,
+      userCity = null,
+      userPhoneNumber = null,
+      // Customer data (pre-filled if linked, otherwise customer fills)
       customerId = customer?.id,
       customerName = customer?.name,
       customerPhone = customer?.phoneNumber,
       customerEmail = customer?.email,
-      customerCity = null,
-      customerAddress = null,
-      locationId = null,
+      customerStreetAddress = customer?.streetAddress,
+      customerCity = customer?.city,
+      // Order details (empty, customer fills)
       status = OrderStatus.EMPTY.name,
-      products = null,
+      products = emptyList(),
+      productsVersion = 1,
       totalPrice = BigDecimal.ZERO,
+      deliveryDate = null,
+      linkExpiresAt = linkExpiresAt,
       createdAt = now,
       updatedAt = now,
     )

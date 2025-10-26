@@ -36,7 +36,7 @@ class OrderController(
     ResponseEntity.ok(orderService.getOrderById(orderId, user.userId))
 
   @PostMapping
-  fun createOrder(
+  fun createEmptyOrder(
     @RequestBody request: CreateEmptyOrderRequest,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<String> {

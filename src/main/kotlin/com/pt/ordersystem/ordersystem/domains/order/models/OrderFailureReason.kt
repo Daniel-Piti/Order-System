@@ -5,8 +5,16 @@ enum class OrderFailureReason(val userMessage: String, val technical: String) {
     userMessage = "Order not found",
     technical = "Order not found | "
   ),
-  NO_LOCATIONS(
-    userMessage = "You must have at least one location to create an order",
-    technical = "User attempted to create order without any locations | "
+  EXPIRED(
+    userMessage = "This order link has expired",
+    technical = "Order link expired | "
+  ),
+  UNAUTHORIZED(
+    userMessage = "You don't have permission to access this order",
+    technical = "Unauthorized order access | "
+  ),
+  INVALID_STATUS(
+    userMessage = "Cannot perform this action with current order status",
+    technical = "Invalid order status transition | "
   ),
 }

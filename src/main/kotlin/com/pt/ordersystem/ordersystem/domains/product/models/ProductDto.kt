@@ -13,10 +13,13 @@ data class ProductDto(
   val pictureUrl: String?
 )
 
+// Simple product data for orders - V1
+// When V2 is needed: create ProductDataForOrder_V2, support both temporarily, then migrate
 data class ProductDataForOrder(
-  val id: String,
+  val productId: String,
+  val productName: String,
   val quantity: Int,
-  val price: BigDecimal,
+  val pricePerUnit: BigDecimal
 )
 
 fun ProductDbEntity.toDto() = ProductDto(
