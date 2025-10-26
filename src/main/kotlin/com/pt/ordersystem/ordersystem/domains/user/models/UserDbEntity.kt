@@ -30,8 +30,11 @@ data class UserDbEntity(
   @Column(name = "date_of_birth", nullable = false)
   val dateOfBirth: LocalDate,
 
-  @Column(name = "main_address", nullable = false)
-  val mainAddress: String,
+  @Column(name = "street_address", nullable = false)
+  val streetAddress: String,
+
+  @Column(name = "city", nullable = false)
+  val city: String,
 
   @Column(name = "created_at", nullable = false)
   val createdAt: LocalDateTime = LocalDateTime.now(),

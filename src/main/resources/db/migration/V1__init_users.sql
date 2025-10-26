@@ -7,7 +7,8 @@ CREATE TABLE users (
     password VARCHAR(255) NOT NULL,
     phone_number VARCHAR(20) NOT NULL,
     date_of_birth DATE NOT NULL,
-    main_address VARCHAR(255) NOT NULL,
+    street_address VARCHAR(255) NOT NULL,
+    city VARCHAR(100) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
@@ -23,7 +24,8 @@ CREATE TABLE users_history (
     password VARCHAR(255) NOT NULL,
     phone_number VARCHAR(20) NOT NULL,
     date_of_birth DATE NOT NULL,
-    main_address VARCHAR(255) NOT NULL,
+    street_address VARCHAR(255) NOT NULL,
+    city VARCHAR(100) NOT NULL,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL
 );
@@ -31,13 +33,13 @@ CREATE TABLE users_history (
 CREATE TRIGGER trg_users_after_insert
 AFTER INSERT ON users FOR EACH ROW
 INSERT INTO users_history
-    (id, first_name, last_name, email, password, phone_number, date_of_birth, main_address, created_at, updated_at)
+    (id, first_name, last_name, email, password, phone_number, date_of_birth, street_address, city, created_at, updated_at)
 VALUES (NEW.id, NEW.first_name, NEW.last_name, NEW.email, NEW.password, NEW.phone_number,
-        NEW.date_of_birth, NEW.main_address, NEW.created_at, NEW.updated_at);
+        NEW.date_of_birth, NEW.street_address, NEW.city, NEW.created_at, NEW.updated_at);
 
 CREATE TRIGGER trg_users_after_update
 AFTER UPDATE ON users FOR EACH ROW
 INSERT INTO users_history
-    (id, first_name, last_name, email, password, phone_number, date_of_birth, main_address, created_at, updated_at)
+    (id, first_name, last_name, email, password, phone_number, date_of_birth, street_address, city, created_at, updated_at)
 VALUES (NEW.id, NEW.first_name, NEW.last_name, NEW.email, NEW.password, NEW.phone_number,
-        NEW.date_of_birth, NEW.main_address, NEW.created_at, NEW.updated_at);
+        NEW.date_of_birth, NEW.street_address, NEW.city, NEW.created_at, NEW.updated_at);

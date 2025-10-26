@@ -18,7 +18,8 @@ data class NewUserRequest(
   val password: String,
   val phoneNumber: String,
   val dateOfBirth: LocalDate,
-  val mainAddress: String,
+  val streetAddress: String,
+  val city: String,
 )
 
 data class UpdateUserDetailsRequest(
@@ -26,5 +27,6 @@ data class UpdateUserDetailsRequest(
   val lastName: String,
   val phoneNumber: String,
   val dateOfBirth: LocalDate,
-  val mainAddress: String,
+  val streetAddress: String,
+  val city: String,
 )

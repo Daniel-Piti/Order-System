@@ -10,7 +10,8 @@ data class UserDto(
   val email: String,
   val phoneNumber: String,
   val dateOfBirth: LocalDate,
-  val mainAddress: String,
+  val streetAddress: String,
+  val city: String,
   val createdAt: LocalDateTime,
   val updatedAt: LocalDateTime,
 )
@@ -22,7 +23,8 @@ fun UserDbEntity.toDto(): UserDto = UserDto(
   email = this.email,
   phoneNumber = this.phoneNumber,
   dateOfBirth = this.dateOfBirth,
-  mainAddress = this.mainAddress,
+  streetAddress = this.streetAddress,
+  city = this.city,
   createdAt = this.createdAt,
   updatedAt = this.updatedAt,
 )

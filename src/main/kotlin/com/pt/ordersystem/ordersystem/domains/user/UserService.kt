@@ -38,7 +38,8 @@ class UserService(
       FieldValidators.validateStrongPassword(password)
       FieldValidators.validatePhoneNumber(phoneNumber)
       FieldValidators.validateDateNotFuture(dateOfBirth)
-      FieldValidators.validateNonEmpty(mainAddress, "'address'")
+      FieldValidators.validateNonEmpty(streetAddress, "'street address'")
+      FieldValidators.validateNonEmpty(city, "'city'")
     }
 
     val newUserDbEntity = UserDbEntity(
@@ -49,7 +50,8 @@ class UserService(
       password = passwordEncoder.encode(newUserRequest.password),
       phoneNumber = newUserRequest.phoneNumber,
       dateOfBirth = newUserRequest.dateOfBirth,
-      mainAddress = newUserRequest.mainAddress,
+      streetAddress = newUserRequest.streetAddress,
+      city = newUserRequest.city,
       createdAt = LocalDateTime.now(),
       updatedAt = LocalDateTime.now()
     )
@@ -66,7 +68,8 @@ class UserService(
       FieldValidators.validateNonEmpty(lastName, "'last name'")
       FieldValidators.validatePhoneNumber(phoneNumber)
       FieldValidators.validateDateNotFuture(dateOfBirth)
-      FieldValidators.validateNonEmpty(mainAddress, "'address'")
+      FieldValidators.validateNonEmpty(streetAddress, "'street address'")
+      FieldValidators.validateNonEmpty(city, "'city'")
     }
 
     val user = userRepository.findByEmail(email) ?: throw ServiceException(
@@ -81,7 +84,8 @@ class UserService(
       lastName = updatedUserDetails.lastName,
       phoneNumber = updatedUserDetails.phoneNumber,
       dateOfBirth = updatedUserDetails.dateOfBirth,
-      mainAddress = updatedUserDetails.mainAddress,
+      streetAddress = updatedUserDetails.streetAddress,
+      city = updatedUserDetails.city,
       updatedAt = LocalDateTime.now()
     )
 
