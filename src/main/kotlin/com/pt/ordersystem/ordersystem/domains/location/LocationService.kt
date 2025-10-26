@@ -38,7 +38,8 @@ class LocationService(
 
     with(request) {
       FieldValidators.validateNonEmpty(name, "'name'")
-      FieldValidators.validateNonEmpty(address, "'address'")
+      FieldValidators.validateNonEmpty(streetAddress, "'street address'")
+      FieldValidators.validateNonEmpty(city, "'city'")
       FieldValidators.validatePhoneNumber(phoneNumber)
     }
 
@@ -55,7 +56,8 @@ class LocationService(
       id = GeneralUtils.genId(),
       userId = userId,
       name = request.name,
-      address = request.address,
+      streetAddress = request.streetAddress,
+      city = request.city,
       phoneNumber = request.phoneNumber,
       createdAt = LocalDateTime.now(),
       updatedAt = LocalDateTime.now()
@@ -68,7 +70,8 @@ class LocationService(
 
     with(request) {
       FieldValidators.validateNonEmpty(name, "'name'")
-      FieldValidators.validateNonEmpty(address, "'address'")
+      FieldValidators.validateNonEmpty(streetAddress, "'street address'")
+      FieldValidators.validateNonEmpty(city, "'city'")
       FieldValidators.validatePhoneNumber(phoneNumber)
     }
 
@@ -82,7 +85,8 @@ class LocationService(
 
     val updatedLocation = location.copy(
       name = request.name,
-      address = request.address,
+      streetAddress = request.streetAddress,
+      city = request.city,
       phoneNumber = request.phoneNumber,
       updatedAt = LocalDateTime.now()
     )

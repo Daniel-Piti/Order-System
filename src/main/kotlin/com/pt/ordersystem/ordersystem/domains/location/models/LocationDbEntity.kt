@@ -20,8 +20,11 @@ data class LocationDbEntity(
   @Column(nullable = false)
   val name: String,
 
-  @Column(nullable = false)
-  val address: String,
+  @Column(name = "street_address", nullable = false)
+  val streetAddress: String,
+
+  @Column(name = "city", nullable = false)
+  val city: String,
 
   @Column(name = "phone_number", nullable = false)
   val phoneNumber: String,
