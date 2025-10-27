@@ -6,6 +6,7 @@ import com.pt.ordersystem.ordersystem.domains.order.models.CreateEmptyOrderReque
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDto
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.data.domain.Page
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -23,8 +24,22 @@ class OrderController(
 ) {
 
   @GetMapping
-  fun getAllOrders(@AuthenticationPrincipal user: AuthUser): ResponseEntity<List<OrderDto>> {
-    val orders = orderService.getAllOrdersForUser(user.userId)
+  fun getAllOrders(
+    @AuthenticationPrincipal user: AuthUser,
+    @RequestParam(defaultValue = "0") page: Int,
+    @RequestParam(defaultValue = "20") size: Int,
+    @RequestParam(defaultValue = "createdAt") sortBy: String,
+    @RequestParam(defaultValue = "DESC") sortDirection: String,
+    @RequestParam(required = false) status: String?
+  ): ResponseEntity<Page<OrderDto>> {
+    val orders = orderService.getAllOrdersForUser(
+      userId = user.userId,
+      page = page,
+      size = size,
+      sortBy = sortBy,
+      sortDirection = sortDirection,
+      status = status
+    )
     return ResponseEntity.ok(orders)
   }
 

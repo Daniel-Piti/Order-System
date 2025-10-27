@@ -1,11 +1,13 @@
 package com.pt.ordersystem.ordersystem.domains.order
 
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerService
-import com.pt.ordersystem.ordersystem.domains.location.LocationService
 import com.pt.ordersystem.ordersystem.domains.order.models.*
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
@@ -17,8 +19,37 @@ class OrderService(
   private val customerService: CustomerService,
 ) {
 
-  fun getAllOrdersForUser(userId: String): List<OrderDto> {
-    return orderRepository.findAllByUserId(userId).map { it.toDto() }
+  companion object {
+    private const val MAX_PAGE_SIZE = 100
+  }
+
+  fun getAllOrdersForUser(
+    userId: String,
+    page: Int,
+    size: Int,
+    sortBy: String,
+    sortDirection: String,
+    status: String?
+  ): Page<OrderDto> {
+    // Enforce max page size
+    val validatedSize = size.coerceAtMost(MAX_PAGE_SIZE)
+
+    // Create sort based on direction
+    val sort = if (sortDirection.uppercase() == "DESC") {
+      Sort.by(sortBy).descending()
+    } else {
+      Sort.by(sortBy).ascending()
+    }
+
+    // Create pageable with sort
+    val pageable = PageRequest.of(page, validatedSize, sort)
+
+    // Fetch orders with optional status filter
+    return if (status != null && status.isNotBlank()) {
+      orderRepository.findAllByUserIdAndStatus(userId, status, pageable).map { it.toDto() }
+    } else {
+      orderRepository.findAllByUserId(userId, pageable).map { it.toDto() }
+    }
   }
 
   fun getOrderById(orderId: String, userId: String? = null): OrderDto {
