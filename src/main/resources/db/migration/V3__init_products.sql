@@ -15,6 +15,8 @@ CREATE TABLE products (
 
 CREATE INDEX idx_products_user_id ON products (user_id);
 CREATE INDEX idx_products_category_id ON products (category_id);
+CREATE INDEX idx_products_user_category ON products (user_id, category_id);
+CREATE INDEX idx_products_user_created ON products (user_id, created_at);
 
 -- PRODUCTS HISTORY TABLE
 CREATE TABLE products_history (

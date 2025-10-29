@@ -13,6 +13,7 @@ CREATE TABLE product_overrides (
 CREATE INDEX idx_product_overrides_product_id ON product_overrides (product_id);
 CREATE INDEX idx_product_overrides_user_id ON product_overrides (user_id);
 CREATE INDEX idx_product_overrides_customer_id ON product_overrides (customer_id);
+CREATE INDEX idx_product_overrides_user_customer ON product_overrides (user_id, customer_id);
 
 -- PRODUCT OVERRIDES HISTORY TABLE
 CREATE TABLE product_overrides_history (

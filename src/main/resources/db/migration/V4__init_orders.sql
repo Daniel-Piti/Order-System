@@ -35,6 +35,8 @@ CREATE INDEX idx_orders_customer_id ON orders (customer_id);
 CREATE INDEX idx_orders_status ON orders (status);
 CREATE INDEX idx_orders_products_version ON orders (products_version);
 CREATE INDEX idx_orders_link_expires_at ON orders (link_expires_at);
+CREATE INDEX idx_orders_user_status ON orders (user_id, status);
+CREATE INDEX idx_orders_user_created ON orders (user_id, created_at);
 
 -- ORDERS HISTORY TABLE
 CREATE TABLE orders_history (
