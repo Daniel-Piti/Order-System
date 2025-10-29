@@ -29,6 +29,16 @@ class UserService(
       severity = SeverityLevel.WARN
     )
 
+  fun getUserById(userId: String): UserDbEntity =
+    userRepository.findById(userId).orElseThrow {
+      ServiceException(
+        status = HttpStatus.NOT_FOUND,
+        userMessage = UserFailureReason.NOT_FOUND.userMessage,
+        technicalMessage = UserFailureReason.NOT_FOUND.technical + "userId=$userId",
+        severity = SeverityLevel.WARN
+      )
+    }
+
   fun createUser(newUserRequest: NewUserRequest): String {
 
     with(newUserRequest) {
