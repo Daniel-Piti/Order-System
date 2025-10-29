@@ -15,43 +15,14 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Products", description = "Product management API")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/products")
+@PreAuthorize(AUTH_USER)
 class ProductController(
   private val productService: ProductService
 ) {
 
-  // ----------------------
-  // Public endpoints
-  // ----------------------
-
-  @GetMapping("/user/{userId}/{productId}")
-  fun getProduct(
-    @PathVariable userId: String,
-    @PathVariable productId: String
-  ): ResponseEntity<ProductDto> {
-    val product = productService.getProductById(productId)
-    return ResponseEntity.ok(product)
-  }
-
-  @GetMapping("/user/{userId}")
-  fun getAllUserProducts(@PathVariable userId: String): ResponseEntity<List<ProductDto>> {
-    val products = productService.getAllProductsForUser(userId)
-    return ResponseEntity.ok(products)
-  }
-
-  @GetMapping("/order/{orderId}")
-  fun getAllProductsForOrder(@PathVariable orderId: String): ResponseEntity<List<ProductDto>> {
-    val products = productService.getAllProductsForOrder(orderId)
-    return ResponseEntity.ok(products)
-  }
-
-  // ----------------------
-  // Authenticated endpoints (only for the logged-in user)
-  // ----------------------
-
-  @SecurityRequirement(name = "bearerAuth")
-  @PreAuthorize(AUTH_USER)
   @GetMapping
   fun getAllProducts(
     @AuthenticationPrincipal user: AuthUser,
@@ -72,8 +43,6 @@ class ProductController(
     return ResponseEntity.ok(products)
   }
 
-  @SecurityRequirement(name = "bearerAuth")
-  @PreAuthorize(AUTH_USER)
   @PostMapping
   fun createProduct(
     @RequestBody request: CreateProductRequest,
@@ -83,8 +52,6 @@ class ProductController(
     return ResponseEntity.status(HttpStatus.CREATED).body(newProductId)
   }
 
-  @SecurityRequirement(name = "bearerAuth")
-  @PreAuthorize(AUTH_USER)
   @PutMapping("/{productId}")
   fun updateProduct(
     @PathVariable productId: String,
@@ -95,8 +62,6 @@ class ProductController(
     return ResponseEntity.ok(updatedProductId)
   }
 
-  @SecurityRequirement(name = "bearerAuth")
-  @PreAuthorize(AUTH_USER)
   @DeleteMapping("/{productId}")
   fun deleteProduct(
     @PathVariable productId: String,

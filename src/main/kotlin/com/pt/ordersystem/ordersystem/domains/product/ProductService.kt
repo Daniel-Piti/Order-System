@@ -62,11 +62,20 @@ class ProductService(
     // Create pageable with sort
     val pageable = PageRequest.of(page, validatedSize, sort)
 
-    // Fetch products based on whether category filter is applied
-    return if (categoryId != null && categoryId.isNotBlank()) {
-      productRepository.findByUserIdAndCategoryId(userId, categoryId, pageable).map { it.toDto() }
-    } else {
-      productRepository.findAllByUserId(userId, pageable).map { it.toDto() }
+    // Fetch products based on category filter
+    return when {
+      categoryId == null || categoryId.isBlank() -> {
+        // No filter - return all products
+        productRepository.findAllByUserId(userId, pageable).map { it.toDto() }
+      }
+      categoryId.uppercase() == "NONE" -> {
+        // Filter for products with no category (categoryId IS NULL)
+        productRepository.findByUserIdAndCategoryIdIsNull(userId, pageable).map { it.toDto() }
+      }
+      else -> {
+        // Filter by specific category
+        productRepository.findByUserIdAndCategoryId(userId, categoryId, pageable).map { it.toDto() }
+      }
     }
   }
 

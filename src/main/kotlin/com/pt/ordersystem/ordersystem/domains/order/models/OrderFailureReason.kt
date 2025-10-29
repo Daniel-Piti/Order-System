@@ -17,4 +17,8 @@ enum class OrderFailureReason(val userMessage: String, val technical: String) {
     userMessage = "Cannot perform this action with current order status",
     technical = "Invalid order status transition | "
   ),
+  NO_LOCATIONS(
+    userMessage = "Cannot create order. Please add at least one location first.",
+    technical = "User attempted to create order with 0 locations | "
+  ),
 }

@@ -70,6 +70,9 @@ data class OrderDbEntity(
   @Column(name = "link_expires_at", nullable = false)
   val linkExpiresAt: LocalDateTime,
 
+  @Column(name = "notes", length = 2048, nullable = false)
+  val notes: String = "",
+
   @Column(name = "created_at", nullable = false, updatable = false)
   val createdAt: LocalDateTime = LocalDateTime.now(),
 

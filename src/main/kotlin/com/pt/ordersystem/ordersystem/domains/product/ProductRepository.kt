@@ -12,4 +12,5 @@ interface ProductRepository : JpaRepository<ProductDbEntity, String> {
   fun findAllByUserId(userId: String, pageable: Pageable): Page<ProductDbEntity>
   fun findByUserIdAndCategoryId(userId: String, categoryId: String): List<ProductDbEntity>
   fun findByUserIdAndCategoryId(userId: String, categoryId: String, pageable: Pageable): Page<ProductDbEntity>
+  fun findByUserIdAndCategoryIdIsNull(userId: String, pageable: Pageable): Page<ProductDbEntity>
 }

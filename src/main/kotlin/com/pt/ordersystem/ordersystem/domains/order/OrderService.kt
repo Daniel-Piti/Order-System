@@ -1,6 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.order
 
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerService
+import com.pt.ordersystem.ordersystem.domains.location.LocationRepository
 import com.pt.ordersystem.ordersystem.domains.order.models.*
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.exception.ServiceException
@@ -17,6 +18,7 @@ import java.time.LocalDateTime
 class OrderService(
   private val orderRepository: OrderRepository,
   private val customerService: CustomerService,
+  private val locationRepository: LocationRepository,
 ) {
 
   companion object {
@@ -75,6 +77,17 @@ class OrderService(
   }
 
   fun createEmptyOrder(userId: String, request: CreateEmptyOrderRequest): String {
+    // Validate user has at least one location
+    val locationCount = locationRepository.countByUserId(userId)
+    if (locationCount == 0) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = OrderFailureReason.NO_LOCATIONS.userMessage,
+        technicalMessage = OrderFailureReason.NO_LOCATIONS.technical + "userId=$userId",
+        severity = SeverityLevel.INFO
+      )
+    }
+
     val now = LocalDateTime.now()
 
     // If customerId is provided, fetch customer data to pre-fill
@@ -106,6 +119,7 @@ class OrderService(
       totalPrice = BigDecimal.ZERO,
       deliveryDate = null,
       linkExpiresAt = linkExpiresAt,
+      notes = "",
       createdAt = now,
       updatedAt = now,
     )

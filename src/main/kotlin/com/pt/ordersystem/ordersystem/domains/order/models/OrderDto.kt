@@ -29,6 +29,7 @@ data class OrderDto(
   val totalPrice: BigDecimal,
   val deliveryDate: LocalDate?,
   val linkExpiresAt: LocalDateTime,
+  val notes: String,
   val createdAt: LocalDateTime,
   val updatedAt: LocalDateTime
 )
@@ -55,6 +56,7 @@ fun OrderDbEntity.toDto(): OrderDto {
     totalPrice = this.totalPrice,
     deliveryDate = this.deliveryDate,
     linkExpiresAt = this.linkExpiresAt,
+    notes = this.notes,
     createdAt = this.createdAt,
     updatedAt = this.updatedAt
   )

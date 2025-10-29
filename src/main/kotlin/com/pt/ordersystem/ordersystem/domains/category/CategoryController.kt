@@ -12,25 +12,25 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
 @Tag(name = "Categories", description = "User category management API")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/categories")
+@PreAuthorize(AUTH_USER)
 class CategoryController(
     private val categoryService: CategoryService
 ) {
 
-    @GetMapping("/user/{userId}")
-    fun getAllCategories(@PathVariable userId: String): ResponseEntity<List<CategoryDto>> =
-        ResponseEntity.ok(categoryService.getUserCategories(userId))
+    @GetMapping
+    fun getAllCategories(@AuthenticationPrincipal user: AuthUser): ResponseEntity<List<CategoryDto>> =
+        ResponseEntity.ok(categoryService.getUserCategories(user.userId))
 
-    @GetMapping("/user/{userId}/{categoryId}")
+    @GetMapping("/{categoryId}")
     fun getCategoryById(
-        @PathVariable userId: String,
-        @PathVariable categoryId: String
+        @PathVariable categoryId: String,
+        @AuthenticationPrincipal user: AuthUser
     ): ResponseEntity<CategoryDto> =
-        ResponseEntity.ok(categoryService.getCategoryById(userId, categoryId))
+        ResponseEntity.ok(categoryService.getCategoryById(user.userId, categoryId))
 
-    @SecurityRequirement(name = "bearerAuth")
-    @PreAuthorize(AUTH_USER)
     @PostMapping
     fun createCategory(
         @RequestBody request: CreateCategoryRequest,
@@ -40,8 +40,6 @@ class CategoryController(
         return ResponseEntity.status(HttpStatus.CREATED).body(categoryId)
     }
 
-    @SecurityRequirement(name = "bearerAuth")
-    @PreAuthorize(AUTH_USER)
     @PutMapping("/{categoryId}")
     fun updateCategory(
         @PathVariable categoryId: String,
@@ -52,8 +50,6 @@ class CategoryController(
         return ResponseEntity.ok(updatedCategoryId)
     }
 
-    @SecurityRequirement(name = "bearerAuth")
-    @PreAuthorize(AUTH_USER)
     @DeleteMapping("/{categoryId}")
     fun deleteCategory(
         @PathVariable categoryId: String,

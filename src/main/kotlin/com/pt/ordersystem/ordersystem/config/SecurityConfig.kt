@@ -27,14 +27,12 @@ class SecurityConfig(
       .authorizeHttpRequests {
         it.requestMatchers(
           "/api/auth/**",
+          "/api/public/**",
           "/swagger-ui/**",
           "/v3/api-docs/**",
           "/swagger-ui.html",
           "/swagger-resources/**",
-          "/webjars/**",
-          "/api/products/user/**",
-          "/api/products/order/**",
-          "/api/categories/user/**"
+          "/webjars/**"
         ).permitAll()
         it.anyRequest().authenticated()
       }
