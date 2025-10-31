@@ -1,5 +1,5 @@
-secrets.yml
-!secrets.example.yml
+config.yml
+!config.example.yml
 .env
 !.env.example
 HELP.md

@@ -1,12 +1,9 @@
 spring:
   application:
-    name: ordersystem
+    name: order-system
 
   config:
-    import: optional:file:secrets.yml
-
-  datasource:
-    url: jdbc:mysql://localhost:3306/orders_system
+    import: file:config.yml
 
   jpa:
     hibernate:

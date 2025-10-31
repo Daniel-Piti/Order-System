@@ -1,0 +1,27 @@
+# Application configuration file containing both secrets and other sensitive config
+# This file is imported by application.yml and should be gitignored
+# Copy this to config.yml and fill in your actual values
+
+spring:
+  datasource:
+    # Database URL - change this per environment
+    # Dev: jdbc:mysql://localhost:3306/orders_system
+    # Prod: jdbc:mysql://your-prod-server:3306/orders_system
+    url: ${DB_URL:jdbc:mysql://localhost:3306/orders_system}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+config:
+  # HS256 secret, min 32 chars. Set via env var APP_SECRETS_JWT in CI/hosts
+  jwt: ${APP_SECRETS_JWT}
+  # BCrypt hashes only (do NOT store plaintext). Optional: leave blank to disable admin login.
+  admin-username-hash: ${ADMIN_USERNAME_HASH:}
+  admin-password-hash: ${ADMIN_PASSWORD_HASH:}
+  
+  # Cloudflare R2 configuration (all R2 settings in one place)
+  r2:
+    bucket-name: ${R2_BUCKET_NAME:order-system-test}
+    region: ${R2_REGION:auto}
+    account-id: ${R2_ACCOUNT_ID}
+    access-key: ${R2_ACCESS_KEY_ID}
+    secret-key: ${R2_SECRET_ACCESS_KEY}
