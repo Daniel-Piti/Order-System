@@ -1,3 +1,7 @@
+secrets.yml
+!secrets.example.yml
+.env
+!.env.example
 HELP.md
 .gradle
 build/

@@ -2,6 +2,7 @@ package com.pt.ordersystem.ordersystem.domains.login
 
 import com.pt.ordersystem.ordersystem.auth.JwtUtil
 import com.pt.ordersystem.ordersystem.auth.Roles
+import com.pt.ordersystem.ordersystem.config.SecretsProvider
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.domains.login.models.AdminLoginRequest
@@ -17,13 +18,8 @@ class LoginService(
   private val passwordEncoder: BCryptPasswordEncoder,
   private val userService: UserService,
   private val jwtUtil: JwtUtil,
+  private val secrets: SecretsProvider,
 ) {
-
-  companion object {
-    // We can move these to application config or env variables
-    private const val ADMIN_USERNAME_HASH = "\$2a\$10\$iKrrfrYNuyfyDTCDIdOgquXgIoT6nK8TJ40Gltux/5p14sS2Im3Li" // 'admin'
-    private const val ADMIN_PASSWORD_HASH = "\$2a\$10\$iKrrfrYNuyfyDTCDIdOgquXgIoT6nK8TJ40Gltux/5p14sS2Im3Li" // 'admin'
-  }
 
   fun loginUser(request: UserLoginRequest): LoginResponse {
     try {
@@ -58,8 +54,8 @@ class LoginService(
   }
 
   fun loginAdmin(request: AdminLoginRequest): LoginResponse {
-    val isUsernameValid = passwordEncoder.matches(request.adminUserName, ADMIN_USERNAME_HASH)
-    val isPasswordValid = passwordEncoder.matches(request.password, ADMIN_PASSWORD_HASH)
+    val isUsernameValid = passwordEncoder.matches(request.adminUserName, secrets.adminUsernameHash)
+    val isPasswordValid = passwordEncoder.matches(request.password, secrets.adminPasswordHash)
 
     if (!isUsernameValid || !isPasswordValid) {
       // Log the actual reason for debugging
