@@ -18,8 +18,9 @@ class ConfigProvider(
   val adminUsernameHash: String = config.adminUsernameHash
 
   val adminPasswordHash: String = config.adminPasswordHash
-  
-  // R2 configuration access
+
   val r2: R2Properties = config.r2
+
+  val maxFileSizeMb: Int = config.maxUploadFileSizeMb
 }
 
