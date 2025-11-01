@@ -34,7 +34,7 @@ class PublicProductController(
     @RequestParam(defaultValue = "20") size: Int,
     @RequestParam(defaultValue = "name") sortBy: String,
     @RequestParam(defaultValue = "ASC") sortDirection: String,
-    @RequestParam(required = false) categoryId: String?
+    @RequestParam(required = false) categoryId: Long?
   ): ResponseEntity<Page<ProductDto>> {
     // Validate user exists first - will throw 404 if not found
     userService.getUserById(userId)

@@ -30,7 +30,7 @@ class ProductController(
     @RequestParam(defaultValue = "20") size: Int,
     @RequestParam(defaultValue = "name") sortBy: String,
     @RequestParam(defaultValue = "ASC") sortDirection: String,
-    @RequestParam(required = false) categoryId: String?
+    @RequestParam(required = false) categoryId: Long?
   ): ResponseEntity<Page<ProductDto>> {
     val products = productService.getAllProductsForUser(
       userId = user.userId,

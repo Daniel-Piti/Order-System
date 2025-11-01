@@ -5,7 +5,6 @@ import com.pt.ordersystem.ordersystem.domains.product.ProductService
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
-import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -20,7 +19,7 @@ class CategoryService(
         private const val MAX_CATEGORIES_PER_USER = 1000
     }
 
-    fun getCategoryById(userId: String, categoryId: String): CategoryDto {
+    fun getCategoryById(userId: String, categoryId: Long): CategoryDto {
         val category = categoryRepository.findByUserIdAndId(userId, categoryId)
             ?: throw ServiceException(
                 status = HttpStatus.NOT_FOUND,
@@ -35,7 +34,7 @@ class CategoryService(
     fun getUserCategories(userId: String): List<CategoryDto> =
         categoryRepository.findByUserId(userId).map { it.toDto() }
 
-    fun createCategory(userId: String, request: CreateCategoryRequest): String {
+    fun createCategory(userId: String, request: CreateCategoryRequest): Long {
         with(request) {
             FieldValidators.validateNonEmpty(category, "'category'")
         }
@@ -63,7 +62,6 @@ class CategoryService(
 
         val now = LocalDateTime.now()
         val category = CategoryDbEntity(
-            id = GeneralUtils.genId(),
             userId = userId,
             category = request.category.trim(),
             createdAt = now,
@@ -73,7 +71,7 @@ class CategoryService(
         return categoryRepository.save(category).id
     }
 
-    fun updateCategory(userId: String, categoryId: String, request: UpdateCategoryRequest): String {
+    fun updateCategory(userId: String, categoryId: Long, request: UpdateCategoryRequest): Long {
         val category = categoryRepository.findByUserIdAndId(userId, categoryId)
             ?: throw ServiceException(
                 status = HttpStatus.NOT_FOUND,
@@ -105,7 +103,7 @@ class CategoryService(
         return categoryRepository.save(updatedCategory).id
     }
 
-    fun deleteCategory(userId: String, categoryId: String) {
+    fun deleteCategory(userId: String, categoryId: Long) {
         categoryRepository.findByUserIdAndId(userId, categoryId)
             ?: throw ServiceException(
                 status = HttpStatus.NOT_FOUND,

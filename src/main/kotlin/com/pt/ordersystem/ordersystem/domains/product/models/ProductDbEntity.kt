@@ -20,7 +20,7 @@ data class ProductDbEntity(
   val name: String,
 
   @Column(name = "category_id", nullable = true)
-  val categoryId: String?,
+  val categoryId: Long?,
 
   @Column(name = "original_price", nullable = false)
   val originalPrice: BigDecimal,

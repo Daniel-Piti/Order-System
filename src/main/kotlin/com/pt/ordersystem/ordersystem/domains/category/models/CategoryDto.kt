@@ -1,7 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.category.models
 
 data class CategoryDto(
-    val id: String,
+    val id: Long,
     val userId: String,
     val category: String
 )

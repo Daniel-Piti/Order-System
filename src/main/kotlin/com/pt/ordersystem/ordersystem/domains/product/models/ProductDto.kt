@@ -6,7 +6,7 @@ data class ProductDto(
   val id: String,
   val userId: String,
   val name: String,
-  val categoryId: String?,
+  val categoryId: Long?,
   val originalPrice: BigDecimal,
   val specialPrice: BigDecimal,
   val description: String

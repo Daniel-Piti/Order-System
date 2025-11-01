@@ -27,7 +27,7 @@ class ProductService(
     const val MAX_PAGE_SIZE = 100
   }
 
-  fun removeCategoryFromProducts(userId: String, categoryId: String) {
+  fun removeCategoryFromProducts(userId: String, categoryId: Long) {
     val productsWithCategory = productRepository.findByUserIdAndCategoryId(userId, categoryId)
     productsWithCategory.forEach { product ->
       val updatedProduct = product.copy(
@@ -44,7 +44,7 @@ class ProductService(
     size: Int,
     sortBy: String,
     sortDirection: String,
-    categoryId: String?
+    categoryId: Long?
   ): Page<ProductDto> {
     // Enforce max page size
     val validatedSize = size.coerceAtMost(MAX_PAGE_SIZE)
@@ -60,19 +60,12 @@ class ProductService(
     val pageable = PageRequest.of(page, validatedSize, sort)
 
     // Fetch products based on category filter
-    return when {
-      categoryId == null || categoryId.isBlank() -> {
-        // No filter - return all products
-        productRepository.findAllByUserId(userId, pageable).map { it.toDto() }
-      }
-      categoryId.uppercase() == "NONE" -> {
-        // Filter for products with no category (categoryId IS NULL)
-        productRepository.findByUserIdAndCategoryIdIsNull(userId, pageable).map { it.toDto() }
-      }
-      else -> {
-        // Filter by specific category
-        productRepository.findByUserIdAndCategoryId(userId, categoryId, pageable).map { it.toDto() }
-      }
+    return if (categoryId == null) {
+      // No filter - return all products
+      productRepository.findAllByUserId(userId, pageable).map { it.toDto() }
+    } else {
+      // Filter by specific category
+      productRepository.findByUserIdAndCategoryId(userId, categoryId, pageable).map { it.toDto() }
     }
   }
 

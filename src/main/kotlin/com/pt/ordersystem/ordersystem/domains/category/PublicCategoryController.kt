@@ -25,7 +25,7 @@ class PublicCategoryController(
   @GetMapping("/user/{userId}/category/{categoryId}")
   fun getCategoryById(
     @PathVariable userId: String,
-    @PathVariable categoryId: String
+    @PathVariable categoryId: Long
   ): ResponseEntity<CategoryDto> {
     // Validate user exists
     userService.getUserById(userId)

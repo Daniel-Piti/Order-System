@@ -1,6 +1,6 @@
 -- CATEGORIES TABLE
 CREATE TABLE categories (
-    id VARCHAR(255) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id VARCHAR(255) NOT NULL,
     category VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -13,7 +13,7 @@ CREATE INDEX idx_categories_user_id ON categories(user_id);
 -- CATEGORIES HISTORY TABLE
 CREATE TABLE categories_history (
     history_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    id VARCHAR(255) NOT NULL,
+    id BIGINT NOT NULL,
     user_id VARCHAR(255) NOT NULL,
     category VARCHAR(255) NOT NULL,
     created_at TIMESTAMP NOT NULL,

@@ -7,7 +7,8 @@ import java.time.LocalDateTime
 @Table(name = "categories")
 data class CategoryDbEntity(
     @Id
-    val id: String,
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long = 0,
     
     @Column(name = "user_id", nullable = false)
     val userId: String,
