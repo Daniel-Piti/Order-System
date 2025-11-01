@@ -35,9 +35,9 @@ class CategoryController(
     fun createCategory(
         @RequestBody request: CreateCategoryRequest,
         @AuthenticationPrincipal user: AuthUser
-    ): ResponseEntity<String> {
+    ): ResponseEntity<Long> {
         val categoryId = categoryService.createCategory(user.userId, request)
-        return ResponseEntity.status(HttpStatus.CREATED).body(categoryId.toString())
+        return ResponseEntity.status(HttpStatus.CREATED).body(categoryId)
     }
 
     @PutMapping("/{categoryId}")
@@ -45,9 +45,9 @@ class CategoryController(
         @PathVariable categoryId: Long,
         @RequestBody request: UpdateCategoryRequest,
         @AuthenticationPrincipal user: AuthUser
-    ): ResponseEntity<String> {
+    ): ResponseEntity<Long> {
         val updatedCategoryId = categoryService.updateCategory(user.userId, categoryId, request)
-        return ResponseEntity.ok(updatedCategoryId.toString())
+        return ResponseEntity.ok(updatedCategoryId)
     }
 
     @DeleteMapping("/{categoryId}")

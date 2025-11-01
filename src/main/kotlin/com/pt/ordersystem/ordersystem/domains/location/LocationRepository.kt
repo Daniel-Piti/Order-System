@@ -5,8 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 
 @Repository
-interface LocationRepository : JpaRepository<LocationDbEntity, String> {
+interface LocationRepository : JpaRepository<LocationDbEntity, Long> {
   fun findByUserId(userId: String): List<LocationDbEntity>
   fun countByUserId(userId: String): Int
-  fun findByUserIdAndId(userId: String, id: String): LocationDbEntity?
+  fun findByUserIdAndId(userId: String, id: Long): LocationDbEntity?
 }

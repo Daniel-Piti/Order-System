@@ -18,7 +18,7 @@ class LocationService(
     const val MAXIMUM_LOCATIONS = 10
   }
 
-  fun getLocationById(userId: String, locationId: String): LocationDto {
+  fun getLocationById(userId: String, locationId: Long): LocationDto {
     val location = locationRepository.findByUserIdAndId(userId, locationId)
       ?: throw ServiceException(
         status = HttpStatus.NOT_FOUND,
@@ -33,7 +33,7 @@ class LocationService(
   fun getUserLocations(userId: String): List<LocationDto> =
     locationRepository.findByUserId(userId).map { it.toDto() }
 
-  fun createLocation(userId: String, request: NewLocationRequest): String {
+  fun createLocation(userId: String, request: NewLocationRequest): Long {
     val usersLocationCount = locationRepository.countByUserId(userId)
 
     with(request) {
@@ -53,7 +53,6 @@ class LocationService(
     }
 
     val location = LocationDbEntity(
-      id = GeneralUtils.genId(),
       userId = userId,
       name = request.name,
       streetAddress = request.streetAddress,
@@ -66,7 +65,7 @@ class LocationService(
     return locationRepository.save(location).id
   }
 
-  fun updateLocation(userId: String, locationId: String, request: UpdateLocationRequest): String {
+  fun updateLocation(userId: String, locationId: Long, request: UpdateLocationRequest): Long {
 
     with(request) {
       FieldValidators.validateNonEmpty(name, "'name'")
@@ -94,7 +93,7 @@ class LocationService(
     return locationRepository.save(updatedLocation).id
   }
 
-  fun deleteLocation(userId: String, locationId: String) {
+  fun deleteLocation(userId: String, locationId: Long) {
     val location = locationRepository.findByUserIdAndId(userId, locationId)
       ?: throw ServiceException(
         status = HttpStatus.NOT_FOUND,

@@ -1,7 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.location.models
 
 data class LocationDto(
-  val id: String,
+  val id: Long,
   val userId: String,
   val name: String,
   val streetAddress: String,
