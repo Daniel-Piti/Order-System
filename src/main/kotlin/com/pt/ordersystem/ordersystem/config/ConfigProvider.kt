@@ -21,6 +21,6 @@ class ConfigProvider(
 
   val r2: R2Properties = config.r2
 
-  val maxFileSizeMb: Int = config.maxUploadFileSizeMb
+  val maxUploadFileSizeMb: Int = config.maxUploadFileSizeMb
 }
 

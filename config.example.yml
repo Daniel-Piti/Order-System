@@ -28,4 +28,4 @@ config:
     public-domain: ${R2_PUBLIC_DOMAIN}
   
   # File upload configuration
-  max-file-size-mb: ${MAX_FILE_SIZE_MB:5}
+  max-upload-file-size-mb: ${MAX_FILE_SIZE_MB:5}

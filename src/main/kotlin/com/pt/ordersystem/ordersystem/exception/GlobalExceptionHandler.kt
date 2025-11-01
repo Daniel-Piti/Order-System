@@ -27,7 +27,7 @@ class GlobalExceptionHandler(
   fun handleMaxUploadSizeException(ex: MaxUploadSizeExceededException): ResponseEntity<FailureResponse> {
     val failureResponse = FailureResponse(
       status = HttpStatus.PAYLOAD_TOO_LARGE,
-      userMessage = "File size exceeds the maximum allowed limit of ${configProvider.maxFileSizeMb}MB",
+      userMessage = "File size exceeds the maximum allowed limit of ${configProvider.maxUploadFileSizeMb}MB",
       technicalMessage = ex.message ?: "File upload size limit exceeded",
       severity = SeverityLevel.WARN
     )

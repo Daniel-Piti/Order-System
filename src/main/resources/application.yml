@@ -8,8 +8,8 @@ spring:
   # File upload limits
   servlet:
     multipart:
-      max-file-size: ${config.max-file-size-mb}MB      # Maximum file size per request
-      max-request-size: ${config.max-file-size-mb}MB   # Maximum request size (file + other data)
+      max-file-size: ${config.max-upload-file-size-mb}MB      # Maximum file size per request
+      max-request-size: ${config.max-upload-file-size-mb}MB   # Maximum request size (file + other data)
       enabled: true
 
   jpa:

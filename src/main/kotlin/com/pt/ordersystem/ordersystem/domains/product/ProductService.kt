@@ -6,6 +6,7 @@ import com.pt.ordersystem.ordersystem.domains.product.models.*
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.domains.order.OrderService
+import com.pt.ordersystem.ordersystem.domains.productImage.ProductImageService
 import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideRepository
 import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideService
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
@@ -22,6 +23,7 @@ class ProductService(
   private val productOverrideService: ProductOverrideService,
   private val orderService: OrderService,
   private val productOverrideRepository: ProductOverrideRepository,
+  private val productImageService: ProductImageService,
 ) {
 
   companion object {
@@ -211,6 +213,8 @@ class ProductService(
     AuthUtils.checkOwnership(product.userId)
 
     productOverrideService.deleteAllOverridesForProduct(product.userId, productId)
+    
+    productImageService.deleteAllImagesForProduct(productId)
 
     productRepository.delete(product)
   }

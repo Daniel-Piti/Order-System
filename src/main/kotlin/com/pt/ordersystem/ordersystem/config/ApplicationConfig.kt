@@ -11,7 +11,7 @@ data class ApplicationConfig(
 
   val r2: R2Properties = R2Properties(),
 
-  val maxUploadFileSizeMb: Int = 5
+  val maxUploadFileSizeMb: Int = 5 // Default value 5
 )
 
 data class R2Properties(
