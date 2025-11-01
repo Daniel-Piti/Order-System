@@ -25,7 +25,7 @@ config:
     account-id: ${R2_ACCOUNT_ID}
     access-key: ${R2_ACCESS_KEY_ID}
     secret-key: ${R2_SECRET_ACCESS_KEY}
-    public-domain: ${R2_PUBLIC_DOMAIN:https://pub-9b068b0b4acb4746bcac097f9cdf9ff9.r2.dev}
+    public-domain: ${R2_PUBLIC_DOMAIN}
   
   # File upload configuration
   max-file-size-mb: ${MAX_FILE_SIZE_MB:5}
