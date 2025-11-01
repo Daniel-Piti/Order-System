@@ -9,9 +9,9 @@ import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 
 @Repository
-interface ProductOverrideRepository : JpaRepository<ProductOverrideDbEntity, String> {
+interface ProductOverrideRepository : JpaRepository<ProductOverrideDbEntity, Long> {
   fun findByUserId(userId: String): List<ProductOverrideDbEntity>
-  fun findByUserIdAndId(userId: String, id: String): ProductOverrideDbEntity?
+  fun findByUserIdAndId(userId: String, id: Long): ProductOverrideDbEntity?
   fun findByProductIdAndCustomerId(productId: String, customerId: String): ProductOverrideDbEntity?
   fun findByUserIdAndProductId(userId: String, productId: String): List<ProductOverrideDbEntity>
   fun findByUserIdAndCustomerId(userId: String, customerId: String): List<ProductOverrideDbEntity>

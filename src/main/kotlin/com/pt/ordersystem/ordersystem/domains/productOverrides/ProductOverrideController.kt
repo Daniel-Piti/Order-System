@@ -48,7 +48,7 @@ class ProductOverrideController(
 
   @GetMapping("/override/{overrideId}")
   fun getOverrideById(
-    @PathVariable overrideId: String,
+    @PathVariable overrideId: Long,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<ProductOverrideDto> {
     val override = productOverrideService.getProductOverrideById(user.userId, overrideId)
@@ -75,7 +75,7 @@ class ProductOverrideController(
 
   @PutMapping("/override/{overrideId}")
   fun updateOverride(
-    @PathVariable overrideId: String,
+    @PathVariable overrideId: Long,
     @RequestBody request: UpdateProductOverrideRequest,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<ProductOverrideDto> {
@@ -85,7 +85,7 @@ class ProductOverrideController(
 
   @DeleteMapping("/override/{overrideId}")
   fun deleteOverride(
-    @PathVariable overrideId: String,
+    @PathVariable overrideId: Long,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<String> {
     productOverrideService.deleteProductOverride(user.userId, overrideId)

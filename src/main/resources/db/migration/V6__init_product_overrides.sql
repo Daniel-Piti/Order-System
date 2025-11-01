@@ -1,13 +1,12 @@
 -- PRODUCT OVERRIDES TABLE
 CREATE TABLE product_overrides (
-    id VARCHAR(255) NOT NULL,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     product_id VARCHAR(255) NOT NULL,
     user_id VARCHAR(255) NOT NULL,
     customer_id VARCHAR(255) NOT NULL,
     override_price DECIMAL(10, 2) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id)
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_product_overrides_product_id ON product_overrides (product_id);
@@ -18,7 +17,7 @@ CREATE INDEX idx_product_overrides_user_customer ON product_overrides (user_id, 
 -- PRODUCT OVERRIDES HISTORY TABLE
 CREATE TABLE product_overrides_history (
     history_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    id VARCHAR(255) NOT NULL,
+    id BIGINT NOT NULL,
     product_id VARCHAR(255) NOT NULL,
     user_id VARCHAR(255) NOT NULL,
     customer_id VARCHAR(255) NOT NULL,

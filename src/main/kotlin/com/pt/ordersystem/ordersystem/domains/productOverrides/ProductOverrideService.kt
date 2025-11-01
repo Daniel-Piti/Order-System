@@ -62,7 +62,6 @@ class ProductOverrideService(
     }
 
     val productOverride = ProductOverrideDbEntity(
-      id = GeneralUtils.genId(),
       productId = request.productId,
       userId = userId,
       customerId = request.customerId,
@@ -102,7 +101,7 @@ class ProductOverrideService(
       .map { it.toProductOverrideWithPriceDto() }
   }
 
-  fun getProductOverrideById(userId: String, overrideId: String): ProductOverrideDto {
+  fun getProductOverrideById(userId: String, overrideId: Long): ProductOverrideDto {
     val override = productOverrideRepository.findByUserIdAndId(userId, overrideId)
       ?: throw ServiceException(
         status = HttpStatus.NOT_FOUND,
@@ -120,7 +119,7 @@ class ProductOverrideService(
   fun getProductOverridesByCustomerId(userId: String, customerId: String): List<ProductOverrideDto> =
     productOverrideRepository.findByUserIdAndCustomerId(userId, customerId).map { it.toDto() }
 
-  fun updateProductOverride(userId: String, overrideId: String, request: UpdateProductOverrideRequest): ProductOverrideDto {
+  fun updateProductOverride(userId: String, overrideId: Long, request: UpdateProductOverrideRequest): ProductOverrideDto {
     FieldValidators.validatePrice(request.overridePrice)
     
     val override = productOverrideRepository.findByUserIdAndId(userId, overrideId)
@@ -140,7 +139,7 @@ class ProductOverrideService(
     return savedOverride.toDto()
   }
 
-  fun deleteProductOverride(userId: String, overrideId: String) {
+  fun deleteProductOverride(userId: String, overrideId: Long) {
     val override = productOverrideRepository.findByUserIdAndId(userId, overrideId)
       ?: throw ServiceException(
         status = HttpStatus.NOT_FOUND,
