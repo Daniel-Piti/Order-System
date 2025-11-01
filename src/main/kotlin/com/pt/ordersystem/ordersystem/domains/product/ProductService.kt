@@ -6,6 +6,7 @@ import com.pt.ordersystem.ordersystem.domains.product.models.*
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.domains.order.OrderService
+import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideRepository
 import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideService
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.data.domain.Page
@@ -20,6 +21,7 @@ class ProductService(
   private val productRepository: ProductRepository,
   private val productOverrideService: ProductOverrideService,
   private val orderService: OrderService,
+  private val productOverrideRepository: ProductOverrideRepository,
 ) {
 
   companion object {
@@ -71,21 +73,28 @@ class ProductService(
 
   fun getAllProductsForOrder(orderId: String): List<ProductDto> {
     val order = orderService.getOrderById(orderId)
+
+    // Fetch all products for the user
     val products = productRepository.findAllByUserId(order.userId)
 
     // If no customer assigned, return products with default prices
-    val customerId = order.customerId ?: return products.map { it.toDto() }
+    if (order.customerId == null) {
+      return products.map { it.toDto() }
+    }
 
-    // Apply customer-specific price overrides
-    val productOverrides = productOverrideService
-      .getProductOverridesByCustomerId(order.userId, customerId)
-      .associateBy { it.productId }
+    // Customer exists - get all overrides for this customer
+    val overrides = productOverrideRepository.findByUserIdAndCustomerId(
+      userId = order.userId,
+      customerId = order.customerId
+    )
 
+    // Create a map of productId -> override price for quick lookup
+    val overrideMap = overrides.associate { it.productId to it.overridePrice }
+
+    // Map products to DTOs, using override price if available, otherwise special price
     return products.map { product ->
-      val override = productOverrides[product.id]
-      product.copy(
-        specialPrice = override?.overridePrice ?: product.specialPrice,
-      ).toDto()
+      val effectivePrice = overrideMap[product.id] ?: product.specialPrice
+      product.toDto().copy(specialPrice = effectivePrice)
     }
   }
 
