@@ -21,3 +21,5 @@ data class CategoryDbEntity(
     @Column(name = "updated_at", nullable = false)
     val updatedAt: LocalDateTime
 )
+
+

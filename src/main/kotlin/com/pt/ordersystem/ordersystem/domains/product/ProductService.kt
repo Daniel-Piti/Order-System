@@ -27,9 +27,6 @@ class ProductService(
     const val MAX_PAGE_SIZE = 100
   }
 
-  fun getAllProductsForUser(userId: String): List<ProductDto> =
-    productRepository.findAllByUserId(userId).map { it.toDto() }
-
   fun removeCategoryFromProducts(userId: String, categoryId: String) {
     val productsWithCategory = productRepository.findByUserIdAndCategoryId(userId, categoryId)
     productsWithCategory.forEach { product ->

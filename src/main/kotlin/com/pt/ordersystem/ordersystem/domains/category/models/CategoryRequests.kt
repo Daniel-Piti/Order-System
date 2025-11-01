@@ -7,3 +7,5 @@ data class CreateCategoryRequest(
 data class UpdateCategoryRequest(
     val category: String
 )
+
+

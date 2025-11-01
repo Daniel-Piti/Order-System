@@ -15,3 +15,5 @@ interface CategoryRepository : JpaRepository<CategoryDbEntity, String> {
     
     fun existsByUserIdAndCategory(userId: String, category: String): Boolean
 }
+
+
