@@ -1,4 +1,4 @@
--- Create categories table
+-- CATEGORIES TABLE
 CREATE TABLE categories (
     id VARCHAR(255) PRIMARY KEY,
     user_id VARCHAR(255) NOT NULL,
