@@ -27,7 +27,7 @@ class ProductImageService(
     private const val MAX_IMAGES_PER_PRODUCT = 5
   }
 
-  fun uploadImageForProduct(
+  fun validateAndUploadImageForProduct(
     userId: String,
     productId: String,
     file: MultipartFile
@@ -46,7 +46,7 @@ class ProductImageService(
 
     // Check existing images count
     val existingImages = productImageRepository.findByProductId(productId)
-    
+
     if (existingImages.size >= MAX_IMAGES_PER_PRODUCT) {
       throw ServiceException(
         status = HttpStatus.BAD_REQUEST,
@@ -56,8 +56,14 @@ class ProductImageService(
       )
     }
 
-    // Validate file
-    validateFile(file)
+    return uploadImageForProduct(userId, productId, file)
+  }
+
+  fun uploadImageForProduct(
+    userId: String,
+    productId: String,
+    file: MultipartFile
+  ): ProductImageDto {
 
     // Generate S3 key with base path
     val fileName = file.originalFilename ?: "image"
@@ -121,7 +127,7 @@ class ProductImageService(
     productImageRepository.deleteByProductId(productId)
   }
 
-  private fun validateFile(file: MultipartFile) {
+  fun validateImage(file: MultipartFile) {
     if (file.isEmpty) {
       throw ServiceException(
         status = HttpStatus.BAD_REQUEST,

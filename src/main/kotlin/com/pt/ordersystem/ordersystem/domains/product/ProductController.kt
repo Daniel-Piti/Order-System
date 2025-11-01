@@ -4,13 +4,21 @@ import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.product.models.CreateProductRequest
 import com.pt.ordersystem.ordersystem.domains.product.models.UpdateProductRequest
+import com.pt.ordersystem.ordersystem.exception.ServiceException
+import com.pt.ordersystem.ordersystem.exception.SeverityLevel
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.parameters.RequestBody as SwaggerRequestBody
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
 
 @Tag(name = "Products", description = "Product management API")
 @SecurityRequirement(name = "bearerAuth")
@@ -21,12 +29,29 @@ class ProductController(
   private val productService: ProductService
 ) {
 
-  @PostMapping
+  @PostMapping(consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+  @Operation(
+    summary = "Create a new product",
+    description = "Create a new product with optional images (up to 5). Provide product data as individual fields."
+  )
   fun createProduct(
-    @RequestBody request: CreateProductRequest,
+    @RequestParam("name") name: String,
+    @RequestParam(value = "categoryId", required = false) categoryId: Long?,
+    @RequestParam("originalPrice") originalPrice: java.math.BigDecimal,
+    @RequestParam("specialPrice") specialPrice: java.math.BigDecimal,
+    @RequestParam(value = "description", defaultValue = "") description: String,
+    @RequestPart(value = "images", required = false) images: List<MultipartFile>?,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<String> {
-    val newProductId = productService.createProduct(user.userId, request)
+    val request = CreateProductRequest(
+      name = name,
+      categoryId = categoryId,
+      originalPrice = originalPrice,
+      specialPrice = specialPrice,
+      description = description
+    )
+
+    val newProductId = productService.createProductWithImages(user.userId, request, images)
     return ResponseEntity.status(HttpStatus.CREATED).body(newProductId)
   }
 

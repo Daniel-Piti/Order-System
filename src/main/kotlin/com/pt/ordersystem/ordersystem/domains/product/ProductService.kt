@@ -15,6 +15,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.web.multipart.MultipartFile
 import java.time.LocalDateTime
 
 @Service
@@ -157,6 +158,44 @@ class ProductService(
     )
 
     return productRepository.save(product).id
+  }
+
+  fun createProductWithImages(
+    userId: String,
+    request: CreateProductRequest,
+    images: List<MultipartFile>?
+  ): String {
+    // Prepare for validation
+    val imageFiles = images?.filter { !it.isEmpty } ?: emptyList()
+
+    // Validations
+    if (imageFiles.size > 5) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Maximum 5 images allowed per product",
+        technicalMessage = "Attempted to upload ${imageFiles.size} images during product creation",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    imageFiles.forEach { productImageService.validateImage(it) }
+
+    // Create and upload
+    val productId = createProduct(userId, request)
+    
+    if (imageFiles.isNotEmpty()) {
+      imageFiles.forEach { image ->
+        try {
+          productImageService.uploadImageForProduct(userId, productId, image)
+        } catch (e: Exception) {
+          // Log error but continue with other images
+          // If all images fail, product is still created (design decision)
+          println("Warning: Failed to upload image for product $productId: ${e.message}")
+        }
+      }
+    }
+    
+    return productId
   }
 
   fun updateProduct(productId: String, request: UpdateProductRequest): String {

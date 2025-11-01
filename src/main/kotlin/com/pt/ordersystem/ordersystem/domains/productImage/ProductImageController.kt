@@ -28,7 +28,7 @@ class ProductImageController(
     @RequestPart("image") image: MultipartFile,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<String> {
-    val imageDto = productImageService.uploadImageForProduct(user.userId, productId, image)
+    val imageDto = productImageService.validateAndUploadImageForProduct(user.userId, productId, image)
     return ResponseEntity.status(HttpStatus.CREATED).body(imageDto.url)
   }
 
