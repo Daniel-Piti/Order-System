@@ -151,7 +151,6 @@ class ProductService(
       originalPrice = request.originalPrice,
       specialPrice = request.specialPrice,
       description = request.description,
-      pictureUrl = request.pictureUrl,
       createdAt = LocalDateTime.now(),
       updatedAt = LocalDateTime.now()
     )
@@ -194,7 +193,6 @@ class ProductService(
       originalPrice = request.originalPrice,
       specialPrice = request.specialPrice,
       description = request.description,
-      pictureUrl = request.pictureUrl,
       updatedAt = LocalDateTime.now(),
     )
 

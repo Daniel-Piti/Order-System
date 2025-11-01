@@ -7,7 +7,6 @@ CREATE TABLE products (
     original_price DECIMAL(10, 2) NOT NULL CHECK (original_price >= 0),
     special_price DECIMAL(10, 2) NOT NULL CHECK (special_price >= 0),
     description TEXT NOT NULL,
-    picture_url VARCHAR(1024) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
@@ -28,7 +27,6 @@ CREATE TABLE products_history (
     original_price DECIMAL(10, 2) NOT NULL CHECK (original_price >= 0),
     special_price DECIMAL(10, 2) NOT NULL CHECK (special_price >= 0),
     description TEXT NOT NULL,
-    picture_url VARCHAR(1024) NOT NULL,
     created_at TIMESTAMP,
     updated_at TIMESTAMP
 );
@@ -36,10 +34,10 @@ CREATE TABLE products_history (
 -- TRIGGERS
 CREATE TRIGGER trg_products_after_insert
 AFTER INSERT ON products FOR EACH ROW
-INSERT INTO products_history (id, user_id, name, category_id, original_price, special_price, description, picture_url, created_at, updated_at)
-VALUES (NEW.id, NEW.user_id, NEW.name, NEW.category_id, NEW.original_price, NEW.special_price, NEW.description, NEW.picture_url, NEW.created_at, NEW.updated_at);
+INSERT INTO products_history (id, user_id, name, category_id, original_price, special_price, description, created_at, updated_at)
+VALUES (NEW.id, NEW.user_id, NEW.name, NEW.category_id, NEW.original_price, NEW.special_price, NEW.description, NEW.created_at, NEW.updated_at);
 
 CREATE TRIGGER trg_products_after_update
 AFTER UPDATE ON products FOR EACH ROW
-INSERT INTO products_history (id, user_id, name, category_id, original_price, special_price, description, picture_url, created_at, updated_at)
-VALUES (NEW.id, NEW.user_id, NEW.name, NEW.category_id, NEW.original_price, NEW.special_price, NEW.description, NEW.picture_url, NEW.created_at, NEW.updated_at);
+INSERT INTO products_history (id, user_id, name, category_id, original_price, special_price, description, created_at, updated_at)
+VALUES (NEW.id, NEW.user_id, NEW.name, NEW.category_id, NEW.original_price, NEW.special_price, NEW.description, NEW.created_at, NEW.updated_at);

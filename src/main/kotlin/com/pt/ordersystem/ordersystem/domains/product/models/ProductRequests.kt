@@ -8,7 +8,6 @@ data class CreateProductRequest(
   val originalPrice: BigDecimal,
   val specialPrice: BigDecimal,
   val description: String,
-  val pictureUrl: String,
 )
 
 data class UpdateProductRequest(
@@ -17,5 +16,4 @@ data class UpdateProductRequest(
   val originalPrice: BigDecimal,
   val specialPrice: BigDecimal,
   val description: String,
-  val pictureUrl: String,
 )

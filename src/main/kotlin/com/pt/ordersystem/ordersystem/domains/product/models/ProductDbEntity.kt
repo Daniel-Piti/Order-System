@@ -31,9 +31,6 @@ data class ProductDbEntity(
   @Column(columnDefinition = "TEXT", nullable = false)
   val description: String,
 
-  @Column(name = "picture_url")
-  val pictureUrl: String,
-
   @Column(name = "created_at", nullable = false, updatable = false)
   val createdAt: LocalDateTime = LocalDateTime.now(),
 
