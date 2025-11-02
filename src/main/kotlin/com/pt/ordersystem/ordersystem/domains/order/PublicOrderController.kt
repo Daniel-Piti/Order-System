@@ -1,6 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.order
 
-import com.pt.ordersystem.ordersystem.domains.order.models.OrderDto
+import com.pt.ordersystem.ordersystem.domains.order.models.OrderPublicDto
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -13,7 +13,7 @@ class PublicOrderController(
 ) {
 
   @GetMapping("/{orderId}")
-  fun getOrderById(@PathVariable orderId: String): ResponseEntity<OrderDto> =
-    ResponseEntity.ok(orderService.getOrderById(orderId))
+  fun getOrderById(@PathVariable orderId: String): ResponseEntity<OrderPublicDto> =
+    ResponseEntity.ok(orderService.getOrderByIdPublic(orderId))
 
 }

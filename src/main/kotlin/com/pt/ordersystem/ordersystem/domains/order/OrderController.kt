@@ -48,7 +48,7 @@ class OrderController(
     @PathVariable orderId: String,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<OrderDto> =
-    ResponseEntity.ok(orderService.getOrderById(orderId, user.userId))
+    ResponseEntity.ok(orderService.getOrderByIdForUser(orderId))
 
   @PostMapping
   fun createEmptyOrder(

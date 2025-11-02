@@ -1,5 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.order
 
+import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerService
 import com.pt.ordersystem.ordersystem.domains.location.LocationRepository
 import com.pt.ordersystem.ordersystem.domains.order.models.*
@@ -54,7 +55,7 @@ class OrderService(
     }
   }
 
-  fun getOrderById(orderId: String, userId: String? = null): OrderDto {
+  fun getOrderByIdPublic(orderId: String): OrderPublicDto {
     val order = orderRepository.findById(orderId).orElseThrow {
       throw ServiceException(
         status = HttpStatus.NOT_FOUND,
@@ -64,15 +65,34 @@ class OrderService(
       )
     }
 
-    if (userId != null && order.userId != userId) {
+    return order.toPublicDto()
+  }
+
+  fun getOrderByIdForUser(orderId: String): OrderDto {
+    val order = orderRepository.findById(orderId).orElseThrow {
       throw ServiceException(
-        status = HttpStatus.FORBIDDEN,
-        userMessage = "You are not authorized to access this order",
-        technicalMessage = "User $userId tried to access order owned by ${order.userId}",
+        status = HttpStatus.NOT_FOUND,
+        userMessage = OrderFailureReason.NOT_FOUND.userMessage,
+        technicalMessage = OrderFailureReason.NOT_FOUND.technical + "orderId=$orderId",
         severity = SeverityLevel.WARN
       )
     }
 
+    // Validate ownership - users can only access their own orders
+    AuthUtils.checkOwnership(order.userId)
+
+    return order.toDto()
+  }
+
+  fun getOrderByIdInternal(orderId: String): OrderDto {
+    val order = orderRepository.findById(orderId).orElseThrow {
+      throw ServiceException(
+        status = HttpStatus.NOT_FOUND,
+        userMessage = OrderFailureReason.NOT_FOUND.userMessage,
+        technicalMessage = OrderFailureReason.NOT_FOUND.technical + "orderId=$orderId",
+        severity = SeverityLevel.WARN
+      )
+    }
     return order.toDto()
   }
 
