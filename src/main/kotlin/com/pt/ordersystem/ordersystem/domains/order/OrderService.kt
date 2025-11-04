@@ -3,6 +3,7 @@ package com.pt.ordersystem.ordersystem.domains.order
 import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerService
 import com.pt.ordersystem.ordersystem.domains.location.LocationRepository
+import com.pt.ordersystem.ordersystem.domains.location.LocationService
 import com.pt.ordersystem.ordersystem.domains.order.models.*
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.exception.ServiceException
@@ -20,6 +21,7 @@ class OrderService(
   private val orderRepository: OrderRepository,
   private val customerService: CustomerService,
   private val locationRepository: LocationRepository,
+  private val locationService: LocationService,
 ) {
 
   companion object {
@@ -145,6 +147,69 @@ class OrderService(
     )
 
     return orderRepository.save(order).id
+  }
+
+  fun placeOrder(orderId: String, request: PlaceOrderRequest) {
+    val order = orderRepository.findById(orderId).orElseThrow {
+      throw ServiceException(
+        status = HttpStatus.NOT_FOUND,
+        userMessage = OrderFailureReason.NOT_FOUND.userMessage,
+        technicalMessage = OrderFailureReason.NOT_FOUND.technical + "orderId=$orderId",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    // Validate order is in EMPTY status
+    if (order.status != OrderStatus.EMPTY.name) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Order cannot be placed. Order status must be EMPTY.",
+        technicalMessage = "Order $orderId has status ${order.status}, expected EMPTY",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    // Validate products are not empty
+    if (request.products.isEmpty()) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Cannot place an order with no products",
+        technicalMessage = "Order $orderId attempted to be placed with empty products list",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    // Fetch pickup location
+    val pickupLocation = locationService.getLocationById(order.userId, request.pickupLocationId)
+
+    // Calculate total price
+    val totalPrice = request.products.fold(BigDecimal.ZERO) { sum, product ->
+      sum + (product.pricePerUnit.multiply(BigDecimal.valueOf(product.quantity.toLong())))
+    }
+
+    // Update order
+    val updatedOrder = order.copy(
+      // User (pickup) location from selected location
+      userStreetAddress = pickupLocation.streetAddress,
+      userCity = pickupLocation.city,
+      userPhoneNumber = pickupLocation.phoneNumber,
+      // Customer data
+      customerName = request.customerName,
+      customerPhone = request.customerPhone,
+      customerEmail = request.customerEmail,
+      customerStreetAddress = request.customerStreetAddress,
+      customerCity = request.customerCity,
+      // Order details
+      status = OrderStatus.PLACED.name,
+      products = request.products,
+      productsVersion = order.productsVersion + 1,
+      totalPrice = totalPrice,
+      deliveryDate = request.deliveryDate,
+      notes = request.notes,
+      updatedAt = LocalDateTime.now()
+    )
+
+    orderRepository.save(updatedOrder)
   }
 
 }
