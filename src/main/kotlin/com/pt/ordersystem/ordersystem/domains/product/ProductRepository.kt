@@ -17,6 +17,8 @@ interface ProductRepository : JpaRepository<ProductDbEntity, String> {
   fun findByUserIdAndCategoryId(userId: String, categoryId: Long): List<ProductDbEntity>
   fun findByUserIdAndCategoryId(userId: String, categoryId: Long, pageable: Pageable): Page<ProductDbEntity>
   fun findByUserIdAndBrandId(userId: String, brandId: Long): List<ProductDbEntity>
+  fun findByUserIdAndBrandId(userId: String, brandId: Long, pageable: Pageable): Page<ProductDbEntity>
+  fun findByUserIdAndCategoryIdAndBrandId(userId: String, categoryId: Long, brandId: Long, pageable: Pageable): Page<ProductDbEntity>
   
   @Modifying
   @Query("UPDATE ProductDbEntity p SET p.brandId = NULL, p.updatedAt = :updatedAt WHERE p.userId = :userId AND p.brandId = :brandId")

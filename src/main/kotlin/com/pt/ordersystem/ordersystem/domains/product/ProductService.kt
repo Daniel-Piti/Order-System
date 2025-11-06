@@ -17,6 +17,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
 import java.time.LocalDateTime
 
@@ -47,7 +48,8 @@ class ProductService(
     size: Int,
     sortBy: String,
     sortDirection: String,
-    categoryId: Long?
+    categoryId: Long?,
+    brandId: Long?
   ): Page<ProductDto> {
     // Enforce max page size
     val validatedSize = size.coerceAtMost(MAX_PAGE_SIZE)
@@ -62,13 +64,24 @@ class ProductService(
     // Create pageable with sort
     val pageable = PageRequest.of(page, validatedSize, sort)
 
-    // Fetch products based on category filter
-    val productPage = if (categoryId == null) {
-      // No filter - return all products
-      productRepository.findAllByUserId(userId, pageable)
-    } else {
-      // Filter by specific category
-      productRepository.findByUserIdAndCategoryId(userId, categoryId, pageable)
+    // Fetch products based on filters
+    val productPage = when {
+      categoryId != null && brandId != null -> {
+        // Filter by both category and brand
+        productRepository.findByUserIdAndCategoryIdAndBrandId(userId, categoryId, brandId, pageable)
+      }
+      categoryId != null -> {
+        // Filter by category only
+        productRepository.findByUserIdAndCategoryId(userId, categoryId, pageable)
+      }
+      brandId != null -> {
+        // Filter by brand only
+        productRepository.findByUserIdAndBrandId(userId, brandId, pageable)
+      }
+      else -> {
+        // No filter - return all products
+        productRepository.findAllByUserId(userId, pageable)
+      }
     }
 
     // Enrich with brand names
@@ -142,6 +155,7 @@ class ProductService(
     return product.toDto(brandName = brandName)
   }
 
+  @Transactional
   fun createProduct(userId: String, request: CreateProductRequest): String {
 
     with(request) {
@@ -187,6 +201,7 @@ class ProductService(
     return productRepository.save(product).id
   }
 
+  @Transactional
   fun createProductWithImages(
     userId: String,
     request: CreateProductRequest,
@@ -225,6 +240,7 @@ class ProductService(
     return productId
   }
 
+  @Transactional
   fun updateProduct(productId: String, request: UpdateProductRequest): String {
 
     with(request) {
@@ -267,6 +283,7 @@ class ProductService(
     return productRepository.save(updated).id
   }
 
+  @Transactional
   fun deleteProduct(productId: String) {
     val product = productRepository.findById(productId).orElseThrow {
       ServiceException(

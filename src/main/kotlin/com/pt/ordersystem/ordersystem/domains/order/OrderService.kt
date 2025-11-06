@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
@@ -98,6 +99,7 @@ class OrderService(
     return order.toDto()
   }
 
+  @Transactional
   fun createEmptyOrder(userId: String, request: CreateEmptyOrderRequest): String {
     // Validate user has at least one location
     val locationCount = locationRepository.countByUserId(userId)
@@ -149,6 +151,7 @@ class OrderService(
     return orderRepository.save(order).id
   }
 
+  @Transactional
   fun placeOrder(orderId: String, request: PlaceOrderRequest) {
     val order = orderRepository.findById(orderId).orElseThrow {
       throw ServiceException(

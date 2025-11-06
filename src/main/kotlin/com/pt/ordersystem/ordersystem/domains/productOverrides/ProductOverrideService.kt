@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
 @Service
@@ -25,6 +26,7 @@ class ProductOverrideService(
     private const val MAX_PAGE_SIZE = 100
   }
 
+  @Transactional
   fun createProductOverride(userId: String, request: CreateProductOverrideRequest): ProductOverrideDto {
     FieldValidators.validatePrice(request.overridePrice)
     
@@ -119,6 +121,7 @@ class ProductOverrideService(
   fun getProductOverridesByCustomerId(userId: String, customerId: String): List<ProductOverrideDto> =
     productOverrideRepository.findByUserIdAndCustomerId(userId, customerId).map { it.toDto() }
 
+  @Transactional
   fun updateProductOverride(userId: String, overrideId: Long, request: UpdateProductOverrideRequest): ProductOverrideDto {
     FieldValidators.validatePrice(request.overridePrice)
     
@@ -151,6 +154,7 @@ class ProductOverrideService(
     productOverrideRepository.delete(override)
   }
 
+  @Transactional
   fun deleteAllOverridesForProduct(userId: String, productId: String) {
     val overrides = productOverrideRepository.findByUserIdAndProductId(userId, productId)
     productOverrideRepository.deleteAll(overrides)

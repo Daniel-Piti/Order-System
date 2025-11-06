@@ -6,6 +6,7 @@ import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
 @Service
@@ -18,6 +19,7 @@ class CustomerService(
     private const val MAX_CUSTOMERS_PER_USER = 1000
   }
 
+  @Transactional
   fun createCustomer(userId: String, request: CreateCustomerRequest): CustomerDto {
     with(request) {
       FieldValidators.validateNonEmpty(name, "'name'")
@@ -80,6 +82,7 @@ class CustomerService(
     return customer.toDto()
   }
 
+  @Transactional
   fun updateCustomer(userId: String, customerId: String, request: UpdateCustomerRequest): CustomerDto {
     // Validate input fields
     with(request) {
@@ -111,6 +114,7 @@ class CustomerService(
     return savedCustomer.toDto()
   }
 
+  @Transactional
   fun deleteCustomer(userId: String, customerId: String) {
     val customer = customerRepository.findByUserIdAndId(userId, customerId)
       ?: throw ServiceException(
