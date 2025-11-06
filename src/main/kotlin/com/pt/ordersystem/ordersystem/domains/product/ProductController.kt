@@ -36,6 +36,7 @@ class ProductController(
   )
   fun createProduct(
     @RequestParam("name") name: String,
+    @RequestParam(value = "brandId", required = false) brandId: Long?,
     @RequestParam(value = "categoryId", required = false) categoryId: Long?,
     @RequestParam("originalPrice") originalPrice: java.math.BigDecimal,
     @RequestParam("specialPrice") specialPrice: java.math.BigDecimal,
@@ -45,6 +46,7 @@ class ProductController(
   ): ResponseEntity<String> {
     val request = CreateProductRequest(
       name = name,
+      brandId = brandId,
       categoryId = categoryId,
       originalPrice = originalPrice,
       specialPrice = specialPrice,

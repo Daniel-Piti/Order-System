@@ -19,6 +19,9 @@ data class ProductDbEntity(
   @Column(nullable = false)
   val name: String,
 
+  @Column(name = "brand_id", nullable = true)
+  val brandId: Long?,
+
   @Column(name = "category_id", nullable = true)
   val categoryId: Long?,
 

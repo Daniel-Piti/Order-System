@@ -4,6 +4,7 @@ import java.math.BigDecimal
 
 data class CreateProductRequest(
   val name: String,
+  val brandId: Long?,
   val categoryId: Long?,
   val originalPrice: BigDecimal,
   val specialPrice: BigDecimal,
@@ -12,6 +13,7 @@ data class CreateProductRequest(
 
 data class UpdateProductRequest(
   val name: String,
+  val brandId: Long?,
   val categoryId: Long?,
   val originalPrice: BigDecimal,
   val specialPrice: BigDecimal,

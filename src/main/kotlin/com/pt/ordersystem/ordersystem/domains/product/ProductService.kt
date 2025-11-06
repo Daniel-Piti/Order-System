@@ -3,6 +3,7 @@ package com.pt.ordersystem.ordersystem.domains.product
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.domains.product.models.*
+import com.pt.ordersystem.ordersystem.domains.brand.BrandService
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.domains.order.OrderService
@@ -10,6 +11,7 @@ import com.pt.ordersystem.ordersystem.domains.productImage.ProductImageService
 import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideRepository
 import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideService
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
+import org.springframework.context.annotation.Lazy
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -25,6 +27,7 @@ class ProductService(
   private val orderService: OrderService,
   private val productOverrideRepository: ProductOverrideRepository,
   private val productImageService: ProductImageService,
+  @Lazy private val brandService: BrandService,
 ) {
 
   companion object {
@@ -32,16 +35,11 @@ class ProductService(
     const val MAX_PAGE_SIZE = 100
   }
 
-  fun removeCategoryFromProducts(userId: String, categoryId: Long) {
-    val productsWithCategory = productRepository.findByUserIdAndCategoryId(userId, categoryId)
-    productsWithCategory.forEach { product ->
-      val updatedProduct = product.copy(
-        categoryId = null,
-        updatedAt = LocalDateTime.now()
-      )
-      productRepository.save(updatedProduct)
-    }
-  }
+  fun removeCategoryFromProducts(userId: String, categoryId: Long) =
+    productRepository.removeCategoryFromProducts(userId, categoryId, LocalDateTime.now())
+
+  fun removeBrandFromProducts(userId: String, brandId: Long) =
+    productRepository.removeBrandFromProducts(userId, brandId, LocalDateTime.now())
 
   fun getAllProductsForUser(
     userId: String,
@@ -65,13 +63,24 @@ class ProductService(
     val pageable = PageRequest.of(page, validatedSize, sort)
 
     // Fetch products based on category filter
-    return if (categoryId == null) {
+    val productPage = if (categoryId == null) {
       // No filter - return all products
-      productRepository.findAllByUserId(userId, pageable).map { it.toDto() }
+      productRepository.findAllByUserId(userId, pageable)
     } else {
       // Filter by specific category
-      productRepository.findByUserIdAndCategoryId(userId, categoryId, pageable).map { it.toDto() }
+      productRepository.findByUserIdAndCategoryId(userId, categoryId, pageable)
     }
+
+    // Enrich with brand names
+    val brands = brandService.getUserBrands(userId)
+    val brandMap = brands.associateBy { it.id }
+    
+    val enrichedContent = productPage.content.map { product ->
+      val brandName = product.brandId?.let { brandMap[it]?.name }
+      product.toDto(brandName = brandName)
+    }
+
+    return org.springframework.data.domain.PageImpl(enrichedContent, pageable, productPage.totalElements)
   }
 
   fun getAllProductsForOrder(orderId: String): List<ProductDto> {
@@ -80,9 +89,16 @@ class ProductService(
     // Fetch all products for the user
     val products = productRepository.findAllByUserId(order.userId)
 
+    // Fetch brands for enrichment
+    val brands = brandService.getUserBrands(order.userId)
+    val brandMap = brands.associateBy { it.id }
+
     // If no customer assigned, return products with default prices
     if (order.customerId == null) {
-      return products.map { it.toDto() }
+      return products.map { product ->
+        val brandName = product.brandId?.let { brandMap[it]?.name }
+        product.toDto(brandName = brandName)
+      }
     }
 
     // Customer exists - get all overrides for this customer
@@ -97,7 +113,8 @@ class ProductService(
     // Map products to DTOs, using override price if available, otherwise special price
     return products.map { product ->
       val effectivePrice = overrideMap[product.id] ?: product.specialPrice
-      product.toDto().copy(specialPrice = effectivePrice)
+      val brandName = product.brandId?.let { brandMap[it]?.name }
+      product.toDto(brandName = brandName).copy(specialPrice = effectivePrice)
     }
   }
 
@@ -113,7 +130,16 @@ class ProductService(
 
     AuthUtils.checkOwnership(product.userId)
 
-    return product.toDto()
+    // Fetch brand name if brandId exists
+    val brandName = product.brandId?.let {
+      try {
+        brandService.getBrandById(product.userId, it).name
+      } catch (e: Exception) {
+        null // Brand might have been deleted
+      }
+    }
+
+    return product.toDto(brandName = brandName)
   }
 
   fun createProduct(userId: String, request: CreateProductRequest): String {
@@ -149,6 +175,7 @@ class ProductService(
       id = GeneralUtils.genId(),
       userId = userId,
       name = request.name,
+      brandId = request.brandId,
       categoryId = request.categoryId,
       originalPrice = request.originalPrice,
       specialPrice = request.specialPrice,
@@ -229,6 +256,7 @@ class ProductService(
 
     val updated = product.copy(
       name = request.name,
+      brandId = request.brandId,
       categoryId = request.categoryId,
       originalPrice = request.originalPrice,
       specialPrice = request.specialPrice,
