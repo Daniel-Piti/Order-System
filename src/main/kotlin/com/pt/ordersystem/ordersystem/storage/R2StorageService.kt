@@ -51,11 +51,12 @@ class R2StorageService(
       s3Client.putObject(putObjectRequest, requestBody)
 
       // Return the public URL
-      return if (r2.publicDomain.endsWith("/")) {
-        "${r2.publicDomain}$key"
-      } else {
-        "${r2.publicDomain}/$key"
-      }
+      return getPublicUrl(key) ?: throw ServiceException(
+        status = HttpStatus.INTERNAL_SERVER_ERROR,
+        userMessage = "Failed to upload file to storage",
+        technicalMessage = "Unable to generate public URL",
+        severity = SeverityLevel.ERROR
+      )
     } catch (e: S3Exception) {
       throw ServiceException(
         status = HttpStatus.INTERNAL_SERVER_ERROR,
@@ -86,6 +87,18 @@ class R2StorageService(
     val sanitizedFileName = fileName.replace(" ", "_").replace("[^a-zA-Z0-9._-]".toRegex(), "")
     val uuid = UUID.randomUUID().toString()
     return "$basePath/${uuid}_$sanitizedFileName"
+  }
+
+  fun getPublicUrl(s3Key: String?): String? {
+    if (s3Key == null) return null
+    
+    val publicDomain = if (r2.publicDomain.endsWith("/")) {
+      r2.publicDomain
+    } else {
+      "${r2.publicDomain}/"
+    }
+    
+    return "${publicDomain}${s3Key}"
   }
 }
 

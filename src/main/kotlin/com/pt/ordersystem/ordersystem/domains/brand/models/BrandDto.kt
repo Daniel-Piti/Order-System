@@ -4,18 +4,16 @@ data class BrandDto(
     val id: Long,
     val userId: String,
     val name: String,
-    val s3Key: String?,
+    val imageUrl: String?,
     val fileName: String?,
-    val fileSizeBytes: Long?,
-    val mimeType: String?
+    val mimeType: String?,
 )
 
-fun BrandDbEntity.toDto(): BrandDto = BrandDto(
+fun BrandDbEntity.toDto(imageUrl: String? = null) = BrandDto(
     id = this.id,
     userId = this.userId,
     name = this.name,
-    s3Key = this.s3Key,
+    imageUrl = imageUrl,
     fileName = this.fileName,
-    fileSizeBytes = this.fileSizeBytes,
     mimeType = this.mimeType
 )

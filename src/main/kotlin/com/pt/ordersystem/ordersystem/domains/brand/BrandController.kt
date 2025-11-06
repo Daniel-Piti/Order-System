@@ -8,10 +8,12 @@ import com.pt.ordersystem.ordersystem.domains.brand.models.UpdateBrandRequest
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
 
 @Tag(name = "Brands", description = "User brand management API")
 @SecurityRequirement(name = "bearerAuth")
@@ -29,22 +31,26 @@ class BrandController(
         return ResponseEntity.ok(brandService.getUserBrands(user.userId))
     }
 
-    @PostMapping
+    @PostMapping(consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun createBrand(
-        @RequestBody request: CreateBrandRequest,
+        @RequestParam("name") name: String,
+        @RequestPart(value = "image", required = false) image: MultipartFile?,
         @AuthenticationPrincipal user: AuthUser
     ): ResponseEntity<Long> {
-        val brandId = brandService.createBrand(user.userId, request)
+        val request = CreateBrandRequest(name = name)
+        val brandId = brandService.createBrand(user.userId, request, image)
         return ResponseEntity.status(HttpStatus.CREATED).body(brandId)
     }
 
-    @PutMapping("/{brandId}")
+    @PutMapping("/{brandId}", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     fun updateBrand(
         @PathVariable brandId: Long,
-        @RequestBody request: UpdateBrandRequest,
+        @RequestParam("name") name: String,
+        @RequestPart(value = "image", required = false) image: MultipartFile?,
         @AuthenticationPrincipal user: AuthUser
     ): ResponseEntity<Long> {
-        val updatedBrandId = brandService.updateBrand(user.userId, brandId, request)
+        val request = UpdateBrandRequest(name = name)
+        val updatedBrandId = brandService.updateBrand(user.userId, brandId, request, image)
         return ResponseEntity.ok(updatedBrandId)
     }
 

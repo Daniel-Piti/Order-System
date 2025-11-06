@@ -4,10 +4,9 @@ data class ProductImageDto(
   val id: Long,
   val productId: String,
   val userId: String,
-  val url: String, // Full public URL from R2
+  val url: String,
   val fileName: String,
-  val fileSizeBytes: Long,
-  val mimeType: String
+  val mimeType: String,
 )
 
 fun ProductImageDbEntity.toDto(publicUrl: String) = ProductImageDto(
@@ -16,7 +15,6 @@ fun ProductImageDbEntity.toDto(publicUrl: String) = ProductImageDto(
   userId = userId,
   url = publicUrl,
   fileName = fileName,
-  fileSizeBytes = fileSizeBytes,
   mimeType = mimeType
 )
 

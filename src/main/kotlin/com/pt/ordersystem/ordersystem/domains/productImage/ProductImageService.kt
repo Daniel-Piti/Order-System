@@ -91,11 +91,15 @@ class ProductImageService(
 
   fun getImagesForProduct(productId: String): List<ProductImageDto> {
     val images = productImageRepository.findByProductId(productId)
-    val r2 = configProvider.r2
-    val publicDomain = if (r2.publicDomain.endsWith("/")) r2.publicDomain else "${r2.publicDomain}/"
 
     return images.map { image ->
-      val publicUrl = "${publicDomain}${image.s3Key}"
+      val publicUrl = r2StorageService.getPublicUrl(image.s3Key)
+        ?: throw ServiceException(
+          status = HttpStatus.INTERNAL_SERVER_ERROR,
+          userMessage = "Failed to get image URL",
+          technicalMessage = "s3Key is null for image id=${image.id}",
+          severity = SeverityLevel.ERROR
+        )
       image.toDto(publicUrl)
     }
   }
