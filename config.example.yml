@@ -10,6 +10,22 @@ spring:
     url: ${DB_URL:jdbc:mysql://localhost:3306/orders_system}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+  
+  # Email configuration (Spring Mail)
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME}
+    password: ${SMTP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+    # From email address (sender)
+    from-email: ${SMTP_FROM_EMAIL}
 
 config:
   # HS256 secret, min 32 chars. Set via env var APP_SECRETS_JWT in CI/hosts

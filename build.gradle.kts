@@ -31,6 +31,7 @@ dependencies {
 	implementation("io.jsonwebtoken:jjwt-api:0.11.5")
 	implementation("com.aventrix.jnanoid:jnanoid:2.0.0")
 	implementation("org.springframework.boot:spring-boot-starter-security")
+	implementation("org.springframework.boot:spring-boot-starter-mail")
 	
 	// AWS SDK for S3 (compatible with Cloudflare R2)
 	implementation("software.amazon.awssdk:s3:2.29.45")
