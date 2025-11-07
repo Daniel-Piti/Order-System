@@ -14,7 +14,7 @@ class ExpireEmptyOrdersJob(
 
   private val logger = LoggerFactory.getLogger(ExpireEmptyOrdersJob::class.java)
 
-  @Scheduled(fixedDelayString = "5000") // initialDelayString: wait 10s before first run
+  @Scheduled(fixedDelayString = CommonTimes.ONE_HOUR) // initialDelayString: wait 10s before first run
   @Transactional
   fun updateStatusOfEmptyExpiredOrders() {
     logger.info("RUNNING: updateStatusOfEmptyExpiredOrders")
