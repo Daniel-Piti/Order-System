@@ -59,4 +59,13 @@ class OrderController(
     return ResponseEntity.status(HttpStatus.CREATED).body(newOrderId)
   }
 
+  @PutMapping("/{orderId}/status/done")
+  fun markOrderDone(
+    @PathVariable orderId: String,
+    @AuthenticationPrincipal user: AuthUser
+  ): ResponseEntity<Void> {
+    orderService.markOrderDone(orderId)
+    return ResponseEntity.noContent().build()
+  }
+
 }

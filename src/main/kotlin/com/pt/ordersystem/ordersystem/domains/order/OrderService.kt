@@ -215,4 +215,35 @@ class OrderService(
     orderRepository.save(updatedOrder)
   }
 
+  @Transactional
+  fun markOrderDone(orderId: String) {
+    val order = orderRepository.findById(orderId).orElseThrow {
+      throw ServiceException(
+        status = HttpStatus.NOT_FOUND,
+        userMessage = OrderFailureReason.NOT_FOUND.userMessage,
+        technicalMessage = OrderFailureReason.NOT_FOUND.technical + "orderId=$orderId",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    // Ensure user owns order
+    AuthUtils.checkOwnership(order.userId)
+
+    if (order.status != OrderStatus.PLACED.name) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Only placed orders can be marked as done",
+        technicalMessage = "Order $orderId has status ${order.status}, expected PLACED",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    val updatedOrder = order.copy(
+      status = OrderStatus.DONE.name,
+      updatedAt = LocalDateTime.now()
+    )
+
+    orderRepository.save(updatedOrder)
+  }
+
 }

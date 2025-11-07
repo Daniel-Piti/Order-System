@@ -2,6 +2,7 @@ package com.pt.ordersystem.ordersystem.notification.email
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_ADMIN
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailNotificationResponse
+import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderDoneNotificationRequest
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderPlacedNotificationRequest
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -27,6 +28,14 @@ class EmailNotificationController(
     @Valid @RequestBody request: EmailOrderPlacedNotificationRequest,
   ): ResponseEntity<EmailNotificationResponse> {
     val response = emailNotificationService.sendOrderPlacedNotification(request)
+    return ResponseEntity.ok(response)
+  }
+
+  @PostMapping("/order-done")
+  fun sendOrderDoneNotification(
+    @Valid @RequestBody request: EmailOrderDoneNotificationRequest,
+  ): ResponseEntity<EmailNotificationResponse> {
+    val response = emailNotificationService.sendOrderDoneNotification(request)
     return ResponseEntity.ok(response)
   }
 }

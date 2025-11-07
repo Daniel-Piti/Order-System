@@ -9,4 +9,8 @@ enum class EmailNotificationFailureReason(val userMessage: String, val technical
     userMessage = "Notification can only be sent for placed orders",
     technical = "Order notification failed - order not in PLACED status | "
   ),
+  ORDER_NOT_DONE(
+    userMessage = "Notification can only be sent for completed orders",
+    technical = "Order notification failed - order not in DONE status | "
+  ),
 }

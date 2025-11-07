@@ -6,6 +6,7 @@ import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailNotificationFailureReason
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailNotificationResponse
+import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderDoneNotificationRequest
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderPlacedNotificationRequest
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -33,6 +34,26 @@ class EmailNotificationService(
     return EmailNotificationResponse(
       success = true,
       message = "Order placed notification sent",
+    )
+  }
+
+  fun sendOrderDoneNotification(request: EmailOrderDoneNotificationRequest): EmailNotificationResponse {
+    val order = orderService.getOrderByIdInternal(request.orderId)
+
+    if (order.status != OrderStatus.DONE) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = EmailNotificationFailureReason.ORDER_NOT_DONE.userMessage,
+        technicalMessage = EmailNotificationFailureReason.ORDER_NOT_DONE.technical + "orderId=${order.id} status=${order.status}",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    emailNotificationMailer.sendOrderDoneEmail(order, request.recipientEmail)
+
+    return EmailNotificationResponse(
+      success = true,
+      message = "Order done notification sent",
     )
   }
 }

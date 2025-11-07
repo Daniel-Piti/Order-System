@@ -12,6 +12,15 @@ data class EmailOrderPlacedNotificationRequest(
   val recipientEmail: String,
 )
 
+data class EmailOrderDoneNotificationRequest(
+  @field:NotBlank
+  val orderId: String,
+
+  @field:NotBlank
+  @field:Email
+  val recipientEmail: String,
+)
+
 data class EmailNotificationResponse(
   val success: Boolean,
   val message: String,
