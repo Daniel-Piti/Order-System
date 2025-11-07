@@ -205,7 +205,7 @@ class OrderService(
       // Order details
       status = OrderStatus.PLACED.name,
       products = request.products,
-      productsVersion = order.productsVersion + 1,
+      productsVersion = order.productsVersion,
       totalPrice = totalPrice,
       deliveryDate = request.deliveryDate,
       notes = request.notes,
