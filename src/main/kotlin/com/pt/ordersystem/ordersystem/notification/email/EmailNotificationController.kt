@@ -2,6 +2,7 @@ package com.pt.ordersystem.ordersystem.notification.email
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_ADMIN
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailNotificationResponse
+import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderCancelledNotificationRequest
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderDoneNotificationRequest
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderPlacedNotificationRequest
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
@@ -36,6 +37,14 @@ class EmailNotificationController(
     @Valid @RequestBody request: EmailOrderDoneNotificationRequest,
   ): ResponseEntity<EmailNotificationResponse> {
     val response = emailNotificationService.sendOrderDoneNotification(request)
+    return ResponseEntity.ok(response)
+  }
+
+  @PostMapping("/order-cancelled")
+  fun sendOrderCancelledNotification(
+    @Valid @RequestBody request: EmailOrderCancelledNotificationRequest,
+  ): ResponseEntity<EmailNotificationResponse> {
+    val response = emailNotificationService.sendOrderCancelledNotification(request)
     return ResponseEntity.ok(response)
   }
 }

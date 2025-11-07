@@ -246,4 +246,35 @@ class OrderService(
     orderRepository.save(updatedOrder)
   }
 
+  @Transactional
+  fun cancelOrder(orderId: String) {
+    val order = orderRepository.findById(orderId).orElseThrow {
+      throw ServiceException(
+        status = HttpStatus.NOT_FOUND,
+        userMessage = OrderFailureReason.NOT_FOUND.userMessage,
+        technicalMessage = OrderFailureReason.NOT_FOUND.technical + "orderId=$orderId",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    AuthUtils.checkOwnership(order.userId)
+
+    val cancellableStatuses = setOf(OrderStatus.PLACED.name, OrderStatus.EMPTY.name)
+
+    if (order.status !in cancellableStatuses) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Only placed or empty orders can be cancelled",
+        technicalMessage = "Order $orderId has status ${order.status}, expected PLACED or EMPTY",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    val updatedOrder = order.copy(
+      status = OrderStatus.CANCELLED.name,
+      updatedAt = LocalDateTime.now()
+    )
+
+    orderRepository.save(updatedOrder)
+  }
 }

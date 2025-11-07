@@ -86,6 +86,36 @@ class EmailNotificationMailer(
     }
   }
 
+  fun sendOrderCancelledEmail(order: OrderDto, recipientEmail: String) {
+    try {
+      val message: MimeMessage = mailSender.createMimeMessage()
+      val helper = MimeMessageHelper(message, true, "UTF-8")
+
+      helper.setTo(recipientEmail)
+      helper.setSubject("Order Cancelled - Order #${order.id}")
+      helper.setFrom(fromEmail)
+      helper.setText(buildOrderCancelledBody(order), true)
+
+      mailSender.send(message)
+
+      logger.info(
+        "Order cancelled email sent successfully | orderId={} | customer={} | to={}",
+        order.id,
+        order.customerName ?: "unknown",
+        recipientEmail,
+      )
+    } catch (e: Exception) {
+      logger.error(
+        "Failed to send order cancelled email | orderId={} | to={} | error={}",
+        order.id,
+        recipientEmail,
+        e.message,
+        e
+      )
+      throw e
+    }
+  }
+
   private fun buildOrderPlacedBody(order: OrderDto): String {
     val locale = Locale.Builder().setLanguage("en").setRegion("IL").build()
     val currencyFormatter = NumberFormat.getCurrencyInstance(locale)
@@ -236,6 +266,75 @@ class EmailNotificationMailer(
               <div class="total">Final total: $formattedTotal</div>
 
               <p style="margin: 22px 0 0; font-size: 14px; color: #4b5563;">We appreciate your business and look forward to serving you again. If you have any feedback, we’d love to hear it.</p>
+              <p style="margin: 14px 0 0; font-size: 14px; color: #4b5563;">Warm regards,<br><strong>Order System Team</strong></p>
+            </div>
+            <div class="footer">
+              This is an automated message. Please do not reply.
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    """.trimIndent()
+  }
+
+  private fun buildOrderCancelledBody(order: OrderDto): String {
+    val locale = Locale.Builder().setLanguage("en").setRegion("IL").build()
+    val currencyFormatter = NumberFormat.getCurrencyInstance(locale)
+    val formattedTotal = currencyFormatter.format(order.totalPrice)
+    val cancelledAt = formatDateTime(order.updatedAt)
+
+    return """
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body { font-family: 'Inter', Arial, sans-serif; background-color: #fee2e2; padding: 32px 12px; color: #1f2937; }
+          .wrapper { max-width: 560px; margin: 0 auto; }
+          .card { background: #fef2f2; border-radius: 18px; border: 1px solid #fecaca; box-shadow: 0 18px 36px rgba(248, 113, 113, 0.14); overflow: hidden; }
+          .card-header { padding: 28px 32px 18px; background: linear-gradient(135deg, #b91c1c, #f87171); color: #ffffff; }
+          .card-header h2 { margin: 0; font-size: 22px; font-weight: 600; }
+          .card-header p { margin: 6px 0 0; font-size: 14px; opacity: 0.85; }
+          .card-body { padding: 26px 32px 32px; }
+          .summary { border: 1px solid #fca5a5; border-radius: 16px; padding: 18px 20px; background: #fff7f7; margin-top: 20px; }
+          .summary-row { display: flex; justify-content: space-between; font-size: 14px; padding: 6px 0; }
+          .summary-row span:first-child { color: #6b7280; }
+          .summary-row span:last-child { font-weight: 600; color: #b91c1c; margin-left: 8px; }
+          .total { margin-top: 18px; text-align: center; font-size: 18px; font-weight: 600; color: #b91c1c; }
+          .products { margin-top: 26px; border: 1px solid #fca5a5; border-radius: 16px; padding: 18px 20px; background: #ffffff; }
+          .products-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #ef4444; font-weight: 700; }
+          .products-body { margin-top: 12px; }
+          .product-row { padding: 16px 0; border-top: 1px solid #fbd5d5; }
+          .product-row:first-child { border-top: none; padding-top: 12px; }
+          .product-name { font-weight: 600; color: #111827; font-size: 15px; }
+          .product-meta { color: #6b7280; font-size: 12px; margin-top: 6px; display: block; }
+          .product-total { margin-top: 8px; font-weight: 700; color: #b91c1c; font-size: 16px; display: block; text-align: left; }
+          .products-empty { margin-top: 26px; border: 1px solid #fca5a5; border-radius: 16px; background: #ffffff; padding: 18px 20px; text-align: center; font-size: 13px; color: #6b7280; }
+          .footer { padding: 20px 32px 24px; text-align: center; font-size: 12px; color: #6b7280; }
+        </style>
+      </head>
+      <body>
+        <div class="wrapper">
+          <div class="card">
+            <div class="card-header">
+              <h2>Order cancelled</h2>
+              <p>The order was closed before completion.</p>
+            </div>
+            <div class="card-body">
+              <p style="margin: 0 0 14px; font-size: 15px;">Hello ${order.customerName ?: "Customer"},</p>
+              <p style="margin: 0 0 18px; font-size: 14px; color: #4b5563;">We wanted to let you know that the order below has been cancelled. Keep this summary for your records.</p>
+
+              <div class="summary">
+                <div class="summary-row"><span>Order ID:&nbsp;</span><span>${order.id}</span></div>
+                <div class="summary-row"><span>Cancelled:&nbsp;</span><span>$cancelledAt</span></div>
+              </div>
+
+              <div class="total">Total at cancellation: $formattedTotal</div>
+
+              ${buildProductList(order)}
+
+              <p style="margin: 22px 0 0; font-size: 14px; color: #4b5563;">If this cancellation was unexpected, please reach out so we can help sort things out.</p>
               <p style="margin: 14px 0 0; font-size: 14px; color: #4b5563;">Warm regards,<br><strong>Order System Team</strong></p>
             </div>
             <div class="footer">

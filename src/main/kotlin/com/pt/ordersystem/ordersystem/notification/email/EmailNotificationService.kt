@@ -6,6 +6,7 @@ import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailNotificationFailureReason
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailNotificationResponse
+import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderCancelledNotificationRequest
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderDoneNotificationRequest
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderPlacedNotificationRequest
 import org.springframework.http.HttpStatus
@@ -54,6 +55,26 @@ class EmailNotificationService(
     return EmailNotificationResponse(
       success = true,
       message = "Order done notification sent",
+    )
+  }
+
+  fun sendOrderCancelledNotification(request: EmailOrderCancelledNotificationRequest): EmailNotificationResponse {
+    val order = orderService.getOrderByIdInternal(request.orderId)
+
+    if (order.status != OrderStatus.CANCELLED) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = EmailNotificationFailureReason.ORDER_NOT_CANCELLED.userMessage,
+        technicalMessage = EmailNotificationFailureReason.ORDER_NOT_CANCELLED.technical + "orderId=${order.id} status=${order.status}",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    emailNotificationMailer.sendOrderCancelledEmail(order, request.recipientEmail)
+
+    return EmailNotificationResponse(
+      success = true,
+      message = "Order cancelled notification sent",
     )
   }
 }

@@ -68,4 +68,13 @@ class OrderController(
     return ResponseEntity.noContent().build()
   }
 
+  @PutMapping("/{orderId}/status/cancelled")
+  fun cancelOrder(
+    @PathVariable orderId: String,
+    @AuthenticationPrincipal user: AuthUser
+  ): ResponseEntity<Void> {
+    orderService.cancelOrder(orderId)
+    return ResponseEntity.noContent().build()
+  }
+
 }
