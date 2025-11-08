@@ -65,7 +65,7 @@ class BrandService(
             
             // Generate S3 key with base path
             val originalFileName = image.originalFilename ?: "brand-image"
-            val basePath = "$userId/brands"
+            val basePath = "users/$userId/brands"
             s3Key = r2StorageService.generateKey(basePath, originalFileName)
             
             // Upload to R2
@@ -158,7 +158,7 @@ class BrandService(
             
             // Upload new image
             val originalFileName = image.originalFilename ?: "brand-image"
-            val basePath = "$userId/brands"
+            val basePath = "users/$userId/brands"
             s3Key = r2StorageService.generateKey(basePath, originalFileName)
             r2StorageService.uploadFile(image, s3Key)
             

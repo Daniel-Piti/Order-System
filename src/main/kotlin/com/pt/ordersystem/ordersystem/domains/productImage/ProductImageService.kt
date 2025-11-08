@@ -67,7 +67,7 @@ class ProductImageService(
 
     // Generate S3 key with base path
     val fileName = file.originalFilename ?: "image"
-    val basePath = "$userId/$productId"
+    val basePath = "users/$userId/products/$productId"
     val s3Key = r2StorageService.generateKey(basePath, fileName)
 
     // Upload to R2
