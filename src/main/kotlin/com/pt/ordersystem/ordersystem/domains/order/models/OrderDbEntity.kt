@@ -8,7 +8,6 @@ import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import java.math.BigDecimal
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity
@@ -64,14 +63,17 @@ data class OrderDbEntity(
   @Column(name = "total_price", nullable = false)
   val totalPrice: BigDecimal,
 
-  @Column(name = "delivery_date")
-  val deliveryDate: LocalDate?,
-
   @Column(name = "link_expires_at", nullable = false)
   val linkExpiresAt: LocalDateTime,
 
   @Column(name = "notes", length = 2048, nullable = false)
   val notes: String = "",
+
+  @Column(name = "placed_at")
+  val placedAt: LocalDateTime? = null,
+
+  @Column(name = "done_at")
+  val doneAt: LocalDateTime? = null,
 
   @Column(name = "created_at", nullable = false, updatable = false)
   val createdAt: LocalDateTime = LocalDateTime.now(),

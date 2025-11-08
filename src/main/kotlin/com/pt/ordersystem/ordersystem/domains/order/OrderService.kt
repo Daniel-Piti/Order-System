@@ -141,9 +141,10 @@ class OrderService(
       products = emptyList(),
       productsVersion = 1,
       totalPrice = BigDecimal.ZERO,
-      deliveryDate = null,
       linkExpiresAt = linkExpiresAt,
       notes = "",
+      placedAt = null,
+      doneAt = null,
       createdAt = now,
       updatedAt = now,
     )
@@ -191,6 +192,7 @@ class OrderService(
     }
 
     // Update order
+    val now = LocalDateTime.now()
     val updatedOrder = order.copy(
       // User (pickup) location from selected location
       userStreetAddress = pickupLocation.streetAddress,
@@ -207,9 +209,10 @@ class OrderService(
       products = request.products,
       productsVersion = order.productsVersion,
       totalPrice = totalPrice,
-      deliveryDate = request.deliveryDate,
       notes = request.notes,
-      updatedAt = LocalDateTime.now()
+      placedAt = now,
+      doneAt = null,
+      updatedAt = now
     )
 
     orderRepository.save(updatedOrder)
@@ -238,9 +241,11 @@ class OrderService(
       )
     }
 
+    val now = LocalDateTime.now()
     val updatedOrder = order.copy(
       status = OrderStatus.DONE.name,
-      updatedAt = LocalDateTime.now()
+      doneAt = now,
+      updatedAt = now
     )
 
     orderRepository.save(updatedOrder)

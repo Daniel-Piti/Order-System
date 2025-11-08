@@ -120,7 +120,7 @@ class EmailNotificationMailer(
     val locale = Locale.Builder().setLanguage("en").setRegion("IL").build()
     val currencyFormatter = NumberFormat.getCurrencyInstance(locale)
     val formattedTotal = currencyFormatter.format(order.totalPrice)
-    val placedAt = formatDateTime(order.createdAt)
+    val placedAt = formatDateTime(order.placedAt!!)
 
     return """
       <!DOCTYPE html>
@@ -224,7 +224,7 @@ class EmailNotificationMailer(
     val locale = Locale.Builder().setLanguage("en").setRegion("IL").build()
     val currencyFormatter = NumberFormat.getCurrencyInstance(locale)
     val formattedTotal = currencyFormatter.format(order.totalPrice)
-    val completedAt = formatDateTime(order.updatedAt)
+    val completedAt = formatDateTime(order.doneAt!!)
 
     return """
       <!DOCTYPE html>
@@ -282,7 +282,6 @@ class EmailNotificationMailer(
     val locale = Locale.Builder().setLanguage("en").setRegion("IL").build()
     val currencyFormatter = NumberFormat.getCurrencyInstance(locale)
     val formattedTotal = currencyFormatter.format(order.totalPrice)
-    val cancelledAt = formatDateTime(order.updatedAt)
 
     return """
       <!DOCTYPE html>
@@ -327,7 +326,6 @@ class EmailNotificationMailer(
 
               <div class="summary">
                 <div class="summary-row"><span>Order ID:&nbsp;</span><span>${order.id}</span></div>
-                <div class="summary-row"><span>Cancelled:&nbsp;</span><span>$cancelledAt</span></div>
               </div>
 
               <div class="total">Total at cancellation: $formattedTotal</div>

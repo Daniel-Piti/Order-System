@@ -2,7 +2,6 @@ package com.pt.ordersystem.ordersystem.domains.order.models
 
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductDataForOrder
 import java.math.BigDecimal
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 data class OrderDto(
@@ -27,9 +26,10 @@ data class OrderDto(
   val products: List<ProductDataForOrder>,
   val productsVersion: Int,
   val totalPrice: BigDecimal,
-  val deliveryDate: LocalDate?,
   val linkExpiresAt: LocalDateTime,
   val notes: String,
+  val placedAt: LocalDateTime?,
+  val doneAt: LocalDateTime?,
   val createdAt: LocalDateTime,
   val updatedAt: LocalDateTime
 )
@@ -54,9 +54,10 @@ fun OrderDbEntity.toDto(): OrderDto {
     products = this.products, // Already a List<ProductDataForOrder> - JPA converter handles it!
     productsVersion = this.productsVersion,
     totalPrice = this.totalPrice,
-    deliveryDate = this.deliveryDate,
     linkExpiresAt = this.linkExpiresAt,
     notes = this.notes,
+    placedAt = this.placedAt,
+    doneAt = this.doneAt,
     createdAt = this.createdAt,
     updatedAt = this.updatedAt
   )

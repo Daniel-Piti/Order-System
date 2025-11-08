@@ -8,6 +8,8 @@ import java.time.LocalDate
 
 object FieldValidators {
 
+  private val MAX_PRICE = BigDecimal("1000000")
+
   fun validateEmail(email: String) {
     val emailPattern = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$".toRegex()
 
@@ -88,6 +90,15 @@ object FieldValidators {
         status = HttpStatus.BAD_REQUEST,
         userMessage = "Price must be greater than or equal to 0",
         technicalMessage = "Price `$price` is negative",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    if (price > MAX_PRICE) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Price cannot exceed 1,000,000",
+        technicalMessage = "Price `$price` is greater than allowed maximum $MAX_PRICE",
         severity = SeverityLevel.WARN
       )
     }
