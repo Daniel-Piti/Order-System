@@ -36,11 +36,11 @@ class ProductService(
     const val MAX_PAGE_SIZE = 100
   }
 
-  fun removeCategoryFromProducts(userId: String, categoryId: Long) =
-    productRepository.removeCategoryFromProducts(userId, categoryId, LocalDateTime.now())
+  fun removeCategoryFromProducts(managerId: String, categoryId: Long) =
+    productRepository.removeCategoryFromProducts(managerId, categoryId, LocalDateTime.now())
 
-  fun removeBrandFromProducts(userId: String, brandId: Long) =
-    productRepository.removeBrandFromProducts(userId, brandId, LocalDateTime.now())
+  fun removeBrandFromProducts(managerId: String, brandId: Long) =
+    productRepository.removeBrandFromProducts(managerId, brandId, LocalDateTime.now())
 
   fun getAllProductsForUser(
     userId: String,

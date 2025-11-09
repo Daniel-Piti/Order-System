@@ -11,7 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
-@Tag(name = "Categories", description = "User category management API")
+@Tag(name = "Categories", description = "Manager category management API")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/categories")
@@ -20,23 +20,12 @@ class CategoryController(
     private val categoryService: CategoryService
 ) {
 
-    @GetMapping
-    fun getAllCategories(@AuthenticationPrincipal user: AuthUser): ResponseEntity<List<CategoryDto>> =
-        ResponseEntity.ok(categoryService.getUserCategories(user.id))
-
-    @GetMapping("/{categoryId}")
-    fun getCategoryById(
-        @PathVariable categoryId: Long,
-        @AuthenticationPrincipal user: AuthUser
-    ): ResponseEntity<CategoryDto> =
-        ResponseEntity.ok(categoryService.getCategoryById(user.id, categoryId))
-
     @PostMapping
     fun createCategory(
         @RequestBody request: CreateCategoryRequest,
-        @AuthenticationPrincipal user: AuthUser
+        @AuthenticationPrincipal manager: AuthUser
     ): ResponseEntity<Long> {
-        val categoryId = categoryService.createCategory(user.id, request)
+        val categoryId = categoryService.createCategory(manager.id, request)
         return ResponseEntity.status(HttpStatus.CREATED).body(categoryId)
     }
 
@@ -44,18 +33,18 @@ class CategoryController(
     fun updateCategory(
         @PathVariable categoryId: Long,
         @RequestBody request: UpdateCategoryRequest,
-        @AuthenticationPrincipal user: AuthUser
+        @AuthenticationPrincipal manager: AuthUser
     ): ResponseEntity<Long> {
-        val updatedCategoryId = categoryService.updateCategory(user.id, categoryId, request)
+        val updatedCategoryId = categoryService.updateCategory(manager.id, categoryId, request)
         return ResponseEntity.ok(updatedCategoryId)
     }
 
     @DeleteMapping("/{categoryId}")
     fun deleteCategory(
         @PathVariable categoryId: Long,
-        @AuthenticationPrincipal user: AuthUser
+        @AuthenticationPrincipal manager: AuthUser
     ): ResponseEntity<String> {
-        categoryService.deleteCategory(user.id, categoryId)
+        categoryService.deleteCategory(manager.id, categoryId)
         return ResponseEntity.ok("Category deleted successfully")
     }
 }

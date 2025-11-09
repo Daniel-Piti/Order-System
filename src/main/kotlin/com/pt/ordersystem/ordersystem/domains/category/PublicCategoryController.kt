@@ -14,23 +14,23 @@ class PublicCategoryController(
   private val managerService: ManagerService
 ) {
 
-  @GetMapping("/user/{userId}")
-  fun getAllCategories(@PathVariable userId: String): ResponseEntity<List<CategoryDto>> {
-    // Validate user exists first - will throw 404 if not found
-    managerService.getManagerById(userId)
+  @GetMapping("/manager/{managerId}")
+  fun getAllCategories(@PathVariable managerId: String): ResponseEntity<List<CategoryDto>> {
+    // Validate manager exists first - will throw 404 if not found
+    managerService.getManagerById(managerId)
     
-    return ResponseEntity.ok(categoryService.getUserCategories(userId))
+    return ResponseEntity.ok(categoryService.getManagerCategories(managerId))
   }
 
-  @GetMapping("/user/{userId}/category/{categoryId}")
+  @GetMapping("/manager/{managerId}/category/{categoryId}")
   fun getCategoryById(
-    @PathVariable userId: String,
+    @PathVariable managerId: String,
     @PathVariable categoryId: Long
   ): ResponseEntity<CategoryDto> {
-    // Validate user exists
-    managerService.getManagerById(userId)
+    // Validate manager exists
+    managerService.getManagerById(managerId)
     
-    return ResponseEntity.ok(categoryService.getCategoryById(userId, categoryId))
+    return ResponseEntity.ok(categoryService.getCategoryById(managerId, categoryId))
   }
 
 }

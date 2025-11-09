@@ -6,14 +6,14 @@ enum class CategoryFailureReason(
 ) {
     NOT_FOUND(
         userMessage = "Category not found",
-        technical = "Category not found for userId="
+        technical = "Category not found for managerId="
     ),
     ALREADY_EXISTS(
         userMessage = "Category already exists",
-        technical = "Category already exists for userId="
+        technical = "Category already exists for managerId="
     ),
     CATEGORY_LIMIT_EXCEEDED(
         userMessage = "Category limit exceeded",
-        technical = "User has reached the maximum limit of categories. userId="
+        technical = "Manager has reached the maximum limit of categories. managerId="
     )
 }

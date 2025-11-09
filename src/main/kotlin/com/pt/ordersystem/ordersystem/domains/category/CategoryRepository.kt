@@ -7,13 +7,11 @@ import org.springframework.stereotype.Repository
 @Repository
 interface CategoryRepository : JpaRepository<CategoryDbEntity, Long> {
     
-    fun findByUserId(userId: String): List<CategoryDbEntity>
+    fun findByManagerId(managerId: String): List<CategoryDbEntity>
     
-    fun findByUserIdAndId(userId: String, id: Long): CategoryDbEntity?
+    fun findByManagerIdAndId(managerId: String, id: Long): CategoryDbEntity?
     
-    fun findByUserIdAndCategory(userId: String, category: String): CategoryDbEntity?
+    fun findByManagerIdAndCategory(managerId: String, category: String): CategoryDbEntity?
     
-    fun existsByUserIdAndCategory(userId: String, category: String): Boolean
+    fun existsByManagerIdAndCategory(managerId: String, category: String): Boolean
 }
-
-

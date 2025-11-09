@@ -17,11 +17,11 @@ class CategoryService(
 ) {
 
     companion object {
-        private const val MAX_CATEGORIES_PER_USER = 1000
+        private const val MAX_CATEGORIES_PER_MANAGER = 1000
     }
 
-    fun getCategoryById(userId: String, categoryId: Long): CategoryDto {
-        val category = categoryRepository.findByUserIdAndId(userId, categoryId)
+    fun getCategoryById(managerId: String, categoryId: Long): CategoryDto {
+        val category = categoryRepository.findByManagerIdAndId(managerId, categoryId)
             ?: throw ServiceException(
                 status = HttpStatus.NOT_FOUND,
                 userMessage = CategoryFailureReason.NOT_FOUND.userMessage,
@@ -32,39 +32,39 @@ class CategoryService(
         return category.toDto()
     }
 
-    fun getUserCategories(userId: String): List<CategoryDto> =
-        categoryRepository.findByUserId(userId).map { it.toDto() }
+    fun getManagerCategories(managerId: String): List<CategoryDto> =
+        categoryRepository.findByManagerId(managerId).map { it.toDto() }
 
     @Transactional
-    fun createCategory(userId: String, request: CreateCategoryRequest): Long {
+    fun createCategory(managerId: String, request: CreateCategoryRequest): Long {
         with(request) {
             FieldValidators.validateNonEmpty(category, "'category'")
         }
 
-        // Check if user has reached the maximum number of categories
-        val existingCategoriesCount = categoryRepository.findByUserId(userId).size
-        if (existingCategoriesCount >= MAX_CATEGORIES_PER_USER) {
+        // Check if manager has reached the maximum number of categories
+        val existingCategoriesCount = categoryRepository.findByManagerId(managerId).size
+        if (existingCategoriesCount >= MAX_CATEGORIES_PER_MANAGER) {
             throw ServiceException(
                 status = HttpStatus.BAD_REQUEST,
                 userMessage = CategoryFailureReason.CATEGORY_LIMIT_EXCEEDED.userMessage,
-                technicalMessage = CategoryFailureReason.CATEGORY_LIMIT_EXCEEDED.technical + "userId=$userId, limit=$MAX_CATEGORIES_PER_USER",
+                technicalMessage = CategoryFailureReason.CATEGORY_LIMIT_EXCEEDED.technical + "managerId=$managerId, limit=$MAX_CATEGORIES_PER_MANAGER",
                 severity = SeverityLevel.WARN
             )
         }
 
-        // Check if category already exists for this user
-        if (categoryRepository.existsByUserIdAndCategory(userId, request.category.trim())) {
+        // Check if category already exists for this manager
+        if (categoryRepository.existsByManagerIdAndCategory(managerId, request.category.trim())) {
             throw ServiceException(
                 status = HttpStatus.CONFLICT,
                 userMessage = CategoryFailureReason.ALREADY_EXISTS.userMessage,
-                technicalMessage = CategoryFailureReason.ALREADY_EXISTS.technical + "userId=$userId, category=${request.category}",
+                technicalMessage = CategoryFailureReason.ALREADY_EXISTS.technical + "managerId=$managerId, category=${request.category}",
                 severity = SeverityLevel.INFO
             )
         }
 
         val now = LocalDateTime.now()
         val category = CategoryDbEntity(
-            userId = userId,
+            managerId = managerId,
             category = request.category.trim(),
             createdAt = now,
             updatedAt = now
@@ -74,8 +74,8 @@ class CategoryService(
     }
 
     @Transactional
-    fun updateCategory(userId: String, categoryId: Long, request: UpdateCategoryRequest): Long {
-        val category = categoryRepository.findByUserIdAndId(userId, categoryId)
+    fun updateCategory(managerId: String, categoryId: Long, request: UpdateCategoryRequest): Long {
+        val category = categoryRepository.findByManagerIdAndId(managerId, categoryId)
             ?: throw ServiceException(
                 status = HttpStatus.NOT_FOUND,
                 userMessage = CategoryFailureReason.NOT_FOUND.userMessage,
@@ -87,13 +87,13 @@ class CategoryService(
             FieldValidators.validateNonEmpty(this.category, "'category'")
         }
 
-        // Check if new category name already exists for this user (excluding current category)
-        val existingCategory = categoryRepository.findByUserIdAndCategory(userId, request.category.trim())
+        // Check if new category name already exists for this manager (excluding current category)
+        val existingCategory = categoryRepository.findByManagerIdAndCategory(managerId, request.category.trim())
         if (existingCategory != null && existingCategory.id != categoryId) {
             throw ServiceException(
                 status = HttpStatus.CONFLICT,
                 userMessage = CategoryFailureReason.ALREADY_EXISTS.userMessage,
-                technicalMessage = CategoryFailureReason.ALREADY_EXISTS.technical + "userId=$userId, category=${request.category}",
+                technicalMessage = CategoryFailureReason.ALREADY_EXISTS.technical + "managerId=$managerId, category=${request.category}",
                 severity = SeverityLevel.INFO
             )
         }
@@ -107,8 +107,8 @@ class CategoryService(
     }
 
     @Transactional
-    fun deleteCategory(userId: String, categoryId: Long) {
-        categoryRepository.findByUserIdAndId(userId, categoryId)
+    fun deleteCategory(managerId: String, categoryId: Long) {
+        categoryRepository.findByManagerIdAndId(managerId, categoryId)
             ?: throw ServiceException(
                 status = HttpStatus.NOT_FOUND,
                 userMessage = CategoryFailureReason.NOT_FOUND.userMessage,
@@ -117,7 +117,7 @@ class CategoryService(
             )
 
         // Remove category from all products that use this category
-        productService.removeCategoryFromProducts(userId, categoryId)
+        productService.removeCategoryFromProducts(managerId, categoryId)
 
         categoryRepository.deleteById(categoryId)
     }

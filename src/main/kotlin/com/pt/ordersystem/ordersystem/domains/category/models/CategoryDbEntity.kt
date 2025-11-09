@@ -10,8 +10,8 @@ data class CategoryDbEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
     
-    @Column(name = "user_id", nullable = false)
-    val userId: String,
+    @Column(name = "manager_id", nullable = false)
+    val managerId: String,
     
     @Column(name = "category", nullable = false)
     val category: String,
