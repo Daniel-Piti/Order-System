@@ -32,6 +32,7 @@ dependencies {
 	implementation("com.aventrix.jnanoid:jnanoid:2.0.0")
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-mail")
+	implementation("org.apache.pdfbox:pdfbox:3.0.3")
 	
 	// AWS SDK for S3 (compatible with Cloudflare R2)
 	implementation("software.amazon.awssdk:s3:2.29.45")
