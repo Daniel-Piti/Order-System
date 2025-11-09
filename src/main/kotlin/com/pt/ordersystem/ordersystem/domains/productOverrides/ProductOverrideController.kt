@@ -35,7 +35,7 @@ class ProductOverrideController(
     @RequestParam(required = false) customerId: String?
   ): ResponseEntity<Page<ProductOverrideWithPriceDto>> {
     val overrides = productOverrideService.getAllOverrides(
-      userId = user.userId,
+      userId = user.id,
       page = page,
       size = size,
       sortBy = sortBy,
@@ -51,7 +51,7 @@ class ProductOverrideController(
     @PathVariable overrideId: Long,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<ProductOverrideDto> {
-    val override = productOverrideService.getProductOverrideById(user.userId, overrideId)
+    val override = productOverrideService.getProductOverrideById(user.id, overrideId)
     return ResponseEntity.ok(override)
   }
 
@@ -60,7 +60,7 @@ class ProductOverrideController(
     @PathVariable productId: String,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<List<ProductOverrideDto>> {
-    val overrides = productOverrideService.getProductOverridesForProductId(user.userId, productId)
+    val overrides = productOverrideService.getProductOverridesForProductId(user.id, productId)
     return ResponseEntity.ok(overrides)
   }
 
@@ -69,7 +69,7 @@ class ProductOverrideController(
     @RequestBody request: CreateProductOverrideRequest,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<ProductOverrideDto> {
-    val override = productOverrideService.createProductOverride(user.userId, request)
+    val override = productOverrideService.createProductOverride(user.id, request)
     return ResponseEntity.status(HttpStatus.CREATED).body(override)
   }
 
@@ -79,7 +79,7 @@ class ProductOverrideController(
     @RequestBody request: UpdateProductOverrideRequest,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<ProductOverrideDto> {
-    val override = productOverrideService.updateProductOverride(user.userId, overrideId, request)
+    val override = productOverrideService.updateProductOverride(user.id, overrideId, request)
     return ResponseEntity.ok(override)
   }
 
@@ -88,7 +88,7 @@ class ProductOverrideController(
     @PathVariable overrideId: Long,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<String> {
-    productOverrideService.deleteProductOverride(user.userId, overrideId)
+    productOverrideService.deleteProductOverride(user.id, overrideId)
     return ResponseEntity.ok("Product override deleted successfully")
   }
 

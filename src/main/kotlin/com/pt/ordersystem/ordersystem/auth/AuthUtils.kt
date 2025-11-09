@@ -11,7 +11,7 @@ object AuthUtils {
     SecurityContextHolder.getContext().authentication?.principal as? AuthUser
       ?: throw IllegalStateException("Authentication principal missing or invalid")
 
-  fun getCurrentUserId(): String = getPrincipal().userId
+  fun getCurrentUserId(): String = getPrincipal().id
 
   fun getCurrentUserEmail(): String = getPrincipal().email
 

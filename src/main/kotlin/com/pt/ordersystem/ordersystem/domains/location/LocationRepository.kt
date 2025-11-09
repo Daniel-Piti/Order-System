@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface LocationRepository : JpaRepository<LocationDbEntity, Long> {
-  fun findByUserId(userId: String): List<LocationDbEntity>
-  fun countByUserId(userId: String): Int
-  fun findByUserIdAndId(userId: String, id: Long): LocationDbEntity?
+  fun findByManagerId(managerId: String): List<LocationDbEntity>
+  fun countByManagerId(managerId: String): Int
+  fun findByManagerIdAndId(managerId: String, id: Long): LocationDbEntity?
 }

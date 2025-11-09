@@ -2,7 +2,7 @@ package com.pt.ordersystem.ordersystem.domains.location.models
 
 data class LocationDto(
   val id: Long,
-  val userId: String,
+  val managerId: String,
   val name: String,
   val streetAddress: String,
   val city: String,
@@ -11,7 +11,7 @@ data class LocationDto(
 
 fun LocationDbEntity.toDto() = LocationDto(
   id = id,
-  userId = userId,
+  managerId = managerId,
   name = name,
   streetAddress = streetAddress,
   city = city,

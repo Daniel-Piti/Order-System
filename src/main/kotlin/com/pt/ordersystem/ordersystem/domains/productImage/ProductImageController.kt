@@ -2,7 +2,6 @@ package com.pt.ordersystem.ordersystem.domains.productImage
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
-import com.pt.ordersystem.ordersystem.domains.productImage.models.ProductImageDto
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
@@ -28,7 +27,7 @@ class ProductImageController(
     @RequestPart("image") image: MultipartFile,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<String> {
-    val imageDto = productImageService.validateAndUploadImageForProduct(user.userId, productId, image)
+    val imageDto = productImageService.validateAndUploadImageForProduct(user.id, productId, image)
     return ResponseEntity.status(HttpStatus.CREATED).body(imageDto.url)
   }
 
@@ -38,7 +37,7 @@ class ProductImageController(
     @PathVariable imageId: Long,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<String> {
-    productImageService.deleteImage(user.userId, imageId)
+    productImageService.deleteImage(user.id, imageId)
     return ResponseEntity.ok("Image deleted successfully")
   }
 }

@@ -27,13 +27,13 @@ class CustomerController(
     @PathVariable customerId: String,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<CustomerDto> {
-    val customer = customerService.getCustomerByIdAndUserId(user.userId, customerId)
+    val customer = customerService.getCustomerByIdAndUserId(user.id, customerId)
     return ResponseEntity.ok(customer)
   }
 
   @GetMapping
   fun getAllCustomers(@AuthenticationPrincipal user: AuthUser): ResponseEntity<List<CustomerDto>> {
-    val customers = customerService.getCustomersByUserId(user.userId)
+    val customers = customerService.getCustomersByUserId(user.id)
     return ResponseEntity.ok(customers)
   }
 
@@ -42,7 +42,7 @@ class CustomerController(
     @RequestBody request: CreateCustomerRequest,
     @AuthenticationPrincipal user: AuthUser,
   ): ResponseEntity<CustomerDto> {
-    val customer = customerService.createCustomer(user.userId, request)
+    val customer = customerService.createCustomer(user.id, request)
     return ResponseEntity.status(HttpStatus.CREATED).body(customer)
   }
 
@@ -52,7 +52,7 @@ class CustomerController(
     @RequestBody request: UpdateCustomerRequest,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<CustomerDto> {
-    val customer = customerService.updateCustomer(user.userId, customerId, request)
+    val customer = customerService.updateCustomer(user.id, customerId, request)
     return ResponseEntity.ok(customer)
   }
 
@@ -61,7 +61,7 @@ class CustomerController(
     @PathVariable customerId: String,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<String> {
-    customerService.deleteCustomer(user.userId, customerId)
+    customerService.deleteCustomer(user.id, customerId)
     return ResponseEntity.ok("Customer deleted successfully")
   }
 }

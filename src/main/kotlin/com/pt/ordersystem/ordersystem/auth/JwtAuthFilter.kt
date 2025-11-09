@@ -31,7 +31,7 @@ class JwtAuthFilter(
 
         if (email != null && !roles.isNullOrEmpty() && userId != null) {
           val principal = AuthUser(
-            userId = userId.toString(),
+            id = userId.toString(),
             email = email.toString(),
             roles = roles
           )

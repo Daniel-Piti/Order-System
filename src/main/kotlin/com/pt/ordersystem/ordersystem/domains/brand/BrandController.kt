@@ -28,7 +28,7 @@ class BrandController(
     fun getAllBrands(
         @AuthenticationPrincipal user: AuthUser
     ): ResponseEntity<List<BrandDto>> {
-        return ResponseEntity.ok(brandService.getUserBrands(user.userId))
+        return ResponseEntity.ok(brandService.getUserBrands(user.id))
     }
 
     @PostMapping(consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
@@ -38,7 +38,7 @@ class BrandController(
         @AuthenticationPrincipal user: AuthUser
     ): ResponseEntity<Long> {
         val request = CreateBrandRequest(name = name)
-        val brandId = brandService.createBrand(user.userId, request, image)
+        val brandId = brandService.createBrand(user.id, request, image)
         return ResponseEntity.status(HttpStatus.CREATED).body(brandId)
     }
 
@@ -50,7 +50,7 @@ class BrandController(
         @AuthenticationPrincipal user: AuthUser
     ): ResponseEntity<Long> {
         val request = UpdateBrandRequest(name = name)
-        val updatedBrandId = brandService.updateBrand(user.userId, brandId, request, image)
+        val updatedBrandId = brandService.updateBrand(user.id, brandId, request, image)
         return ResponseEntity.ok(updatedBrandId)
     }
 
@@ -59,7 +59,7 @@ class BrandController(
         @PathVariable brandId: Long,
         @AuthenticationPrincipal user: AuthUser
     ): ResponseEntity<String> {
-        brandService.deleteBrand(user.userId, brandId)
+        brandService.deleteBrand(user.id, brandId)
         return ResponseEntity.ok("Brand deleted successfully")
     }
 }

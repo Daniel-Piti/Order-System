@@ -18,8 +18,8 @@ class LocationService(
     const val MAXIMUM_LOCATIONS = 10
   }
 
-  fun getLocationById(userId: String, locationId: Long): LocationDto {
-    val location = locationRepository.findByUserIdAndId(userId, locationId)
+  fun getLocationById(managerId: String, locationId: Long): LocationDto {
+    val location = locationRepository.findByManagerIdAndId(managerId, locationId)
       ?: throw ServiceException(
         status = HttpStatus.NOT_FOUND,
         userMessage = LocationFailureReason.NOT_FOUND.userMessage,
@@ -30,11 +30,11 @@ class LocationService(
     return location.toDto()
   }
 
-  fun getUserLocations(userId: String): List<LocationDto> =
-    locationRepository.findByUserId(userId).map { it.toDto() }
+  fun getManagerLocations(managerId: String): List<LocationDto> =
+    locationRepository.findByManagerId(managerId).map { it.toDto() }
 
-  fun createLocation(userId: String, request: NewLocationRequest): Long {
-    val usersLocationCount = locationRepository.countByUserId(userId)
+  fun createLocation(managerId: String, request: NewLocationRequest): Long {
+    val managerLocationCount = locationRepository.countByManagerId(managerId)
 
     with(request) {
       FieldValidators.validateNonEmpty(name, "'name'")
@@ -43,17 +43,17 @@ class LocationService(
       FieldValidators.validatePhoneNumber(phoneNumber)
     }
 
-    if (usersLocationCount >= MAXIMUM_LOCATIONS) {
+    if (managerLocationCount >= MAXIMUM_LOCATIONS) {
       throw ServiceException(
         status = HttpStatus.BAD_REQUEST,
         userMessage = LocationFailureReason.TWO_MANY_LOCATIONS.userMessage,
-        technicalMessage = LocationFailureReason.TWO_MANY_LOCATIONS.technical + "user=${userId}",
+        technicalMessage = LocationFailureReason.TWO_MANY_LOCATIONS.technical + "manager=${managerId}",
         severity = SeverityLevel.INFO
       )
     }
 
     val location = LocationDbEntity(
-      userId = userId,
+      managerId = managerId,
       name = request.name,
       streetAddress = request.streetAddress,
       city = request.city,
@@ -65,7 +65,7 @@ class LocationService(
     return locationRepository.save(location).id
   }
 
-  fun updateLocation(userId: String, locationId: Long, request: UpdateLocationRequest): Long {
+  fun updateLocation(managerId: String, locationId: Long, request: UpdateLocationRequest): Long {
 
     with(request) {
       FieldValidators.validateNonEmpty(name, "'name'")
@@ -74,7 +74,7 @@ class LocationService(
       FieldValidators.validatePhoneNumber(phoneNumber)
     }
 
-    val location = locationRepository.findByUserIdAndId(userId, locationId)
+    val location = locationRepository.findByManagerIdAndId(managerId, locationId)
       ?: throw ServiceException(
         status = HttpStatus.NOT_FOUND,
         userMessage = LocationFailureReason.NOT_FOUND.userMessage,
@@ -93,8 +93,8 @@ class LocationService(
     return locationRepository.save(updatedLocation).id
   }
 
-  fun deleteLocation(userId: String, locationId: Long) {
-    val location = locationRepository.findByUserIdAndId(userId, locationId)
+  fun deleteLocation(managerId: String, locationId: Long) {
+    val location = locationRepository.findByManagerIdAndId(managerId, locationId)
       ?: throw ServiceException(
         status = HttpStatus.NOT_FOUND,
         userMessage = "Location not found",
@@ -102,12 +102,12 @@ class LocationService(
         severity = SeverityLevel.WARN
       )
 
-    val locationCount = locationRepository.countByUserId(userId)
+    val locationCount = locationRepository.countByManagerId(managerId)
     if (locationCount <= 1) {
       throw ServiceException(
         status = HttpStatus.BAD_REQUEST,
         userMessage = "Cannot delete the last location. You must have at least one location.",
-        technicalMessage = "User $userId attempted to delete their last location",
+        technicalMessage = "Manager $managerId attempted to delete their last location",
         severity = SeverityLevel.INFO
       )
     }

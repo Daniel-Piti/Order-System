@@ -14,12 +14,12 @@ class PublicLocationController(
   private val managerService: ManagerService
 ) {
 
-  @GetMapping("/user/{userId}")
-  fun getLocationsForUser(@PathVariable userId: String): ResponseEntity<List<LocationDto>> {
-    // Validate user exists
-    managerService.getManagerById(userId)
+  @GetMapping("/manager/{managerId}")
+  fun getLocationsForManager(@PathVariable managerId: String): ResponseEntity<List<LocationDto>> {
+    // Validate manager exists
+    managerService.getManagerById(managerId)
     
-    val locations = locationService.getUserLocations(userId)
+    val locations = locationService.getManagerLocations(managerId)
     return ResponseEntity.ok(locations)
   }
 

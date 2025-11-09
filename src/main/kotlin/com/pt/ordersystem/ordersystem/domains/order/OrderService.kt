@@ -101,8 +101,8 @@ class OrderService(
 
   @Transactional
   fun createEmptyOrder(userId: String, request: CreateEmptyOrderRequest): String {
-    // Validate user has at least one location
-    val locationCount = locationRepository.countByUserId(userId)
+    // Validate manager has at least one location
+    val locationCount = locationRepository.countByManagerId(userId)
     if (locationCount == 0) {
       throw ServiceException(
         status = HttpStatus.BAD_REQUEST,

@@ -33,7 +33,7 @@ class OrderController(
     @RequestParam(required = false) status: String?
   ): ResponseEntity<Page<OrderDto>> {
     val orders = orderService.getAllOrdersForUser(
-      userId = user.userId,
+      userId = user.id,
       page = page,
       size = size,
       sortBy = sortBy,
@@ -55,7 +55,7 @@ class OrderController(
     @RequestBody request: CreateEmptyOrderRequest,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<String> {
-    val newOrderId = orderService.createEmptyOrder(user.userId, request)
+    val newOrderId = orderService.createEmptyOrder(user.id, request)
     return ResponseEntity.status(HttpStatus.CREATED).body(newOrderId)
   }
 

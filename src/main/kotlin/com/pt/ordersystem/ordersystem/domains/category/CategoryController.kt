@@ -22,21 +22,21 @@ class CategoryController(
 
     @GetMapping
     fun getAllCategories(@AuthenticationPrincipal user: AuthUser): ResponseEntity<List<CategoryDto>> =
-        ResponseEntity.ok(categoryService.getUserCategories(user.userId))
+        ResponseEntity.ok(categoryService.getUserCategories(user.id))
 
     @GetMapping("/{categoryId}")
     fun getCategoryById(
         @PathVariable categoryId: Long,
         @AuthenticationPrincipal user: AuthUser
     ): ResponseEntity<CategoryDto> =
-        ResponseEntity.ok(categoryService.getCategoryById(user.userId, categoryId))
+        ResponseEntity.ok(categoryService.getCategoryById(user.id, categoryId))
 
     @PostMapping
     fun createCategory(
         @RequestBody request: CreateCategoryRequest,
         @AuthenticationPrincipal user: AuthUser
     ): ResponseEntity<Long> {
-        val categoryId = categoryService.createCategory(user.userId, request)
+        val categoryId = categoryService.createCategory(user.id, request)
         return ResponseEntity.status(HttpStatus.CREATED).body(categoryId)
     }
 
@@ -46,7 +46,7 @@ class CategoryController(
         @RequestBody request: UpdateCategoryRequest,
         @AuthenticationPrincipal user: AuthUser
     ): ResponseEntity<Long> {
-        val updatedCategoryId = categoryService.updateCategory(user.userId, categoryId, request)
+        val updatedCategoryId = categoryService.updateCategory(user.id, categoryId, request)
         return ResponseEntity.ok(updatedCategoryId)
     }
 
@@ -55,7 +55,7 @@ class CategoryController(
         @PathVariable categoryId: Long,
         @AuthenticationPrincipal user: AuthUser
     ): ResponseEntity<String> {
-        categoryService.deleteCategory(user.userId, categoryId)
+        categoryService.deleteCategory(user.id, categoryId)
         return ResponseEntity.ok("Category deleted successfully")
     }
 }

@@ -11,7 +11,7 @@ enum class Roles {
 }
 
 data class AuthUser(
-  val userId: String,
+  val id: String,
   val email: String,
   val roles: List<String>
 )

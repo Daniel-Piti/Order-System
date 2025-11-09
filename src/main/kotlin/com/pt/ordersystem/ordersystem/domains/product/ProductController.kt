@@ -4,12 +4,7 @@ import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.product.models.CreateProductRequest
 import com.pt.ordersystem.ordersystem.domains.product.models.UpdateProductRequest
-import com.pt.ordersystem.ordersystem.exception.ServiceException
-import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import io.swagger.v3.oas.annotations.Operation
-import io.swagger.v3.oas.annotations.media.Content
-import io.swagger.v3.oas.annotations.media.Schema
-import io.swagger.v3.oas.annotations.parameters.RequestBody as SwaggerRequestBody
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
@@ -53,7 +48,7 @@ class ProductController(
       description = description
     )
 
-    val newProductId = productService.createProductWithImages(user.userId, request, images)
+    val newProductId = productService.createProductWithImages(user.id, request, images)
     return ResponseEntity.status(HttpStatus.CREATED).body(newProductId)
   }
 

@@ -16,8 +16,8 @@ data class LocationDbEntity(
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   val id: Long = 0,
 
-  @Column(name = "user_id", nullable = false)
-  val userId: String,
+  @Column(name = "manager_id", nullable = false)
+  val managerId: String,
 
   @Column(nullable = false)
   val name: String,
