@@ -14,23 +14,23 @@ class PublicBrandController(
     private val managerService: ManagerService
 ) {
 
-    @GetMapping("/user/{userId}")
-    fun getAllBrands(@PathVariable userId: String): ResponseEntity<List<BrandDto>> {
-        // Validate user exists first - will throw 404 if not found
-        managerService.getManagerById(userId)
+    @GetMapping("/manager/{managerId}")
+    fun getAllBrands(@PathVariable managerId: String): ResponseEntity<List<BrandDto>> {
+        // Validate manager exists first - will throw 404 if not found
+        managerService.getManagerById(managerId)
         
-        return ResponseEntity.ok(brandService.getUserBrands(userId))
+        return ResponseEntity.ok(brandService.getManagerBrands(managerId))
     }
 
-    @GetMapping("/user/{userId}/brand/{brandId}")
+    @GetMapping("/manager/{managerId}/brand/{brandId}")
     fun getBrandById(
-        @PathVariable userId: String,
+        @PathVariable managerId: String,
         @PathVariable brandId: Long
     ): ResponseEntity<BrandDto> {
-        // Validate user exists
-        managerService.getManagerById(userId)
+        // Validate manager exists
+        managerService.getManagerById(managerId)
         
-        return ResponseEntity.ok(brandService.getBrandById(userId, brandId))
+        return ResponseEntity.ok(brandService.getBrandById(managerId, brandId))
     }
 }
 

@@ -7,11 +7,11 @@ import org.springframework.stereotype.Repository
 @Repository
 interface BrandRepository : JpaRepository<BrandDbEntity, Long> {
     
-    fun findByUserId(userId: String): List<BrandDbEntity>
+    fun findByManagerId(managerId: String): List<BrandDbEntity>
     
-    fun findByUserIdAndId(userId: String, id: Long): BrandDbEntity?
+    fun findByManagerIdAndId(managerId: String, id: Long): BrandDbEntity?
     
-    fun findByUserIdAndName(userId: String, name: String): BrandDbEntity?
+    fun findByManagerIdAndName(managerId: String, name: String): BrandDbEntity?
     
-    fun existsByUserIdAndName(userId: String, name: String): Boolean
+    fun existsByManagerIdAndName(managerId: String, name: String): Boolean
 }

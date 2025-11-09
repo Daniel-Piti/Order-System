@@ -6,14 +6,14 @@ enum class BrandFailureReason(
 ) {
     NOT_FOUND(
         userMessage = "Brand not found",
-        technical = "Brand not found for userId="
+        technical = "Brand not found for managerId="
     ),
     ALREADY_EXISTS(
         userMessage = "Brand already exists",
-        technical = "Brand already exists for userId="
+        technical = "Brand already exists for managerId="
     ),
     BRAND_LIMIT_EXCEEDED(
         userMessage = "Brand limit exceeded",
-        technical = "User has reached the maximum limit of brands. userId="
+        technical = "Manager has reached the maximum limit of brands. managerId="
     )
 }

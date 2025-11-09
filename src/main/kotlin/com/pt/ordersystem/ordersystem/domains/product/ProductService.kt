@@ -85,7 +85,7 @@ class ProductService(
     }
 
     // Enrich with brand names
-    val brands = brandService.getUserBrands(userId)
+    val brands = brandService.getManagerBrands(userId)
     val brandMap = brands.associateBy { it.id }
     
     val enrichedContent = productPage.content.map { product ->
@@ -103,7 +103,7 @@ class ProductService(
     val products = productRepository.findAllByUserId(order.userId)
 
     // Fetch brands for enrichment
-    val brands = brandService.getUserBrands(order.userId)
+    val brands = brandService.getManagerBrands(order.userId)
     val brandMap = brands.associateBy { it.id }
 
     // If no customer assigned, return products with default prices

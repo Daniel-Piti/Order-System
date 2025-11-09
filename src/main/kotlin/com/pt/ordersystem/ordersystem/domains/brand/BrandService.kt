@@ -22,11 +22,11 @@ class BrandService(
 ) {
 
     companion object {
-        private const val MAX_BRANDS_PER_USER = 1000
+        private const val MAX_BRANDS_PER_MANAGER = 1000
     }
 
-    fun getBrandById(userId: String, brandId: Long): BrandDto {
-        val brand = brandRepository.findByUserIdAndId(userId, brandId)
+    fun getBrandById(managerId: String, brandId: Long): BrandDto {
+        val brand = brandRepository.findByManagerIdAndId(managerId, brandId)
             ?: throw ServiceException(
                 status = HttpStatus.NOT_FOUND,
                 userMessage = BrandFailureReason.NOT_FOUND.userMessage,
@@ -39,8 +39,8 @@ class BrandService(
         return brand.toDto(imageUrl)
     }
 
-    fun getUserBrands(userId: String): List<BrandDto> {
-        val brands = brandRepository.findByUserId(userId)
+    fun getManagerBrands(managerId: String): List<BrandDto> {
+        val brands = brandRepository.findByManagerId(managerId)
         
         return brands.map { brand ->
             val imageUrl = r2StorageService.getPublicUrl(brand.s3Key)
@@ -49,7 +49,7 @@ class BrandService(
     }
 
     @Transactional
-    fun createBrand(userId: String, request: CreateBrandRequest, image: MultipartFile?): Long {
+    fun createBrand(managerId: String, request: CreateBrandRequest, image: MultipartFile?): Long {
         with(request) {
             FieldValidators.validateNonEmpty(name, "'name'")
         }
@@ -65,7 +65,7 @@ class BrandService(
             
             // Generate S3 key with base path
             val originalFileName = image.originalFilename ?: "brand-image"
-            val basePath = "users/$userId/brands"
+            val basePath = "managers/$managerId/brands"
             s3Key = r2StorageService.generateKey(basePath, originalFileName)
             
             // Upload to R2
@@ -76,30 +76,30 @@ class BrandService(
             mimeType = image.contentType ?: "application/octet-stream"
         }
 
-        // Check if user has reached the maximum number of brands
-        val existingBrandsCount = brandRepository.findByUserId(userId).size
-        if (existingBrandsCount >= MAX_BRANDS_PER_USER) {
+        // Check if manager has reached the maximum number of brands
+        val existingBrandsCount = brandRepository.findByManagerId(managerId).size
+        if (existingBrandsCount >= MAX_BRANDS_PER_MANAGER) {
             throw ServiceException(
                 status = HttpStatus.BAD_REQUEST,
                 userMessage = BrandFailureReason.BRAND_LIMIT_EXCEEDED.userMessage,
-                technicalMessage = BrandFailureReason.BRAND_LIMIT_EXCEEDED.technical + "userId=$userId, limit=$MAX_BRANDS_PER_USER",
+                technicalMessage = BrandFailureReason.BRAND_LIMIT_EXCEEDED.technical + "managerId=$managerId, limit=$MAX_BRANDS_PER_MANAGER",
                 severity = SeverityLevel.WARN
             )
         }
 
-        // Check if brand already exists for this user
-        if (brandRepository.existsByUserIdAndName(userId, request.name.trim())) {
+        // Check if brand already exists for this manager
+        if (brandRepository.existsByManagerIdAndName(managerId, request.name.trim())) {
             throw ServiceException(
                 status = HttpStatus.CONFLICT,
                 userMessage = BrandFailureReason.ALREADY_EXISTS.userMessage,
-                technicalMessage = BrandFailureReason.ALREADY_EXISTS.technical + "userId=$userId, name=${request.name}",
+                technicalMessage = BrandFailureReason.ALREADY_EXISTS.technical + "managerId=$managerId, name=${request.name}",
                 severity = SeverityLevel.INFO
             )
         }
 
         val now = LocalDateTime.now()
         val brand = BrandDbEntity(
-            userId = userId,
+            managerId = managerId,
             name = request.name.trim(),
             s3Key = s3Key,
             fileName = fileName,
@@ -113,8 +113,8 @@ class BrandService(
     }
 
     @Transactional
-    fun updateBrand(userId: String, brandId: Long, request: UpdateBrandRequest, image: MultipartFile?): Long {
-        val brand = brandRepository.findByUserIdAndId(userId, brandId)
+    fun updateBrand(managerId: String, brandId: Long, request: UpdateBrandRequest, image: MultipartFile?): Long {
+        val brand = brandRepository.findByManagerIdAndId(managerId, brandId)
             ?: throw ServiceException(
                 status = HttpStatus.NOT_FOUND,
                 userMessage = BrandFailureReason.NOT_FOUND.userMessage,
@@ -126,13 +126,13 @@ class BrandService(
             FieldValidators.validateNonEmpty(this.name, "'name'")
         }
 
-        // Check if new brand name already exists for this user (excluding current brand)
-        val existingBrand = brandRepository.findByUserIdAndName(userId, request.name.trim())
+        // Check if new brand name already exists for this manager (excluding current brand)
+        val existingBrand = brandRepository.findByManagerIdAndName(managerId, request.name.trim())
         if (existingBrand != null && existingBrand.id != brandId) {
             throw ServiceException(
                 status = HttpStatus.CONFLICT,
                 userMessage = BrandFailureReason.ALREADY_EXISTS.userMessage,
-                technicalMessage = BrandFailureReason.ALREADY_EXISTS.technical + "userId=$userId, name=${request.name}",
+                technicalMessage = BrandFailureReason.ALREADY_EXISTS.technical + "managerId=$managerId, name=${request.name}",
                 severity = SeverityLevel.INFO
             )
         }
@@ -158,7 +158,7 @@ class BrandService(
             
             // Upload new image
             val originalFileName = image.originalFilename ?: "brand-image"
-            val basePath = "users/$userId/brands"
+            val basePath = "managers/$managerId/brands"
             s3Key = r2StorageService.generateKey(basePath, originalFileName)
             r2StorageService.uploadFile(image, s3Key)
             
@@ -180,8 +180,8 @@ class BrandService(
     }
 
     @Transactional
-    fun deleteBrand(userId: String, brandId: Long) {
-        val brand = brandRepository.findByUserIdAndId(userId, brandId)
+    fun deleteBrand(managerId: String, brandId: Long) {
+        val brand = brandRepository.findByManagerIdAndId(managerId, brandId)
             ?: throw ServiceException(
                 status = HttpStatus.NOT_FOUND,
                 userMessage = BrandFailureReason.NOT_FOUND.userMessage,
@@ -200,7 +200,7 @@ class BrandService(
         }
 
         // Remove brand from all products that use this brand
-        productService.removeBrandFromProducts(userId, brandId)
+        productService.removeBrandFromProducts(managerId, brandId)
 
         brandRepository.deleteById(brandId)
     }
