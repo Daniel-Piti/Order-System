@@ -2,7 +2,7 @@ package com.pt.ordersystem.ordersystem.domains.login
 
 import com.pt.ordersystem.ordersystem.domains.login.models.AdminLoginRequest
 import com.pt.ordersystem.ordersystem.domains.login.models.LoginResponse
-import com.pt.ordersystem.ordersystem.domains.user.models.UserLoginRequest
+import com.pt.ordersystem.ordersystem.domains.manager.models.ManagerLoginRequest
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
@@ -18,8 +18,8 @@ class LoginController(
 ) {
 
   @PostMapping
-  fun userLogin(@RequestBody request: UserLoginRequest): ResponseEntity<LoginResponse> =
-    ResponseEntity.ok(loginService.loginUser(request))
+  fun managerLogin(@RequestBody request: ManagerLoginRequest): ResponseEntity<LoginResponse> =
+    ResponseEntity.ok(loginService.loginManager(request))
 
   @PostMapping("/admin")
   fun adminLogin(@RequestBody request: AdminLoginRequest): ResponseEntity<LoginResponse> =

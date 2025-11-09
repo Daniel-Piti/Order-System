@@ -1,12 +1,15 @@
-package com.pt.ordersystem.ordersystem.domains.user.models
+package com.pt.ordersystem.ordersystem.domains.manager.models
 
-import jakarta.persistence.*
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.Id
+import jakarta.persistence.Table
 import java.time.LocalDate
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "users")
-data class UserDbEntity(
+@Table(name = "managers")
+data class ManagerDbEntity(
 
   @Id
   @Column(nullable = false, length = 255)
@@ -20,6 +23,9 @@ data class UserDbEntity(
 
   @Column(nullable = false, unique = true)
   val email: String,
+
+  @Column(name = "business_name", nullable = false)
+  val businessName: String,
 
   @Column(nullable = false)
   var password: String,
@@ -42,3 +48,4 @@ data class UserDbEntity(
   @Column(name = "updated_at", nullable = false)
   val updatedAt: LocalDateTime = LocalDateTime.now()
 )
+

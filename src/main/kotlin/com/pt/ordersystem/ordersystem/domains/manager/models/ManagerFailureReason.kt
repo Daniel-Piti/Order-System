@@ -1,9 +1,9 @@
-package com.pt.ordersystem.ordersystem.domains.user.models
+package com.pt.ordersystem.ordersystem.domains.manager.models
 
-enum class UserFailureReason(val userMessage: String, val technical: String) {
+enum class ManagerFailureReason(val userMessage: String, val technical: String) {
   NOT_FOUND(
-    userMessage = "User not found",
-    technical = "User not found | "
+    userMessage = "Manager not found",
+    technical = "Manager not found | "
   ),
   INVALID_PASSWORD(
     userMessage = "Invalid password",
@@ -22,3 +22,4 @@ enum class UserFailureReason(val userMessage: String, val technical: String) {
     technical = "Unauthorized access | "
   ),
 }
+

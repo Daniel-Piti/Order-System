@@ -1,7 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.product
 
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductDto
-import com.pt.ordersystem.ordersystem.domains.user.UserService
+import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/public/products")
 class PublicProductController(
   private val productService: ProductService,
-  private val userService: UserService
+  private val managerService: ManagerService
 ) {
 
   @GetMapping("/user/{userId}/product/{productId}")
@@ -21,7 +21,7 @@ class PublicProductController(
     @PathVariable productId: String
   ): ResponseEntity<ProductDto> {
     // Validate user exists
-    userService.getUserById(userId)
+    managerService.getManagerById(userId)
     
     val product = productService.getProductById(productId)
     return ResponseEntity.ok(product)
@@ -38,7 +38,7 @@ class PublicProductController(
     @RequestParam(required = false) brandId: Long?
   ): ResponseEntity<Page<ProductDto>> {
     // Validate user exists first - will throw 404 if not found
-    userService.getUserById(userId)
+    managerService.getManagerById(userId)
     
     val products = productService.getAllProductsForUser(
       userId = userId,

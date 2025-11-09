@@ -1,7 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.category
 
 import com.pt.ordersystem.ordersystem.domains.category.models.CategoryDto
-import com.pt.ordersystem.ordersystem.domains.user.UserService
+import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -11,13 +11,13 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/public/categories")
 class PublicCategoryController(
   private val categoryService: CategoryService,
-  private val userService: UserService
+  private val managerService: ManagerService
 ) {
 
   @GetMapping("/user/{userId}")
   fun getAllCategories(@PathVariable userId: String): ResponseEntity<List<CategoryDto>> {
     // Validate user exists first - will throw 404 if not found
-    userService.getUserById(userId)
+    managerService.getManagerById(userId)
     
     return ResponseEntity.ok(categoryService.getUserCategories(userId))
   }
@@ -28,7 +28,7 @@ class PublicCategoryController(
     @PathVariable categoryId: Long
   ): ResponseEntity<CategoryDto> {
     // Validate user exists
-    userService.getUserById(userId)
+    managerService.getManagerById(userId)
     
     return ResponseEntity.ok(categoryService.getCategoryById(userId, categoryId))
   }

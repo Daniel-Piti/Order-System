@@ -1,13 +1,14 @@
-package com.pt.ordersystem.ordersystem.domains.user.models
+package com.pt.ordersystem.ordersystem.domains.manager.models
 
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-data class UserDto(
+data class ManagerDto(
   val id: String,
   val firstName: String,
   val lastName: String,
   val email: String,
+  val businessName: String,
   val phoneNumber: String,
   val dateOfBirth: LocalDate,
   val streetAddress: String,
@@ -16,11 +17,12 @@ data class UserDto(
   val updatedAt: LocalDateTime,
 )
 
-fun UserDbEntity.toDto(): UserDto = UserDto(
+fun ManagerDbEntity.toDto(): ManagerDto = ManagerDto(
   id = this.id,
   firstName = this.firstName,
   lastName = this.lastName,
   email = this.email,
+  businessName = this.businessName,
   phoneNumber = this.phoneNumber,
   dateOfBirth = this.dateOfBirth,
   streetAddress = this.streetAddress,
@@ -28,3 +30,4 @@ fun UserDbEntity.toDto(): UserDto = UserDto(
   createdAt = this.createdAt,
   updatedAt = this.updatedAt,
 )
+

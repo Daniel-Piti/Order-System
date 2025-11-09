@@ -1,9 +1,9 @@
-package com.pt.ordersystem.ordersystem.domains.user.models
+package com.pt.ordersystem.ordersystem.domains.manager.models
 
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDate
 
-data class UserLoginRequest(
+data class ManagerLoginRequest(
   @field:Schema(example = "@gmail.com")
   val email: String,
 
@@ -11,10 +11,11 @@ data class UserLoginRequest(
   val password: String
 )
 
-data class NewUserRequest(
+data class NewManagerRequest(
   val firstName: String,
   val lastName: String,
   val email: String,
+  val businessName: String,
   val password: String,
   val phoneNumber: String,
   val dateOfBirth: LocalDate,
@@ -22,11 +23,13 @@ data class NewUserRequest(
   val city: String,
 )
 
-data class UpdateUserDetailsRequest(
+data class UpdateManagerDetailsRequest(
   val firstName: String,
   val lastName: String,
+  val businessName: String,
   val phoneNumber: String,
   val dateOfBirth: LocalDate,
   val streetAddress: String,
   val city: String,
 )
+

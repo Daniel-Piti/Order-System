@@ -7,8 +7,8 @@ import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.domains.login.models.AdminLoginRequest
 import com.pt.ordersystem.ordersystem.domains.login.models.LoginResponse
-import com.pt.ordersystem.ordersystem.domains.user.UserService
-import com.pt.ordersystem.ordersystem.domains.user.models.UserLoginRequest
+import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
+import com.pt.ordersystem.ordersystem.domains.manager.models.ManagerLoginRequest
 import org.springframework.http.HttpStatus
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
@@ -16,16 +16,16 @@ import org.springframework.stereotype.Service
 @Service
 class LoginService(
   private val passwordEncoder: BCryptPasswordEncoder,
-  private val userService: UserService,
+  private val managerService: ManagerService,
   private val jwtUtil: JwtUtil,
   private val configProvider: ConfigProvider,
 ) {
 
-  fun loginUser(request: UserLoginRequest): LoginResponse {
+  fun loginManager(request: ManagerLoginRequest): LoginResponse {
     try {
-      val user = userService.getUserByEmail(request.email)
+      val manager = managerService.getManagerByEmail(request.email)
 
-      if (!passwordEncoder.matches(request.password, user.password)) {
+      if (!passwordEncoder.matches(request.password, manager.password)) {
         // Log the actual reason for debugging
         println("[AUTH] Invalid password attempt for email=${request.email}")
         throw ServiceException(
@@ -36,7 +36,7 @@ class LoginService(
         )
       }
 
-      val token = jwtUtil.generateToken(user.email, user.id, listOf(Roles.USER))
+      val token = jwtUtil.generateToken(manager.email, manager.id, listOf(Roles.USER))
       return LoginResponse(token)
     } catch (e: ServiceException) {
       // Log the actual reason for debugging
@@ -68,12 +68,12 @@ class LoginService(
       )
     }
 
-    val user = request.userEmail?.let { email -> userService.getUserByEmail(email) }
+    val manager = request.userEmail?.let { email -> managerService.getManagerByEmail(email) }
 
-    val token = if (user == null) {
+    val token = if (manager == null) {
       jwtUtil.generateToken("ADMIN", "ADMIN", listOf(Roles.ADMIN))
     } else {
-      jwtUtil.generateToken(user.email, user.id, listOf(Roles.ADMIN, Roles.USER))
+      jwtUtil.generateToken(manager.email, manager.id, listOf(Roles.ADMIN, Roles.USER))
     }
 
     return LoginResponse(token)
