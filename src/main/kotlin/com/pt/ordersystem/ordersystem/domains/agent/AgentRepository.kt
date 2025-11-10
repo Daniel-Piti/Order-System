@@ -1,0 +1,13 @@
+package com.pt.ordersystem.ordersystem.domains.agent
+
+import com.pt.ordersystem.ordersystem.domains.agent.models.AgentDbEntity
+import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.stereotype.Repository
+
+@Repository
+interface AgentRepository : JpaRepository<AgentDbEntity, Long> {
+  fun findByManagerId(managerId: String): List<AgentDbEntity>
+  fun findByManagerIdAndId(managerId: String, id: Long): AgentDbEntity?
+  fun findByEmail(email: String): AgentDbEntity?
+  fun existsByEmail(email: String): Boolean
+}

@@ -7,8 +7,10 @@ import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.domains.login.models.AdminLoginRequest
 import com.pt.ordersystem.ordersystem.domains.login.models.LoginResponse
+import com.pt.ordersystem.ordersystem.domains.agent.AgentService
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
-import com.pt.ordersystem.ordersystem.domains.manager.models.ManagerLoginRequest
+import com.pt.ordersystem.ordersystem.domains.login.models.AgentLoginRequest
+import com.pt.ordersystem.ordersystem.domains.login.models.ManagerLoginRequest
 import org.springframework.http.HttpStatus
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service
 class LoginService(
   private val passwordEncoder: BCryptPasswordEncoder,
   private val managerService: ManagerService,
+  private val agentService: AgentService,
   private val jwtUtil: JwtUtil,
   private val configProvider: ConfigProvider,
 ) {
@@ -48,6 +51,35 @@ class LoginService(
         status = HttpStatus.UNAUTHORIZED,
         userMessage = "Invalid email or password",
         technicalMessage = "Authentication failed",
+        severity = SeverityLevel.INFO,
+      )
+    }
+  }
+
+  fun loginAgent(request: AgentLoginRequest): LoginResponse {
+    try {
+      val agent = agentService.getAgentByEmail(request.email)
+
+      if (!passwordEncoder.matches(request.password, agent.password)) {
+        println("[AUTH] Invalid agent password attempt for email=${request.email}")
+        throw ServiceException(
+          status = HttpStatus.UNAUTHORIZED,
+          userMessage = "Invalid email or password",
+          technicalMessage = "Agent authentication failed",
+          severity = SeverityLevel.INFO,
+        )
+      }
+
+      val token = jwtUtil.generateToken(agent.email, agent.id.toString(), listOf(Roles.AGENT))
+      return LoginResponse(token)
+    } catch (e: ServiceException) {
+      if (e.status == HttpStatus.NOT_FOUND) {
+        println("[AUTH] Agent not found attempt for email=${request.email}")
+      }
+      throw ServiceException(
+        status = HttpStatus.UNAUTHORIZED,
+        userMessage = "Invalid email or password",
+        technicalMessage = "Agent authentication failed",
         severity = SeverityLevel.INFO,
       )
     }

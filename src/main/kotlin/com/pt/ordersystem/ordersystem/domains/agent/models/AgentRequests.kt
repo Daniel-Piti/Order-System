@@ -1,26 +1,19 @@
-package com.pt.ordersystem.ordersystem.domains.manager.models
+package com.pt.ordersystem.ordersystem.domains.agent.models
 
-import java.time.LocalDate
-
-data class NewManagerRequest(
+data class NewAgentRequest(
   val firstName: String,
   val lastName: String,
   val email: String,
-  val businessName: String,
   val password: String,
   val phoneNumber: String,
-  val dateOfBirth: LocalDate,
   val streetAddress: String,
   val city: String,
 )
 
-data class UpdateManagerDetailsRequest(
+data class UpdateAgentRequest(
   val firstName: String,
   val lastName: String,
-  val businessName: String,
   val phoneNumber: String,
-  val dateOfBirth: LocalDate,
   val streetAddress: String,
   val city: String,
 )
-
