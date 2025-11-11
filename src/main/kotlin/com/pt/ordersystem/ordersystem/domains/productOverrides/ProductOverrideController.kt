@@ -1,6 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.productOverrides
 
-import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
+import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.CreateProductOverrideRequest
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.ProductOverrideDto
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*
 @SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/product-overrides")
-@PreAuthorize(AUTH_USER)
+@PreAuthorize(AUTH_MANAGER)
 class ProductOverrideController(
   private val productOverrideService: ProductOverrideService
 ) {

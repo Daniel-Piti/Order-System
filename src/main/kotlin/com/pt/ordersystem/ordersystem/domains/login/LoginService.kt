@@ -39,7 +39,7 @@ class LoginService(
         )
       }
 
-      val token = jwtUtil.generateToken(manager.email, manager.id, listOf(Roles.USER))
+      val token = jwtUtil.generateToken(manager.email, manager.id, listOf(Roles.MANAGER))
       return LoginResponse(token)
     } catch (e: ServiceException) {
       // Log the actual reason for debugging
@@ -100,12 +100,24 @@ class LoginService(
       )
     }
 
-    val manager = request.userEmail?.let { email -> managerService.getManagerByEmail(email) }
+    val token = if (request.userEmail != null) {
+      val manager = try {
+        managerService.getManagerByEmail(request.userEmail)
+      } catch (e: ServiceException) {
+        if (e.status == HttpStatus.NOT_FOUND) {
+          throw ServiceException(
+            status = HttpStatus.BAD_REQUEST,
+            userMessage = "Manager not found for the provided email",
+            technicalMessage = "Admin impersonation failed | managerEmail=${request.userEmail}",
+            severity = SeverityLevel.INFO,
+          )
+        }
+        throw e
+      }
 
-    val token = if (manager == null) {
-      jwtUtil.generateToken("ADMIN", "ADMIN", listOf(Roles.ADMIN))
+      jwtUtil.generateToken(manager.email, manager.id, listOf(Roles.ADMIN, Roles.MANAGER))
     } else {
-      jwtUtil.generateToken(manager.email, manager.id, listOf(Roles.ADMIN, Roles.USER))
+      jwtUtil.generateToken("ADMIN", "ADMIN", listOf(Roles.ADMIN))
     }
 
     return LoginResponse(token)

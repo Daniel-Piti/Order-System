@@ -1,7 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.manager
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_ADMIN
-import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
+import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.manager.models.ManagerDto
 import com.pt.ordersystem.ordersystem.domains.manager.models.NewManagerRequest
@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController
 @SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/managers")
-@PreAuthorize(AUTH_USER)
+@PreAuthorize(AUTH_MANAGER)
 class ManagerController(
   private val managerService: ManagerService,
 ) {

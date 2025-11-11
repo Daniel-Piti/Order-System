@@ -1,6 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.product
 
-import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
+import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.product.models.CreateProductRequest
 import com.pt.ordersystem.ordersystem.domains.product.models.UpdateProductRequest
@@ -19,7 +19,7 @@ import org.springframework.web.multipart.MultipartFile
 @SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/products")
-@PreAuthorize(AUTH_USER)
+@PreAuthorize(AUTH_MANAGER)
 class ProductController(
   private val productService: ProductService
 ) {

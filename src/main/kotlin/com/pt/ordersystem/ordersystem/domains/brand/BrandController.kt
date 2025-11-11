@@ -1,6 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.brand
 
-import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
+import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.brand.models.CreateBrandRequest
 import com.pt.ordersystem.ordersystem.domains.brand.models.UpdateBrandRequest
@@ -18,7 +18,7 @@ import org.springframework.web.multipart.MultipartFile
 @SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/brands")
-@PreAuthorize(AUTH_USER)
+@PreAuthorize(AUTH_MANAGER)
 class BrandController(
     private val brandService: BrandService
 ) {

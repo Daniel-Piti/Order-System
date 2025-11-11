@@ -1,6 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.location
 
-import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
+import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.location.models.NewLocationRequest
 import com.pt.ordersystem.ordersystem.domains.location.models.UpdateLocationRequest
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*
 @SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/locations")
-@PreAuthorize(AUTH_USER)
+@PreAuthorize(AUTH_MANAGER)
 class LocationController(
   private val locationService: LocationService
 ) {

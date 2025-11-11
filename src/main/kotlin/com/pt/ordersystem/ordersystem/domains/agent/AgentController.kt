@@ -1,6 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.agent
 
-import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
+import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.agent.models.AgentDto
 import com.pt.ordersystem.ordersystem.domains.agent.models.NewAgentRequest
@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController
 @SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/agents")
-@PreAuthorize(AUTH_USER)
+@PreAuthorize(AUTH_MANAGER)
 class AgentController(
   private val agentService: AgentService,
 ) {

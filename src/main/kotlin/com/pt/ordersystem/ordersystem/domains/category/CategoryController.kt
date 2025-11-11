@@ -1,6 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.category
 
-import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
+import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.category.models.*
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*
 @SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/categories")
-@PreAuthorize(AUTH_USER)
+@PreAuthorize(AUTH_MANAGER)
 class CategoryController(
     private val categoryService: CategoryService
 ) {
