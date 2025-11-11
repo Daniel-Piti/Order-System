@@ -19,8 +19,11 @@ data class ProductOverrideDbEntity(
   @Column(name = "product_id", nullable = false)
   val productId: String,
 
-  @Column(name = "user_id", nullable = false)
-  val userId: String,
+  @Column(name = "manager_id", nullable = false)
+  val managerId: String,
+
+  @Column(name = "agent_id")
+  val agentId: Long? = null,
 
   @Column(name = "customer_id", nullable = false)
   val customerId: String,

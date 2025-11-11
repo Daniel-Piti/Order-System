@@ -36,6 +36,9 @@ class CustomerService(
   fun getCustomerDto(managerId: String, customerId: String) =
     getCustomer(managerId, agentId = null, customerId = customerId).toDto()
 
+  fun getCustomerDtoForAgent(managerId: String, agentId: Long, customerId: String) =
+    getCustomer(managerId, agentId, customerId).toDto()
+
   @Transactional
   fun createCustomer(managerId: String, agentId: Long?, customerPayload: CustomerPayload): CustomerDto {
     val normalizedPayload = normalizePayload(customerPayload)
@@ -95,7 +98,7 @@ class CustomerService(
   fun deleteCustomer(managerId: String, agentId: Long?, customerId: String) {
     val currentCustomer = getCustomer(managerId, agentId, customerId)
 
-    val overrides = productOverrideRepository.findByUserIdAndCustomerId(managerId, customerId)
+    val overrides = productOverrideRepository.findByManagerIdAndCustomerId(managerId, customerId)
     productOverrideRepository.deleteAll(overrides)
 
     customerRepository.delete(currentCustomer)

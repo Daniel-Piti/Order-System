@@ -5,5 +5,6 @@ enum class ProductOverrideFailureReason(val message: String) {
   PRODUCT_OVERRIDE_ALREADY_EXISTS("A price override for this product and customer already exists"),
   PRODUCT_NOT_FOUND("Product not found"),
   CUSTOMER_NOT_FOUND("Customer not found"),
+  BELOW_MINIMUM_PRICE("Override price cannot be lower than the product minimum price"),
 }
 

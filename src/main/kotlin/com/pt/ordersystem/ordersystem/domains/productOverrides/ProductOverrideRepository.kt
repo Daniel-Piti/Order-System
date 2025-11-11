@@ -10,32 +10,44 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface ProductOverrideRepository : JpaRepository<ProductOverrideDbEntity, Long> {
-  fun findByUserId(userId: String): List<ProductOverrideDbEntity>
-  fun findByUserIdAndId(userId: String, id: Long): ProductOverrideDbEntity?
-  fun findByProductIdAndCustomerId(productId: String, customerId: String): ProductOverrideDbEntity?
-  fun findByUserIdAndProductId(userId: String, productId: String): List<ProductOverrideDbEntity>
-  fun findByUserIdAndCustomerId(userId: String, customerId: String): List<ProductOverrideDbEntity>
-  
-  // Paginated queries with JOIN to get product prices
+  fun findByManagerId(managerId: String): List<ProductOverrideDbEntity>
+  fun findByManagerIdAndId(managerId: String, id: Long): ProductOverrideDbEntity?
+  fun findByManagerIdAndProductId(managerId: String, productId: String): List<ProductOverrideDbEntity>
+  fun findByManagerIdAndCustomerId(managerId: String, customerId: String): List<ProductOverrideDbEntity>
+  fun findByManagerIdAndAgentIdIsNullAndProductIdAndCustomerId(managerId: String, productId: String, customerId: String): ProductOverrideDbEntity?
+  fun findByManagerIdAndAgentIdAndProductIdAndCustomerId(managerId: String, agentId: Long, productId: String, customerId: String): ProductOverrideDbEntity?
+  fun findByManagerIdAndAgentId(managerId: String, agentId: Long): List<ProductOverrideDbEntity>
+  fun findByManagerIdAndAgentIdAndProductId(managerId: String, agentId: Long, productId: String): List<ProductOverrideDbEntity>
+  fun findByManagerIdAndAgentIdAndCustomerId(managerId: String, agentId: Long, customerId: String): List<ProductOverrideDbEntity>
+
   @Query("""
-    SELECT po.id, po.product_id, po.user_id, po.customer_id, po.override_price, p.special_price as original_price
+    SELECT po.id, po.product_id, po.manager_id, po.agent_id, po.customer_id, po.override_price, p.price as product_price, p.minimum_price as product_minimum_price
     FROM product_overrides po
     JOIN products p ON po.product_id = p.id
-    WHERE po.user_id = :userId
+    WHERE po.manager_id = :managerId
     AND (:productId IS NULL OR po.product_id = :productId)
     AND (:customerId IS NULL OR po.customer_id = :customerId)
+    AND (:agentId IS NULL OR po.agent_id = :agentId)
+    AND (:includeManagerOverrides = true OR po.agent_id IS NOT NULL)
+    AND (:includeAgentOverrides = true OR po.agent_id IS NULL)
   """,
-  countQuery = """
+    countQuery = """
     SELECT COUNT(*)
     FROM product_overrides po
     JOIN products p ON po.product_id = p.id
-    WHERE po.user_id = :userId
+    WHERE po.manager_id = :managerId
     AND (:productId IS NULL OR po.product_id = :productId)
     AND (:customerId IS NULL OR po.customer_id = :customerId)
+    AND (:agentId IS NULL OR po.agent_id = :agentId)
+    AND (:includeManagerOverrides = true OR po.agent_id IS NOT NULL)
+    AND (:includeAgentOverrides = true OR po.agent_id IS NULL)
   """,
-  nativeQuery = true)
+    nativeQuery = true)
   fun findOverridesWithPrice(
-    @Param("userId") userId: String,
+    @Param("managerId") managerId: String,
+    @Param("agentId") agentId: Long?,
+    @Param("includeManagerOverrides") includeManagerOverrides: Boolean,
+    @Param("includeAgentOverrides") includeAgentOverrides: Boolean,
     @Param("productId") productId: String?,
     @Param("customerId") customerId: String?,
     pageable: Pageable
