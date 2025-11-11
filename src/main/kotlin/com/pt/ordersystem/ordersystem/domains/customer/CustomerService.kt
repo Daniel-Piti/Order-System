@@ -1,10 +1,13 @@
 package com.pt.ordersystem.ordersystem.domains.customer
 
+import com.pt.ordersystem.ordersystem.domains.agent.AgentRepository
 import com.pt.ordersystem.ordersystem.domains.customer.models.*
 import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideRepository
 import com.pt.ordersystem.ordersystem.exception.ServiceException
+import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -12,123 +15,177 @@ import java.time.LocalDateTime
 @Service
 class CustomerService(
   private val customerRepository: CustomerRepository,
-  private val productOverrideRepository: ProductOverrideRepository
+  private val productOverrideRepository: ProductOverrideRepository,
+  private val agentRepository: AgentRepository,
 ) {
 
   companion object {
-    private const val MAX_CUSTOMERS_PER_USER = 1000
+    private const val MAX_CUSTOMER_CAP = 100
   }
 
+  fun getCustomers(managerId: String, agentId: Long?): List<CustomerDto> {
+    val customers = if (agentId == null) {
+      customerRepository.findByManagerId(managerId)
+    } else {
+      validateAgentExists(managerId, agentId)
+      customerRepository.findByManagerIdAndAgentId(managerId, agentId)
+    }
+    return customers.map { it.toDto() }
+  }
+
+  fun getCustomerDto(managerId: String, customerId: String) =
+    getCustomer(managerId, agentId = null, customerId = customerId).toDto()
+
   @Transactional
-  fun createCustomer(userId: String, request: CreateCustomerRequest): CustomerDto {
-    with(request) {
-      FieldValidators.validateNonEmpty(name, "'name'")
-      FieldValidators.validatePhoneNumber(phoneNumber)
-      FieldValidators.validateEmail(email)
-      FieldValidators.validateNonEmpty(streetAddress, "'street address'")
-      FieldValidators.validateNonEmpty(city, "'city'")
-    }
+  fun createCustomer(managerId: String, agentId: Long?, customerPayload: CustomerPayload): CustomerDto {
+    val normalizedPayload = normalizePayload(customerPayload)
 
-    // Check if user has reached the maximum number of customers
-    val existingCustomersCount = customerRepository.findByUserId(userId).size
-    if (existingCustomersCount >= MAX_CUSTOMERS_PER_USER) {
-      throw ServiceException(
-        status = org.springframework.http.HttpStatus.BAD_REQUEST,
-        userMessage = CustomerFailureReason.CUSTOMER_LIMIT_EXCEEDED.userMessage,
-        technicalMessage = CustomerFailureReason.CUSTOMER_LIMIT_EXCEEDED.technical + "UserId=$userId MAX_CUSTOMERS_PER_USER=$MAX_CUSTOMERS_PER_USER",
-        severity = com.pt.ordersystem.ordersystem.exception.SeverityLevel.WARN
-      )
-    }
+    // Validations
+    validatePayload(normalizedPayload)
+    agentId?.also { validateAgentExists(managerId, agentId) }
+    validateUniquePhoneNumber(managerId, normalizedPayload.phoneNumber, excludeCustomerId = null)
+    validateCustomerCap(managerId, agentId)
 
-    // Check if customer with same phone number already exists for this user
-    val existingCustomer = customerRepository.findByUserIdAndPhoneNumber(userId, request.phoneNumber)
-    if (existingCustomer != null) {
-      throw ServiceException(
-        status = org.springframework.http.HttpStatus.BAD_REQUEST,
-        userMessage = CustomerFailureReason.CUSTOMER_ALREADY_EXISTS.userMessage,
-        technicalMessage = CustomerFailureReason.CUSTOMER_ALREADY_EXISTS.technical + " phoneNumber=${request.phoneNumber} userId=$userId",
-        severity = com.pt.ordersystem.ordersystem.exception.SeverityLevel.WARN
-      )
-    }
+    val now = LocalDateTime.now()
 
     val customer = CustomerDbEntity(
       id = GeneralUtils.genId(),
-      userId = userId,
-      name = request.name,
-      phoneNumber = request.phoneNumber,
-      email = request.email,
-      streetAddress = request.streetAddress,
-      city = request.city,
-      createdAt = LocalDateTime.now(),
-      updatedAt = LocalDateTime.now()
+      agentId = agentId,
+      managerId = managerId,
+      name = normalizedPayload.name,
+      phoneNumber = normalizedPayload.phoneNumber,
+      email = normalizedPayload.email,
+      streetAddress = normalizedPayload.streetAddress,
+      city = normalizedPayload.city,
+      createdAt = now,
+      updatedAt = now,
     )
 
-    val savedCustomer = customerRepository.save(customer)
-    return savedCustomer.toDto()
-  }
-
-  fun getCustomersByUserId(userId: String): List<CustomerDto> {
-    return customerRepository.findByUserId(userId).map { it.toDto() }
-  }
-
-  fun getCustomerByIdAndUserId(userId: String, customerId: String): CustomerDto {
-    val customer = customerRepository.findByUserIdAndId(userId, customerId)
-      ?: throw ServiceException(
-        status = org.springframework.http.HttpStatus.NOT_FOUND,
-        userMessage = CustomerFailureReason.CUSTOMER_NOT_FOUND.userMessage,
-        technicalMessage = CustomerFailureReason.CUSTOMER_NOT_FOUND.technical + "customerId=$customerId userId=$userId",
-        severity = com.pt.ordersystem.ordersystem.exception.SeverityLevel.WARN
-      )
-    return customer.toDto()
+    return customerRepository.save(customer).toDto()
   }
 
   @Transactional
-  fun updateCustomer(userId: String, customerId: String, request: UpdateCustomerRequest): CustomerDto {
-    // Validate input fields
-    with(request) {
-      FieldValidators.validateNonEmpty(name, "'name'")
-      FieldValidators.validatePhoneNumber(phoneNumber)
-      FieldValidators.validateEmail(email)
-      FieldValidators.validateNonEmpty(streetAddress, "'street address'")
-      FieldValidators.validateNonEmpty(city, "'city'")
+  fun updateCustomer(
+    managerId: String,
+    agentId: Long?,
+    customerId: String,
+    customerPayload: CustomerPayload
+  ): CustomerDto {
+    val normalizedPayload = normalizePayload(customerPayload)
+
+    validatePayload(normalizedPayload)
+    agentId?.also { validateAgentExists(managerId, agentId) }
+    validateUniquePhoneNumber(managerId, normalizedPayload.phoneNumber, excludeCustomerId = customerId)
+
+    val currentCustomer = getCustomer(managerId, agentId, customerId)
+
+    val updated = currentCustomer.copy(
+      name = normalizedPayload.name,
+      phoneNumber = normalizedPayload.phoneNumber,
+      email = normalizedPayload.email,
+      streetAddress = normalizedPayload.streetAddress,
+      city = normalizedPayload.city,
+      updatedAt = LocalDateTime.now(),
+    )
+
+    return customerRepository.save(updated).toDto()
+  }
+
+  @Transactional
+  fun deleteCustomer(managerId: String, agentId: Long?, customerId: String) {
+    val currentCustomer = getCustomer(managerId, agentId, customerId)
+
+    val overrides = productOverrideRepository.findByUserIdAndCustomerId(managerId, customerId)
+    productOverrideRepository.deleteAll(overrides)
+
+    customerRepository.delete(currentCustomer)
+  }
+
+  private fun validateUniquePhoneNumber(managerId: String, phoneNumber: String, excludeCustomerId: String?) {
+    val customerWithSamePhoneNumber = customerRepository.findByManagerIdAndPhoneNumber(managerId, phoneNumber)
+    if (customerWithSamePhoneNumber != null && customerWithSamePhoneNumber.id != excludeCustomerId) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = CustomerFailureReason.CUSTOMER_ALREADY_EXISTS.userMessage,
+        technicalMessage = CustomerFailureReason.CUSTOMER_ALREADY_EXISTS.technical + "phoneNumber=$phoneNumber managerId=$managerId",
+        severity = SeverityLevel.WARN,
+      )
+    }
+  }
+
+  private fun normalizePayload(customerPayload: CustomerPayload) =
+    CustomerPayload(
+      name = customerPayload.name.trim(),
+      phoneNumber = customerPayload.phoneNumber.trim(),
+      email = customerPayload.email.trim(),
+      streetAddress = customerPayload.streetAddress.trim(),
+      city = customerPayload.city.trim(),
+    )
+
+  private fun validatePayload(customerPayload: CustomerPayload) {
+    FieldValidators.validateNonEmpty(customerPayload.name, "'name'")
+    FieldValidators.validatePhoneNumber(customerPayload.phoneNumber)
+    FieldValidators.validateEmail(customerPayload.email)
+    FieldValidators.validateNonEmpty(customerPayload.streetAddress, "'street address'")
+    FieldValidators.validateNonEmpty(customerPayload.city, "'city'")
+  }
+
+  private fun getCustomer(managerId: String, agentId: Long?, customerId: String): CustomerDbEntity {
+    if (agentId == null) {
+      return customerRepository.findByManagerIdAndId(managerId, customerId)
+        ?: throw ServiceException(
+          status = HttpStatus.NOT_FOUND,
+          userMessage = CustomerFailureReason.CUSTOMER_NOT_FOUND.userMessage,
+          technicalMessage = CustomerFailureReason.CUSTOMER_NOT_FOUND.technical + "managerId=$managerId customerId=$customerId",
+          severity = SeverityLevel.WARN,
+        )
     }
 
-    val customer = customerRepository.findByUserIdAndId(userId, customerId)
+    validateAgentExists(managerId, agentId)
+
+    return customerRepository.findByManagerIdAndAgentIdAndId(managerId, agentId, customerId)
       ?: throw ServiceException(
-        status = org.springframework.http.HttpStatus.NOT_FOUND,
+        status = HttpStatus.NOT_FOUND,
         userMessage = CustomerFailureReason.CUSTOMER_NOT_FOUND.userMessage,
-        technicalMessage = CustomerFailureReason.CUSTOMER_NOT_FOUND.technical + "customerId=$customerId userId=$userId",
-        severity = com.pt.ordersystem.ordersystem.exception.SeverityLevel.WARN
+        technicalMessage = CustomerFailureReason.CUSTOMER_NOT_FOUND.technical + "managerId=$managerId agentId=$agentId customerId=$customerId",
+        severity = SeverityLevel.WARN,
       )
-
-    val updatedCustomer = customer.copy(
-      name = request.name,
-      phoneNumber = request.phoneNumber,
-      email = request.email,
-      streetAddress = request.streetAddress,
-      city = request.city,
-      updatedAt = LocalDateTime.now()
-    )
-
-    val savedCustomer = customerRepository.save(updatedCustomer)
-    return savedCustomer.toDto()
   }
 
-  @Transactional
-  fun deleteCustomer(userId: String, customerId: String) {
-    val customer = customerRepository.findByUserIdAndId(userId, customerId)
-      ?: throw ServiceException(
-        status = org.springframework.http.HttpStatus.NOT_FOUND,
-        userMessage = CustomerFailureReason.CUSTOMER_NOT_FOUND.userMessage,
-        technicalMessage = CustomerFailureReason.CUSTOMER_NOT_FOUND.technical + "customerId=$customerId userId=$userId",
-        severity = com.pt.ordersystem.ordersystem.exception.SeverityLevel.WARN
+  private fun validateCustomerCap(managerId: String, agentId: Long?) {
+    if (agentId != null) {
+      val agentCustomerCount = customerRepository.countByAgentId(agentId)
+      if (agentCustomerCount >= MAX_CUSTOMER_CAP) {
+        throw ServiceException(
+          status = HttpStatus.BAD_REQUEST,
+          userMessage = CustomerFailureReason.AGENT_CUSTOMER_LIMIT_EXCEEDED.userMessage,
+          technicalMessage = CustomerFailureReason.AGENT_CUSTOMER_LIMIT_EXCEEDED.technical + "agentId=$agentId",
+          severity = SeverityLevel.WARN,
+        )
+      }
+    } else {
+      val managerCustomerCount = customerRepository.countByManagerIdAndAgentIdIsNull(managerId)
+      if (managerCustomerCount >= MAX_CUSTOMER_CAP) {
+        throw ServiceException(
+          status = HttpStatus.BAD_REQUEST,
+          userMessage = CustomerFailureReason.CUSTOMER_LIMIT_EXCEEDED.userMessage,
+          technicalMessage = CustomerFailureReason.CUSTOMER_LIMIT_EXCEEDED.technical + "managerId=$managerId",
+          severity = SeverityLevel.WARN,
+        )
+      }
+    }
+  }
+
+  private fun validateAgentExists(managerId: String, agentId: Long) {
+    val agent = agentRepository.findByManagerIdAndId(managerId, agentId)
+    if (agent == null) {
+      throw ServiceException(
+        status = HttpStatus.NOT_FOUND,
+        userMessage = CustomerFailureReason.AGENT_NOT_FOUND.userMessage,
+        technicalMessage = CustomerFailureReason.AGENT_NOT_FOUND.technical + "managerId=$managerId agentId=$agentId",
+        severity = SeverityLevel.WARN,
       )
-    
-    // Delete all product overrides for this customer first (cascading delete)
-    val overrides = productOverrideRepository.findByUserIdAndCustomerId(userId, customerId)
-    productOverrideRepository.deleteAll(overrides)
-    
-    customerRepository.delete(customer)
+    }
   }
 
 }

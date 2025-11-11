@@ -116,7 +116,7 @@ class OrderService(
 
     // If customerId is provided, fetch customer data to pre-fill
     val customer = request.customerId?.let { customerId ->
-      customerService.getCustomerByIdAndUserId(userId, customerId)
+      customerService.getCustomerDto(userId, customerId)
     }
 
     // Link expires in 7 days by default

@@ -2,9 +2,8 @@ package com.pt.ordersystem.ordersystem.domains.customer
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_USER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
-import com.pt.ordersystem.ordersystem.domains.customer.models.CreateCustomerRequest
 import com.pt.ordersystem.ordersystem.domains.customer.models.CustomerDto
-import com.pt.ordersystem.ordersystem.domains.customer.models.UpdateCustomerRequest
+import com.pt.ordersystem.ordersystem.domains.customer.models.CustomerPayload
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
@@ -13,55 +12,62 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
-@Tag(name = "Customers", description = "Customers management API")
+@Tag(name = "Manager Customers", description = "Managers manage their own customers")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
-@RequestMapping("/api/customers")
+@RequestMapping("/api/manager/customers")
 @PreAuthorize(AUTH_USER)
-class CustomerController(
+class CustomerManagerController(
   private val customerService: CustomerService
 ) {
 
   @GetMapping("/{customerId}")
   fun getCustomerById(
     @PathVariable customerId: String,
-    @AuthenticationPrincipal user: AuthUser
+    @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<CustomerDto> {
-    val customer = customerService.getCustomerByIdAndUserId(user.id, customerId)
+    val customer = customerService.getCustomerDto(manager.id, customerId)
     return ResponseEntity.ok(customer)
   }
 
   @GetMapping
-  fun getAllCustomers(@AuthenticationPrincipal user: AuthUser): ResponseEntity<List<CustomerDto>> {
-    val customers = customerService.getCustomersByUserId(user.id)
+  fun getAllCustomers(@AuthenticationPrincipal manager: AuthUser): ResponseEntity<List<CustomerDto>> {
+    val customers = customerService.getCustomers(manager.id, agentId = null)
     return ResponseEntity.ok(customers)
   }
 
   @PostMapping
   fun createCustomer(
-    @RequestBody request: CreateCustomerRequest,
-    @AuthenticationPrincipal user: AuthUser,
+    @RequestBody payload: CustomerPayload,
+    @AuthenticationPrincipal manager: AuthUser,
   ): ResponseEntity<CustomerDto> {
-    val customer = customerService.createCustomer(user.id, request)
+    val customer = customerService.createCustomer(manager.id, agentId = null, customerPayload = payload)
     return ResponseEntity.status(HttpStatus.CREATED).body(customer)
   }
 
   @PutMapping("/{customerId}")
   fun updateCustomer(
     @PathVariable customerId: String,
-    @RequestBody request: UpdateCustomerRequest,
-    @AuthenticationPrincipal user: AuthUser
+    @RequestBody payload: CustomerPayload,
+    @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<CustomerDto> {
-    val customer = customerService.updateCustomer(user.id, customerId, request)
+    val existing = customerService.getCustomerDto(manager.id, customerId)
+    val customer = customerService.updateCustomer(
+      managerId = manager.id,
+      agentId = existing.agentId,
+      customerId = customerId,
+      customerPayload = payload,
+    )
     return ResponseEntity.ok(customer)
   }
 
   @DeleteMapping("/{customerId}")
   fun deleteCustomer(
     @PathVariable customerId: String,
-    @AuthenticationPrincipal user: AuthUser
+    @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<String> {
-    customerService.deleteCustomer(user.id, customerId)
+    val existing = customerService.getCustomerDto(manager.id, customerId)
+    customerService.deleteCustomer(manager.id, agentId = existing.agentId, customerId = customerId)
     return ResponseEntity.ok("Customer deleted successfully")
   }
 }

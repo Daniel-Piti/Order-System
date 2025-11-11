@@ -6,7 +6,6 @@ import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.*
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
-import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -42,7 +41,7 @@ class ProductOverrideService(
     }
 
     try {
-      customerService.getCustomerByIdAndUserId(userId, request.customerId)
+      customerService.getCustomerDto(userId, request.customerId)
     } catch (e: Exception) {
       throw ServiceException(
         status = HttpStatus.NOT_FOUND,

@@ -30,6 +30,9 @@ class AgentService(
   fun getAgentProfile(agentId: String): AgentDto =
     agentRepository.findById(parseAgentId(agentId)).orElseThrow { agentNotFound("agentId=$agentId") }.toDto()
 
+  fun getAgentEntity(agentId: String): AgentDbEntity =
+    agentRepository.findById(parseAgentId(agentId)).orElseThrow { agentNotFound("agentId=$agentId") }
+
   fun getAgentByEmail(email: String): AgentDbEntity =
     agentRepository.findByEmail(email.trim().lowercase()) ?: throw agentNotFound("email=$email")
 
@@ -156,7 +159,7 @@ class AgentService(
     severity = SeverityLevel.WARN,
   )
 
-  private fun parseAgentId(agentId: String): Long =
+  fun parseAgentId(agentId: String): Long =
     agentId.toLongOrNull() ?: throw ServiceException(
       status = HttpStatus.BAD_REQUEST,
       userMessage = "Invalid agent identifier",

@@ -12,8 +12,11 @@ data class CustomerDbEntity(
   @Id
   val id: String,
 
-  @Column(name = "user_id", nullable = false)
-  val userId: String,
+  @Column(name = "agent_id")
+  val agentId: Long?,
+
+  @Column(name = "manager_id", nullable = false)
+  val managerId: String,
 
   @Column(nullable = false)
   val name: String,
@@ -39,7 +42,8 @@ data class CustomerDbEntity(
 
 fun CustomerDbEntity.toDto() = CustomerDto(
   id = id,
-  userId = userId,
+  agentId = agentId,
+  managerId = managerId,
   name = name,
   phoneNumber = phoneNumber,
   email = email,

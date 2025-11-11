@@ -6,8 +6,13 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface CustomerRepository : JpaRepository<CustomerDbEntity, String> {
-  fun findByUserId(userId: String): List<CustomerDbEntity>
-  fun findByUserIdAndId(userId: String, id: String): CustomerDbEntity?
-  fun findByUserIdAndPhoneNumber(userId: String, phoneNumber: String): CustomerDbEntity?
+  fun findByManagerId(managerId: String): List<CustomerDbEntity>
+  fun findByManagerIdAndId(managerId: String, id: String): CustomerDbEntity?
+  fun findByManagerIdAndPhoneNumber(managerId: String, phoneNumber: String): CustomerDbEntity?
+  fun findByManagerIdAndAgentIdIsNullAndId(managerId: String, id: String): CustomerDbEntity?
+  fun findByManagerIdAndAgentId(managerId: String, agentId: Long): List<CustomerDbEntity>
+  fun findByManagerIdAndAgentIdAndId(managerId: String, agentId: Long, id: String): CustomerDbEntity?
+  fun countByAgentId(agentId: Long): Long
+  fun countByManagerIdAndAgentIdIsNull(managerId: String): Long
 }
 
