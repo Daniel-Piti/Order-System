@@ -42,8 +42,8 @@ class ProductService(
   fun removeBrandFromProducts(managerId: String, brandId: Long) =
     productRepository.removeBrandFromProducts(managerId, brandId, LocalDateTime.now())
 
-  fun getAllProductsForUser(
-    userId: String,
+  fun getAllProductsForManager(
+    managerId: String,
     page: Int,
     size: Int,
     sortBy: String,
@@ -68,24 +68,24 @@ class ProductService(
     val productPage = when {
       categoryId != null && brandId != null -> {
         // Filter by both category and brand
-        productRepository.findByUserIdAndCategoryIdAndBrandId(userId, categoryId, brandId, pageable)
+        productRepository.findByManagerIdAndCategoryIdAndBrandId(managerId, categoryId, brandId, pageable)
       }
       categoryId != null -> {
         // Filter by category only
-        productRepository.findByUserIdAndCategoryId(userId, categoryId, pageable)
+        productRepository.findByManagerIdAndCategoryId(managerId, categoryId, pageable)
       }
       brandId != null -> {
         // Filter by brand only
-        productRepository.findByUserIdAndBrandId(userId, brandId, pageable)
+        productRepository.findByManagerIdAndBrandId(managerId, brandId, pageable)
       }
       else -> {
         // No filter - return all products
-        productRepository.findAllByUserId(userId, pageable)
+        productRepository.findAllByManagerId(managerId, pageable)
       }
     }
 
     // Enrich with brand names
-    val brands = brandService.getManagerBrands(userId)
+    val brands = brandService.getManagerBrands(managerId)
     val brandMap = brands.associateBy { it.id }
     
     val enrichedContent = productPage.content.map { product ->
@@ -99,8 +99,8 @@ class ProductService(
   fun getAllProductsForOrder(orderId: String): List<ProductDto> {
     val order = orderService.getOrderByIdInternal(orderId)
 
-    // Fetch all products for the user
-    val products = productRepository.findAllByUserId(order.userId)
+    // Fetch all products for the manager
+    val products = productRepository.findAllByManagerId(order.userId)
 
     // Fetch brands for enrichment
     val brands = brandService.getManagerBrands(order.userId)
@@ -123,11 +123,11 @@ class ProductService(
     // Create a map of productId -> override price for quick lookup
     val overrideMap = overrides.associate { it.productId to it.overridePrice }
 
-    // Map products to DTOs, using override price if available, otherwise special price
+    // Map products to DTOs, using override price if available, otherwise default price
     return products.map { product ->
-      val effectivePrice = overrideMap[product.id] ?: product.specialPrice
+      val effectivePrice = overrideMap[product.id] ?: product.price
       val brandName = product.brandId?.let { brandMap[it]?.name }
-      product.toDto(brandName = brandName).copy(specialPrice = effectivePrice)
+      product.toDto(brandName = brandName).copy(price = effectivePrice)
     }
   }
 
@@ -141,12 +141,12 @@ class ProductService(
       )
     }
 
-    AuthUtils.checkOwnership(product.userId)
+    AuthUtils.checkOwnership(product.managerId)
 
     // Fetch brand name if brandId exists
     val brandName = product.brandId?.let {
       try {
-        brandService.getBrandById(product.userId, it).name
+        brandService.getBrandById(product.managerId, it).name
       } catch (e: Exception) {
         null // Brand might have been deleted
       }
@@ -156,43 +156,43 @@ class ProductService(
   }
 
   @Transactional
-  fun createProduct(userId: String, request: CreateProductRequest): String {
+  fun createProduct(managerId: String, request: CreateProductRequest): String {
 
     with(request) {
       FieldValidators.validateNonEmpty(name, "'name'")
-      FieldValidators.validatePrice(originalPrice)
-      FieldValidators.validatePrice(specialPrice)
+      FieldValidators.validatePrice(minimumPrice)
+      FieldValidators.validatePrice(price)
 
-      // Validate that special price is not greater than original price
-      if (specialPrice > originalPrice) {
+      // Validate that price is not lower than minimum price
+      if (price < minimumPrice) {
         throw ServiceException(
           status = HttpStatus.BAD_REQUEST,
-          userMessage = "Special price cannot be greater than original price",
-          technicalMessage = "specialPrice=$specialPrice > originalPrice=$originalPrice",
+          userMessage = "Price cannot be lower than minimum price",
+          technicalMessage = "price=$price < minimumPrice=$minimumPrice",
           severity = SeverityLevel.WARN
         )
       }
     }
 
-    val numberOfProducts = productRepository.findAllByUserId(userId).size
+    val numberOfProducts = productRepository.findAllByManagerId(managerId).size
 
     if(numberOfProducts >= MAXIMUM_PRODUCTS_FOR_CUSTOMER) {
       throw ServiceException(
         status = HttpStatus.CONFLICT,
         userMessage = "You have reached the product limit ($MAXIMUM_PRODUCTS_FOR_CUSTOMER)",
-        technicalMessage = "User ($userId) has reached $MAXIMUM_PRODUCTS_FOR_CUSTOMER products",
+        technicalMessage = "Manager ($managerId) has reached $MAXIMUM_PRODUCTS_FOR_CUSTOMER products",
         severity = SeverityLevel.WARN
       )
     }
 
     val product = ProductDbEntity(
       id = GeneralUtils.genId(),
-      userId = userId,
+      managerId = managerId,
       name = request.name,
       brandId = request.brandId,
       categoryId = request.categoryId,
-      originalPrice = request.originalPrice,
-      specialPrice = request.specialPrice,
+      minimumPrice = request.minimumPrice,
+      price = request.price,
       description = request.description,
       createdAt = LocalDateTime.now(),
       updatedAt = LocalDateTime.now()
@@ -203,7 +203,7 @@ class ProductService(
 
   @Transactional
   fun createProductWithImages(
-    userId: String,
+    managerId: String,
     request: CreateProductRequest,
     images: List<MultipartFile>?
   ): String {
@@ -223,12 +223,12 @@ class ProductService(
     imageFiles.forEach { productImageService.validateImage(it) }
 
     // Create and upload
-    val productId = createProduct(userId, request)
+    val productId = createProduct(managerId, request)
     
     if (imageFiles.isNotEmpty()) {
       imageFiles.forEach { image ->
         try {
-          productImageService.uploadImageForProduct(userId, productId, image)
+          productImageService.uploadImageForProduct(managerId, productId, image)
         } catch (e: Exception) {
           // Log error but continue with other images
           // If all images fail, product is still created (design decision)
@@ -245,15 +245,15 @@ class ProductService(
 
     with(request) {
       FieldValidators.validateNonEmpty(name, "'name'")
-      FieldValidators.validatePrice(originalPrice)
-      FieldValidators.validatePrice(specialPrice)
+      FieldValidators.validatePrice(minimumPrice)
+      FieldValidators.validatePrice(price)
 
-      // Validate that special price is not greater than original price
-      if (specialPrice > originalPrice) {
+      // Validate that price is not lower than minimum price
+      if (price < minimumPrice) {
         throw ServiceException(
           status = HttpStatus.BAD_REQUEST,
-          userMessage = "Special price cannot be greater than original price",
-          technicalMessage = "specialPrice=$specialPrice > originalPrice=$originalPrice",
+          userMessage = "Price cannot be lower than minimum price",
+          technicalMessage = "price=$price < minimumPrice=$minimumPrice",
           severity = SeverityLevel.WARN
         )
       }
@@ -268,14 +268,14 @@ class ProductService(
       )
     }
 
-    AuthUtils.checkOwnership(product.userId)
+    AuthUtils.checkOwnership(product.managerId)
 
     val updated = product.copy(
       name = request.name,
       brandId = request.brandId,
       categoryId = request.categoryId,
-      originalPrice = request.originalPrice,
-      specialPrice = request.specialPrice,
+      minimumPrice = request.minimumPrice,
+      price = request.price,
       description = request.description,
       updatedAt = LocalDateTime.now(),
     )
@@ -294,9 +294,9 @@ class ProductService(
       )
     }
 
-    AuthUtils.checkOwnership(product.userId)
+    AuthUtils.checkOwnership(product.managerId)
 
-    productOverrideService.deleteAllOverridesForProduct(product.userId, productId)
+    productOverrideService.deleteAllOverridesForProduct(product.managerId, productId)
     
     productImageService.deleteAllImagesForProduct(productId)
 

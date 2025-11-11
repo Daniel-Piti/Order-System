@@ -4,13 +4,13 @@ import java.math.BigDecimal
 
 data class ProductDto(
   val id: String,
-  val userId: String,
+  val managerId: String,
   val name: String,
   val brandId: Long?,
   val brandName: String?,
   val categoryId: Long?,
-  val originalPrice: BigDecimal,
-  val specialPrice: BigDecimal,
+  val minimumPrice: BigDecimal,
+  val price: BigDecimal,
   val description: String
 )
 
@@ -25,12 +25,12 @@ data class ProductDataForOrder(
 
 fun ProductDbEntity.toDto(brandName: String? = null) = ProductDto(
   id = id,
-  userId = userId,
+  managerId = managerId,
   name = name,
   brandId = brandId,
   brandName = brandName,
   categoryId = categoryId,
-  originalPrice = originalPrice,
-  specialPrice = specialPrice,
+  minimumPrice = minimumPrice,
+  price = price,
   description = description
 )

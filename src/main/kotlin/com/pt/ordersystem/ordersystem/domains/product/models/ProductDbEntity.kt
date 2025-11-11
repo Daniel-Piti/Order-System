@@ -13,8 +13,8 @@ data class ProductDbEntity(
   @Id
   val id: String,
 
-  @Column(name = "user_id", nullable = false)
-  val userId: String,
+  @Column(name = "manager_id", nullable = false)
+  val managerId: String,
 
   @Column(nullable = false)
   val name: String,
@@ -25,11 +25,11 @@ data class ProductDbEntity(
   @Column(name = "category_id", nullable = true)
   val categoryId: Long?,
 
-  @Column(name = "original_price", nullable = false)
-  val originalPrice: BigDecimal,
+  @Column(name = "minimum_price", nullable = false)
+  val minimumPrice: BigDecimal,
 
-  @Column(name = "special_price", nullable = false)
-  val specialPrice: BigDecimal,
+  @Column(name = "price", nullable = false)
+  val price: BigDecimal,
 
   @Column(columnDefinition = "TEXT", nullable = false)
   val description: String,

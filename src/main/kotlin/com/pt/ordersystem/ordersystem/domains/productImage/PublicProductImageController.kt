@@ -14,13 +14,13 @@ class PublicProductImageController(
   private val managerService: ManagerService
 ) {
 
-  @GetMapping("/user/{userId}/product/{productId}/images")
+  @GetMapping("/manager/{managerId}/product/{productId}/images")
   fun getProductImages(
-    @PathVariable userId: String,
+    @PathVariable managerId: String,
     @PathVariable productId: String
   ): ResponseEntity<List<ProductImageDto>> {
     // Validate user exists
-    managerService.getManagerById(userId)
+    managerService.getManagerById(managerId)
     
     val images = productImageService.getImagesForProduct(productId)
     return ResponseEntity.ok(images)

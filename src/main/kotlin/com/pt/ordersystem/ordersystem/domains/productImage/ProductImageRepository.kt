@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository
 @Repository
 interface ProductImageRepository : JpaRepository<ProductImageDbEntity, Long> {
   fun findByProductId(productId: String): List<ProductImageDbEntity>
-  fun findByUserIdAndProductId(userId: String, productId: String): List<ProductImageDbEntity>
+  fun findByManagerIdAndProductId(managerId: String, productId: String): List<ProductImageDbEntity>
   fun deleteByProductId(productId: String)
 }
 

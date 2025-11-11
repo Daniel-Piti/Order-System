@@ -28,7 +28,7 @@ class ProductImageService(
   }
 
   fun validateAndUploadImageForProduct(
-    userId: String,
+    managerId: String,
     productId: String,
     file: MultipartFile
   ): ProductImageDto {
@@ -42,7 +42,7 @@ class ProductImageService(
       )
     }
 
-    AuthUtils.checkOwnership(product.userId)
+    AuthUtils.checkOwnership(product.managerId)
 
     // Check existing images count
     val existingImages = productImageRepository.findByProductId(productId)
@@ -56,18 +56,18 @@ class ProductImageService(
       )
     }
 
-    return uploadImageForProduct(userId, productId, file)
+    return uploadImageForProduct(managerId, productId, file)
   }
 
   fun uploadImageForProduct(
-    userId: String,
+    managerId: String,
     productId: String,
     file: MultipartFile
   ): ProductImageDto {
 
     // Generate S3 key with base path
     val fileName = file.originalFilename ?: "image"
-    val basePath = "users/$userId/products/$productId"
+    val basePath = "users/$managerId/products/$productId"
     val s3Key = r2StorageService.generateKey(basePath, fileName)
 
     // Upload to R2
@@ -76,7 +76,7 @@ class ProductImageService(
     // Save to database
     val productImage = ProductImageDbEntity(
       productId = productId,
-      userId = userId,
+      managerId = managerId,
       s3Key = s3Key,
       fileName = file.originalFilename ?: "image",
       fileSizeBytes = file.size,
@@ -104,7 +104,7 @@ class ProductImageService(
     }
   }
 
-  fun deleteImage(userId: String, imageId: Long) {
+  fun deleteImage(managerId: String, imageId: Long) {
     val image = productImageRepository.findById(imageId).orElseThrow {
       ServiceException(
         status = HttpStatus.NOT_FOUND,
@@ -114,7 +114,7 @@ class ProductImageService(
       )
     }
 
-    AuthUtils.checkOwnership(image.userId)
+    AuthUtils.checkOwnership(image.managerId)
 
     // Delete from R2
     r2StorageService.deleteFile(image.s3Key)

@@ -33,8 +33,8 @@ class ProductController(
     @RequestParam("name") name: String,
     @RequestParam(value = "brandId", required = false) brandId: Long?,
     @RequestParam(value = "categoryId", required = false) categoryId: Long?,
-    @RequestParam("originalPrice") originalPrice: java.math.BigDecimal,
-    @RequestParam("specialPrice") specialPrice: java.math.BigDecimal,
+    @RequestParam("minimumPrice") minimumPrice: java.math.BigDecimal,
+    @RequestParam("price") price: java.math.BigDecimal,
     @RequestParam(value = "description", defaultValue = "") description: String,
     @RequestPart(value = "images", required = false) images: List<MultipartFile>?,
     @AuthenticationPrincipal user: AuthUser
@@ -43,8 +43,8 @@ class ProductController(
       name = name,
       brandId = brandId,
       categoryId = categoryId,
-      originalPrice = originalPrice,
-      specialPrice = specialPrice,
+      minimumPrice = minimumPrice,
+      price = price,
       description = description
     )
 

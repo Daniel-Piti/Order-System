@@ -15,21 +15,21 @@ class PublicProductController(
   private val managerService: ManagerService
 ) {
 
-  @GetMapping("/user/{userId}/product/{productId}")
+  @GetMapping("/manager/{managerId}/product/{productId}")
   fun getProduct(
-    @PathVariable userId: String,
+    @PathVariable managerId: String,
     @PathVariable productId: String
   ): ResponseEntity<ProductDto> {
     // Validate user exists
-    managerService.getManagerById(userId)
+    managerService.getManagerById(managerId)
     
     val product = productService.getProductById(productId)
     return ResponseEntity.ok(product)
   }
 
-  @GetMapping("/user/{userId}")
-  fun getAllUserProducts(
-    @PathVariable userId: String,
+  @GetMapping("/manager/{managerId}")
+  fun getAllManagerProducts(
+    @PathVariable managerId: String,
     @RequestParam(defaultValue = "0") page: Int,
     @RequestParam(defaultValue = "20") size: Int,
     @RequestParam(defaultValue = "name") sortBy: String,
@@ -38,10 +38,10 @@ class PublicProductController(
     @RequestParam(required = false) brandId: Long?
   ): ResponseEntity<Page<ProductDto>> {
     // Validate user exists first - will throw 404 if not found
-    managerService.getManagerById(userId)
+    managerService.getManagerById(managerId)
     
-    val products = productService.getAllProductsForUser(
-      userId = userId,
+    val products = productService.getAllProductsForManager(
+      managerId = managerId,
       page = page,
       size = size,
       sortBy = sortBy,

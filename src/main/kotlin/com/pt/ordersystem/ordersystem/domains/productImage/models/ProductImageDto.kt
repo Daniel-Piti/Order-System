@@ -3,7 +3,7 @@ package com.pt.ordersystem.ordersystem.domains.productImage.models
 data class ProductImageDto(
   val id: Long,
   val productId: String,
-  val userId: String,
+  val managerId: String,
   val url: String,
   val fileName: String,
   val mimeType: String,
@@ -12,7 +12,7 @@ data class ProductImageDto(
 fun ProductImageDbEntity.toDto(publicUrl: String) = ProductImageDto(
   id = id,
   productId = productId,
-  userId = userId,
+  managerId = managerId,
   url = publicUrl,
   fileName = fileName,
   mimeType = mimeType

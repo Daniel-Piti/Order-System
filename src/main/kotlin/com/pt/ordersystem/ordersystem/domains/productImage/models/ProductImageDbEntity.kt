@@ -13,8 +13,8 @@ data class ProductImageDbEntity(
   @Column(name = "product_id", nullable = false)
   val productId: String,
 
-  @Column(name = "user_id", nullable = false)
-  val userId: String,
+  @Column(name = "manager_id", nullable = false)
+  val managerId: String,
 
   @Column(name = "s3_key", nullable = false, length = 512)
   val s3Key: String,

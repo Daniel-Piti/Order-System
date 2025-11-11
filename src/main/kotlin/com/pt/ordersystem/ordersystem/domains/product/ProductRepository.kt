@@ -12,19 +12,17 @@ import java.time.LocalDateTime
 
 @Repository
 interface ProductRepository : JpaRepository<ProductDbEntity, String> {
-  fun findAllByUserId(userId: String): List<ProductDbEntity>
-  fun findAllByUserId(userId: String, pageable: Pageable): Page<ProductDbEntity>
-  fun findByUserIdAndCategoryId(userId: String, categoryId: Long): List<ProductDbEntity>
-  fun findByUserIdAndCategoryId(userId: String, categoryId: Long, pageable: Pageable): Page<ProductDbEntity>
-  fun findByUserIdAndBrandId(userId: String, brandId: Long): List<ProductDbEntity>
-  fun findByUserIdAndBrandId(userId: String, brandId: Long, pageable: Pageable): Page<ProductDbEntity>
-  fun findByUserIdAndCategoryIdAndBrandId(userId: String, categoryId: Long, brandId: Long, pageable: Pageable): Page<ProductDbEntity>
+  fun findAllByManagerId(managerId: String): List<ProductDbEntity>
+  fun findAllByManagerId(managerId: String, pageable: Pageable): Page<ProductDbEntity>
+  fun findByManagerIdAndCategoryId(managerId: String, categoryId: Long, pageable: Pageable): Page<ProductDbEntity>
+  fun findByManagerIdAndBrandId(managerId: String, brandId: Long, pageable: Pageable): Page<ProductDbEntity>
+  fun findByManagerIdAndCategoryIdAndBrandId(managerId: String, categoryId: Long, brandId: Long, pageable: Pageable): Page<ProductDbEntity>
   
   @Modifying
-  @Query("UPDATE ProductDbEntity p SET p.brandId = NULL, p.updatedAt = :updatedAt WHERE p.userId = :userId AND p.brandId = :brandId")
-  fun removeBrandFromProducts(@Param("userId") userId: String, @Param("brandId") brandId: Long, @Param("updatedAt") updatedAt: LocalDateTime): Int
+  @Query("UPDATE ProductDbEntity p SET p.brandId = NULL, p.updatedAt = :updatedAt WHERE p.managerId = :managerId AND p.brandId = :brandId")
+  fun removeBrandFromProducts(@Param("managerId") managerId: String, @Param("brandId") brandId: Long, @Param("updatedAt") updatedAt: LocalDateTime): Int
   
   @Modifying
-  @Query("UPDATE ProductDbEntity p SET p.categoryId = NULL, p.updatedAt = :updatedAt WHERE p.userId = :userId AND p.categoryId = :categoryId")
-  fun removeCategoryFromProducts(@Param("userId") userId: String, @Param("categoryId") categoryId: Long, @Param("updatedAt") updatedAt: LocalDateTime): Int
+  @Query("UPDATE ProductDbEntity p SET p.categoryId = NULL, p.updatedAt = :updatedAt WHERE p.managerId = :managerId AND p.categoryId = :categoryId")
+  fun removeCategoryFromProducts(@Param("managerId") managerId: String, @Param("categoryId") categoryId: Long, @Param("updatedAt") updatedAt: LocalDateTime): Int
 }
