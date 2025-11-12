@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/categories")
 @PreAuthorize(AUTH_MANAGER)
-class CategoryController(
+class CategoryManagerController(
     private val categoryService: CategoryService
 ) {
 
@@ -48,3 +48,4 @@ class CategoryController(
         return ResponseEntity.ok("Category deleted successfully")
     }
 }
+

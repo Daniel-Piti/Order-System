@@ -19,7 +19,7 @@ import org.springframework.web.multipart.MultipartFile
 @RestController
 @RequestMapping("/api/brands")
 @PreAuthorize(AUTH_MANAGER)
-class BrandController(
+class BrandManagerController(
     private val brandService: BrandService
 ) {
 
@@ -55,3 +55,4 @@ class BrandController(
         return ResponseEntity.ok("Brand deleted successfully")
     }
 }
+

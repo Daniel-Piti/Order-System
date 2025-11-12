@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/locations")
 @PreAuthorize(AUTH_MANAGER)
-class LocationController(
+class LocationManagerController(
   private val locationService: LocationService
 ) {
 
@@ -48,3 +48,4 @@ class LocationController(
   }
 
 }
+

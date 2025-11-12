@@ -20,7 +20,7 @@ import org.springframework.web.multipart.MultipartFile
 @RestController
 @RequestMapping("/api/products")
 @PreAuthorize(AUTH_MANAGER)
-class ProductController(
+class ProductManagerController(
   private val productService: ProductService
 ) {
 
@@ -72,3 +72,4 @@ class ProductController(
   }
 
 }
+

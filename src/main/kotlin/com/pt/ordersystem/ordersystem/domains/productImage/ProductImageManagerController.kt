@@ -17,7 +17,7 @@ import org.springframework.web.multipart.MultipartFile
 @RestController
 @RequestMapping("/api/products/{productId}/images")
 @PreAuthorize(AUTH_MANAGER)
-class ProductImageController(
+class ProductImageManagerController(
   private val productImageService: ProductImageService
 ) {
 

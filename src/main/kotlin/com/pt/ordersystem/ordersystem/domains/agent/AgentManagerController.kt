@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/agents")
 @PreAuthorize(AUTH_MANAGER)
-class AgentController(
+class AgentManagerController(
   private val agentService: AgentService,
 ) {
 
@@ -61,3 +61,4 @@ class AgentController(
     return ResponseEntity.ok("Agent deleted successfully")
   }
 }
+
