@@ -23,7 +23,7 @@ class PublicProductController(
     // Validate user exists
     managerService.getManagerById(managerId)
     
-    val product = productService.getProductById(productId)
+    val product = productService.getProductById(managerId = managerId, productId = productId)
     return ResponseEntity.ok(product)
   }
 

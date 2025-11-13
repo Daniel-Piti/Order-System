@@ -1,17 +1,16 @@
 package com.pt.ordersystem.ordersystem.domains.order.models
 
 data class OrderPublicDto(
-  val userId: String,
+  val managerId: String,
   val status: OrderStatus,
-  val customerId: String? // Needed for price overrides when fetching products
+  val customerId: String?
 )
 
 fun OrderDbEntity.toPublicDto(): OrderPublicDto {
   val orderStatus = OrderStatus.valueOf(this.status)
   return OrderPublicDto(
-    userId = this.userId,
+    managerId = this.managerId,
     status = orderStatus,
     customerId = this.customerId
   )
 }
-

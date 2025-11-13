@@ -241,11 +241,7 @@ class ProductOverrideService(
 
   private fun validateCustomerAccess(managerId: String, agentId: Long?, customerId: String) {
     try {
-      if (agentId == null) {
-        customerService.getCustomerDto(managerId, customerId)
-      } else {
-        customerService.getCustomerDtoForAgent(managerId, agentId, customerId)
-      }
+      customerService.getCustomerDto(managerId, customerId, agentId)
     } catch (e: ServiceException) {
       throw e
     } catch (e: Exception) {

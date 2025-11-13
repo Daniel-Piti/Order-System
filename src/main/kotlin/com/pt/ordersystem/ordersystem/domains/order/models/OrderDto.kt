@@ -6,15 +6,17 @@ import java.time.LocalDateTime
 
 data class OrderDto(
   val id: String,
-  val userId: String,
+  val orderSource: OrderSource,
+  val managerId: String,
+  val agentId: Long?,
+  val customerId: String?,
   
-  // User location (selected by customer)
-  val userStreetAddress: String?,
-  val userCity: String?,
-  val userPhoneNumber: String?,
+  // Store location (selected by customer)
+  val storeStreetAddress: String?,
+  val storeCity: String?,
+  val storePhoneNumber: String?,
   
   // Customer data
-  val customerId: String?,
   val customerName: String?,
   val customerPhone: String?,
   val customerEmail: String?,
@@ -37,14 +39,17 @@ data class OrderDto(
 fun OrderDbEntity.toDto(): OrderDto {
   // Convert status string to enum
   val orderStatus = OrderStatus.valueOf(this.status)
+  val orderSourceEnum = OrderSource.valueOf(this.orderSource)
 
   return OrderDto(
     id = this.id,
-    userId = this.userId,
-    userStreetAddress = this.userStreetAddress,
-    userCity = this.userCity,
-    userPhoneNumber = this.userPhoneNumber,
+    orderSource = orderSourceEnum,
+    managerId = this.managerId,
+    agentId = this.agentId,
     customerId = this.customerId,
+    storeStreetAddress = this.storeStreetAddress,
+    storeCity = this.storeCity,
+    storePhoneNumber = this.storePhoneNumber,
     customerName = this.customerName,
     customerPhone = this.customerPhone,
     customerEmail = this.customerEmail,

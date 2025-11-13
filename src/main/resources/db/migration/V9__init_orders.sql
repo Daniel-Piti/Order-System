@@ -1,15 +1,17 @@
 -- ORDERS TABLE
 CREATE TABLE orders (
     id VARCHAR(255) NOT NULL,
-    user_id VARCHAR(255) NOT NULL,
+    order_source VARCHAR(20) NOT NULL,
+    manager_id VARCHAR(255) NOT NULL,
+    agent_id BIGINT NULL,
+    customer_id VARCHAR(255) NULL,
     
-    -- User (Seller) pickup location - selected by customer
-    user_street_address VARCHAR(255) NULL,
-    user_city VARCHAR(100) NULL,
-    user_phone_number VARCHAR(20) NULL,
+    -- Store (pickup location) - selected by customer
+    store_street_address VARCHAR(255) NULL,
+    store_city VARCHAR(100) NULL,
+    store_phone_number VARCHAR(20) NULL,
     
     -- Customer (Buyer) data - can be linked or standalone
-    customer_id VARCHAR(255) NULL,
     customer_name VARCHAR(255) NULL,
     customer_phone VARCHAR(20) NULL,
     customer_email VARCHAR(255) NULL,
@@ -31,27 +33,32 @@ CREATE TABLE orders (
     PRIMARY KEY (id)
 );
 
-CREATE INDEX idx_orders_user_id ON orders (user_id);
+CREATE INDEX idx_orders_manager_id ON orders (manager_id);
+CREATE INDEX idx_orders_agent_id ON orders (agent_id);
+CREATE INDEX idx_orders_order_source ON orders (order_source);
 CREATE INDEX idx_orders_customer_id ON orders (customer_id);
 CREATE INDEX idx_orders_status ON orders (status);
 CREATE INDEX idx_orders_products_version ON orders (products_version);
 CREATE INDEX idx_orders_link_expires_at ON orders (link_expires_at);
-CREATE INDEX idx_orders_user_status ON orders (user_id, status);
-CREATE INDEX idx_orders_user_created ON orders (user_id, created_at);
+CREATE INDEX idx_orders_manager_status ON orders (manager_id, status);
+CREATE INDEX idx_orders_manager_created ON orders (manager_id, created_at);
+CREATE INDEX idx_orders_manager_agent ON orders (manager_id, agent_id);
 
 -- ORDERS HISTORY TABLE
 CREATE TABLE orders_history (
     history_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     id VARCHAR(255) NOT NULL,
-    user_id VARCHAR(255) NOT NULL,
+    order_source VARCHAR(20) NOT NULL,
+    manager_id VARCHAR(255) NOT NULL,
+    agent_id BIGINT NULL,
+    customer_id VARCHAR(255) NULL,
     
-    -- User location snapshot
-    user_street_address VARCHAR(255) NULL,
-    user_city VARCHAR(100) NULL,
-    user_phone_number VARCHAR(20) NULL,
+    -- Store location snapshot
+    store_street_address VARCHAR(255) NULL,
+    store_city VARCHAR(100) NULL,
+    store_phone_number VARCHAR(20) NULL,
     
     -- Customer data
-    customer_id VARCHAR(255) NULL,
     customer_name VARCHAR(255) NULL,
     customer_phone VARCHAR(20) NULL,
     customer_email VARCHAR(255) NULL,
@@ -76,17 +83,17 @@ CREATE TABLE orders_history (
 CREATE TRIGGER trg_orders_after_insert
 AFTER INSERT ON orders FOR EACH ROW
 INSERT INTO orders_history(
-    id, user_id, 
-    user_street_address, user_city, user_phone_number,
-    customer_id, customer_name, customer_phone, customer_email, 
+    id, order_source, manager_id, agent_id, customer_id,
+    store_street_address, store_city, store_phone_number,
+    customer_name, customer_phone, customer_email, 
     customer_street_address, customer_city,
     status, products, products_version, total_price, link_expires_at, notes, placed_at, done_at,
     created_at, updated_at
 )
 VALUES (
-    NEW.id, NEW.user_id,
-    NEW.user_street_address, NEW.user_city, NEW.user_phone_number,
-    NEW.customer_id, NEW.customer_name, NEW.customer_phone, NEW.customer_email,
+    NEW.id, NEW.order_source, NEW.manager_id, NEW.agent_id, NEW.customer_id,
+    NEW.store_street_address, NEW.store_city, NEW.store_phone_number,
+    NEW.customer_name, NEW.customer_phone, NEW.customer_email,
     NEW.customer_street_address, NEW.customer_city,
     NEW.status, NEW.products, NEW.products_version, NEW.total_price, NEW.link_expires_at, NEW.notes, NEW.placed_at, NEW.done_at,
     NEW.created_at, NEW.updated_at
@@ -96,17 +103,17 @@ VALUES (
 CREATE TRIGGER trg_orders_after_update
 AFTER UPDATE ON orders FOR EACH ROW
 INSERT INTO orders_history(
-    id, user_id,
-    user_street_address, user_city, user_phone_number,
-    customer_id, customer_name, customer_phone, customer_email,
+    id, order_source, manager_id, agent_id, customer_id,
+    store_street_address, store_city, store_phone_number,
+    customer_name, customer_phone, customer_email,
     customer_street_address, customer_city,
     status, products, products_version, total_price, link_expires_at, notes, placed_at, done_at,
     created_at, updated_at
 )
 VALUES (
-    NEW.id, NEW.user_id,
-    NEW.user_street_address, NEW.user_city, NEW.user_phone_number,
-    NEW.customer_id, NEW.customer_name, NEW.customer_phone, NEW.customer_email,
+    NEW.id, NEW.order_source, NEW.manager_id, NEW.agent_id, NEW.customer_id,
+    NEW.store_street_address, NEW.store_city, NEW.store_phone_number,
+    NEW.customer_name, NEW.customer_phone, NEW.customer_email,
     NEW.customer_street_address, NEW.customer_city,
     NEW.status, NEW.products, NEW.products_version, NEW.total_price, NEW.link_expires_at, NEW.notes, NEW.placed_at, NEW.done_at,
     NEW.created_at, NEW.updated_at

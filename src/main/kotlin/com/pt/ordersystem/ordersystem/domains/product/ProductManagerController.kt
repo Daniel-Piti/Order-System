@@ -58,7 +58,7 @@ class ProductManagerController(
     @RequestBody request: UpdateProductRequest,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<String> {
-    val updatedProductId = productService.updateProduct(productId, request)
+    val updatedProductId = productService.updateProduct(managerId = user.id, productId = productId, request = request)
     return ResponseEntity.ok(updatedProductId)
   }
 
@@ -67,7 +67,7 @@ class ProductManagerController(
     @PathVariable productId: String,
     @AuthenticationPrincipal user: AuthUser
   ): ResponseEntity<String> {
-    productService.deleteProduct(productId)
+    productService.deleteProduct(managerId = user.id, productId = productId)
     return ResponseEntity.ok("Product deleted successfully")
   }
 

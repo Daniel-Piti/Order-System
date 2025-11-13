@@ -89,12 +89,12 @@ class OrderInvoiceService(
   }
 
   private fun validateOwnership(order: OrderDbEntity, requestingUserId: String) {
-    if (order.userId != requestingUserId) {
+    if (order.managerId != requestingUserId) {
       throw ServiceException(
         status = HttpStatus.FORBIDDEN,
         userMessage = OrderFailureReason.UNAUTHORIZED.userMessage,
         technicalMessage = OrderFailureReason.UNAUTHORIZED.technical +
-          "orderId=${order.id}, ownerId=${order.userId}, requester=$requestingUserId",
+          "orderId=${order.id}, ownerId=${order.managerId}, requester=$requestingUserId",
         severity = SeverityLevel.WARN
       )
     }
@@ -267,9 +267,9 @@ class OrderInvoiceService(
       val panelInnerWidth = panelWidth - (panelPadding * 2)
 
       val sellerLines = listOf(
-        "Street: ${sanitize(order.userStreetAddress)}",
-        "City: ${sanitize(order.userCity)}",
-        "Phone: ${sanitize(order.userPhoneNumber)}"
+        "Street: ${sanitize(order.storeStreetAddress)}",
+        "City: ${sanitize(order.storeCity)}",
+        "Phone: ${sanitize(order.storePhoneNumber)}"
       ).flatMap { wrapWithFont(theme.regularFont, it, panelInnerWidth, 11f) }
 
       val customerLines = listOf(

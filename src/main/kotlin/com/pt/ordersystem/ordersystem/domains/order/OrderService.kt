@@ -1,6 +1,5 @@
 package com.pt.ordersystem.ordersystem.domains.order
 
-import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerService
 import com.pt.ordersystem.ordersystem.domains.location.LocationRepository
 import com.pt.ordersystem.ordersystem.domains.location.LocationService
@@ -29,13 +28,15 @@ class OrderService(
     private const val MAX_PAGE_SIZE = 100
   }
 
-  fun getAllOrdersForUser(
-    userId: String,
+  fun getOrders(
+    managerId: String,
     page: Int,
     size: Int,
     sortBy: String,
     sortDirection: String,
-    status: String?
+    status: String?,
+    filterAgent: Boolean,
+    agentId: Long?
   ): Page<OrderDto> {
     // Enforce max page size
     val validatedSize = size.coerceAtMost(MAX_PAGE_SIZE)
@@ -50,12 +51,42 @@ class OrderService(
     // Create pageable with sort
     val pageable = PageRequest.of(page, validatedSize, sort)
 
-    // Fetch orders with optional status filter
-    return if (status != null && status.isNotBlank()) {
-      orderRepository.findAllByUserIdAndStatus(userId, status, pageable).map { it.toDto() }
-    } else {
-      orderRepository.findAllByUserId(userId, pageable).map { it.toDto() }
+    // Fetch orders with optional filters
+    // filterAgent=true, agentId=null -> manager's orders (agentId IS NULL)
+    // filterAgent=true, agentId=123 -> specific agent's orders
+    // filterAgent=false -> no filter by agent (all orders)
+    val selectedOrders = when {
+      // Filter by agent AND status
+      filterAgent && !status.isNullOrBlank() -> {
+        if (agentId == null) {
+          // Manager-only orders
+          orderRepository.findAllByManagerIdAndAgentIdIsNullAndStatus(managerId, status, pageable)
+        } else {
+          // Specific agent orders
+          orderRepository.findAllByManagerIdAndAgentIdAndStatus(managerId, agentId, status, pageable)
+        }
+      }
+      // Filter by agent only (no status filter)
+      filterAgent -> {
+        if (agentId == null) {
+          // Manager-only orders
+          orderRepository.findAllByManagerIdAndAgentIdIsNull(managerId, pageable)
+        } else {
+          // Specific agent orders
+          orderRepository.findAllByManagerIdAndAgentId(managerId, agentId, pageable)
+        }
+      }
+      // Status filter only (no agent filter)
+      !status.isNullOrBlank() -> {
+        orderRepository.findAllByManagerIdAndStatus(managerId, status, pageable)
+      }
+      // No filters - return all orders for manager
+      else -> {
+        orderRepository.findAllByManagerId(managerId, pageable)
+      }
     }
+
+    return selectedOrders.map { it.toDto() }
   }
 
   fun getOrderByIdPublic(orderId: String): OrderPublicDto {
@@ -71,18 +102,23 @@ class OrderService(
     return order.toPublicDto()
   }
 
-  fun getOrderByIdForUser(orderId: String): OrderDto {
-    val order = orderRepository.findById(orderId).orElseThrow {
-      throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = OrderFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = OrderFailureReason.NOT_FOUND.technical + "orderId=$orderId",
-        severity = SeverityLevel.WARN
-      )
-    }
-
-    // Validate ownership - users can only access their own orders
-    AuthUtils.checkOwnership(order.userId)
+  fun getOrderById(orderId: String, managerId: String, agentId: Long? = null): OrderDto {
+    val order = when (agentId) {
+      null -> {
+        // Manager query: find order by managerId (regardless of agentId)
+        orderRepository.findByIdAndManagerId(id = orderId, managerId = managerId)
+      }
+      else -> {
+        // Agent query: find order by managerId AND agentId
+        orderRepository.findByIdAndManagerIdAndAgentId(id = orderId, managerId = managerId, agentId = agentId)
+      }
+    } ?: throw ServiceException(
+      status = HttpStatus.NOT_FOUND,
+      userMessage = OrderFailureReason.NOT_FOUND.userMessage,
+      technicalMessage = OrderFailureReason.NOT_FOUND.technical + 
+        "orderId=$orderId, managerId=$managerId${if (agentId != null) ", agentId=$agentId" else ""}",
+      severity = SeverityLevel.WARN
+    )
 
     return order.toDto()
   }
@@ -100,35 +136,44 @@ class OrderService(
   }
 
   @Transactional
-  fun createEmptyOrder(userId: String, request: CreateEmptyOrderRequest): String {
+  fun createOrder(managerId: String, agentId: Long?, request: CreateOrderRequest): String {
+    
     // Validate manager has at least one location
-    val locationCount = locationRepository.countByManagerId(userId)
+    val locationCount = locationRepository.countByManagerId(managerId)
     if (locationCount == 0) {
       throw ServiceException(
         status = HttpStatus.BAD_REQUEST,
         userMessage = OrderFailureReason.NO_LOCATIONS.userMessage,
-        technicalMessage = OrderFailureReason.NO_LOCATIONS.technical + "userId=$userId",
+        technicalMessage = OrderFailureReason.NO_LOCATIONS.technical + "managerId=$managerId",
         severity = SeverityLevel.INFO
       )
     }
 
-    val now = LocalDateTime.now()
+    // Determine order source
+    val orderSource = when {
+      agentId != null -> OrderSource.AGENT
+      else -> OrderSource.MANAGER
+    }
 
     // If customerId is provided, fetch customer data to pre-fill
     val customer = request.customerId?.let { customerId ->
-      customerService.getCustomerDto(userId, customerId)
+      customerService.getCustomerDto(managerId, customerId, agentId)
     }
+
+    val now = LocalDateTime.now()
 
     // Link expires in 7 days by default
     val linkExpiresAt = now.plusDays(7)
 
     val order = OrderDbEntity(
       id = GeneralUtils.genId(),
-      userId = userId,
-      // User location (will be filled by customer)
-      userStreetAddress = null,
-      userCity = null,
-      userPhoneNumber = null,
+      managerId = managerId,
+      agentId = agentId,
+      orderSource = orderSource.name,
+      // Store location (will be filled by customer when placing order)
+      storeStreetAddress = null,
+      storeCity = null,
+      storePhoneNumber = null,
       // Customer data (pre-filled if linked, otherwise customer fills)
       customerId = customer?.id,
       customerName = customer?.name,
@@ -184,26 +229,30 @@ class OrderService(
     }
 
     // Fetch pickup location
-    val pickupLocation = locationService.getLocationById(order.userId, request.pickupLocationId)
+    val selectedLocation = locationService.getLocationById(order.managerId, request.pickupLocationId)
 
     // Calculate total price
     val totalPrice = request.products.fold(BigDecimal.ZERO) { sum, product ->
       sum + (product.pricePerUnit.multiply(BigDecimal.valueOf(product.quantity.toLong())))
     }
 
+    val customer = order.customerId?.let { 
+      customerService.getCustomerDto(order.managerId, it, order.agentId)
+    }
+
     // Update order
     val now = LocalDateTime.now()
     val updatedOrder = order.copy(
-      // User (pickup) location from selected location
-      userStreetAddress = pickupLocation.streetAddress,
-      userCity = pickupLocation.city,
-      userPhoneNumber = pickupLocation.phoneNumber,
+      // Store (pickup) location from selected location
+      storeStreetAddress = selectedLocation.streetAddress,
+      storeCity = selectedLocation.city,
+      storePhoneNumber = selectedLocation.phoneNumber,
       // Customer data
-      customerName = request.customerName,
-      customerPhone = request.customerPhone,
-      customerEmail = request.customerEmail,
-      customerStreetAddress = request.customerStreetAddress,
-      customerCity = request.customerCity,
+      customerName = customer?.name ?: request.customerName,
+      customerPhone = customer?.phoneNumber ?: request.customerPhone,
+      customerEmail = customer?.email ?: request.customerEmail,
+      customerStreetAddress = customer?.streetAddress ?: request.customerStreetAddress,
+      customerCity = customer?.city ?: request.customerCity,
       // Order details
       status = OrderStatus.PLACED.name,
       products = request.products,
@@ -219,18 +268,13 @@ class OrderService(
   }
 
   @Transactional
-  fun markOrderDone(orderId: String) {
-    val order = orderRepository.findById(orderId).orElseThrow {
-      throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = OrderFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = OrderFailureReason.NOT_FOUND.technical + "orderId=$orderId",
-        severity = SeverityLevel.WARN
-      )
-    }
-
-    // Ensure user owns order
-    AuthUtils.checkOwnership(order.userId)
+  fun markOrderDone(orderId: String, managerId: String) {
+    val order = orderRepository.findByIdAndManagerId(orderId, managerId) ?: throw ServiceException(
+      status = HttpStatus.NOT_FOUND,
+      userMessage = OrderFailureReason.NOT_FOUND.userMessage,
+      technicalMessage = OrderFailureReason.NOT_FOUND.technical + "orderId=$orderId managerId=$managerId",
+      severity = SeverityLevel.WARN
+    )
 
     if (order.status != OrderStatus.PLACED.name) {
       throw ServiceException(
@@ -252,17 +296,13 @@ class OrderService(
   }
 
   @Transactional
-  fun cancelOrder(orderId: String) {
-    val order = orderRepository.findById(orderId).orElseThrow {
-      throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = OrderFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = OrderFailureReason.NOT_FOUND.technical + "orderId=$orderId",
-        severity = SeverityLevel.WARN
-      )
-    }
-
-    AuthUtils.checkOwnership(order.userId)
+  fun cancelOrder(orderId: String, managerId: String) {
+    val order = orderRepository.findByIdAndManagerId(orderId, managerId) ?: throw ServiceException(
+      status = HttpStatus.NOT_FOUND,
+      userMessage = OrderFailureReason.NOT_FOUND.userMessage,
+      technicalMessage = OrderFailureReason.NOT_FOUND.technical + "orderId=$orderId managerId=$managerId",
+      severity = SeverityLevel.WARN
+    )
 
     val cancellableStatuses = setOf(OrderStatus.PLACED.name, OrderStatus.EMPTY.name)
 
@@ -270,7 +310,7 @@ class OrderService(
       throw ServiceException(
         status = HttpStatus.BAD_REQUEST,
         userMessage = "Only placed or empty orders can be cancelled",
-        technicalMessage = "Order $orderId has status ${order.status}, expected PLACED or EMPTY",
+        technicalMessage = "Order $orderId has status ${order.status}, expected $cancellableStatuses",
         severity = SeverityLevel.WARN
       )
     }

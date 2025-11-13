@@ -2,7 +2,7 @@ package com.pt.ordersystem.ordersystem.domains.order.models
 
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductDataForOrder
 
-data class CreateEmptyOrderRequest(
+data class CreateOrderRequest(
   val customerId: String? = null
 )
 

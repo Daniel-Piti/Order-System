@@ -100,10 +100,10 @@ class ProductService(
     val order = orderService.getOrderByIdInternal(orderId)
 
     // Fetch all products for the manager
-    val products = productRepository.findAllByManagerId(order.userId)
+    val products = productRepository.findAllByManagerId(order.managerId)
 
     // Fetch brands for enrichment
-    val brands = brandService.getManagerBrands(order.userId)
+    val brands = brandService.getManagerBrands(order.managerId)
     val brandMap = brands.associateBy { it.id }
 
     // If no customer assigned, return products with default prices
@@ -116,7 +116,7 @@ class ProductService(
 
     // Customer exists - get all overrides for this customer
     val overrides = productOverrideRepository.findByManagerIdAndCustomerId(
-      managerId = order.userId,
+      managerId = order.managerId,
       customerId = order.customerId
     )
 
@@ -131,25 +131,21 @@ class ProductService(
     }
   }
 
-  fun getProductById(productId: String): ProductDto {
-    val product = productRepository.findById(productId).orElseThrow {
-      ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = ProductFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = ProductFailureReason.NOT_FOUND.technical + "productId=$productId",
-        severity = SeverityLevel.WARN
-      )
-    }
-
-    AuthUtils.checkOwnership(product.managerId)
+  fun getProductById(managerId: String, productId: String): ProductDto {
+    val product = productRepository.findByManagerIdAndId(managerId = managerId, id = productId) ?: throw ServiceException(
+      status = HttpStatus.NOT_FOUND,
+      userMessage = ProductFailureReason.NOT_FOUND.userMessage,
+      technicalMessage = ProductFailureReason.NOT_FOUND.technical + "productId=$productId, managerId=$managerId",
+      severity = SeverityLevel.WARN
+    )
 
     // Fetch brand name if brandId exists
     val brandName = product.brandId?.let {
       try {
-        brandService.getBrandById(product.managerId, it).name
+        brandService.getBrandById(managerId, it).name
       } catch (e: Exception) {
         null // Brand might have been deleted
-      }
+}
     }
 
     return product.toDto(brandName = brandName)
@@ -241,7 +237,7 @@ class ProductService(
   }
 
   @Transactional
-  fun updateProduct(productId: String, request: UpdateProductRequest): String {
+  fun updateProduct(managerId: String, productId: String, request: UpdateProductRequest): String {
 
     with(request) {
       FieldValidators.validateNonEmpty(name, "'name'")
@@ -259,16 +255,12 @@ class ProductService(
       }
     }
 
-    val product = productRepository.findById(productId).orElseThrow {
-      ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = ProductFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = ProductFailureReason.NOT_FOUND.technical + "productId=$productId",
-        severity = SeverityLevel.WARN
-      )
-    }
-
-    AuthUtils.checkOwnership(product.managerId)
+    val product = productRepository.findByManagerIdAndId(managerId = managerId, id = productId) ?: throw ServiceException(
+      status = HttpStatus.NOT_FOUND,
+      userMessage = ProductFailureReason.NOT_FOUND.userMessage,
+      technicalMessage = ProductFailureReason.NOT_FOUND.technical + "productId=$productId, managerId=$managerId",
+      severity = SeverityLevel.WARN
+    )
 
     // If minimum price is being increased, update any invalid overrides
     if (request.minimumPrice > product.minimumPrice) {
@@ -289,17 +281,13 @@ class ProductService(
   }
 
   @Transactional
-  fun deleteProduct(productId: String) {
-    val product = productRepository.findById(productId).orElseThrow {
-      ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = ProductFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = ProductFailureReason.NOT_FOUND.technical + "productId=$productId",
-        severity = SeverityLevel.WARN
-      )
-    }
-
-    AuthUtils.checkOwnership(product.managerId)
+  fun deleteProduct(managerId: String, productId: String) {
+    val product = productRepository.findByManagerIdAndId(managerId = managerId, id = productId) ?: throw ServiceException(
+      status = HttpStatus.NOT_FOUND,
+      userMessage = ProductFailureReason.NOT_FOUND.userMessage,
+      technicalMessage = ProductFailureReason.NOT_FOUND.technical + "productId=$productId, managerId=$managerId",
+      severity = SeverityLevel.WARN
+    )
 
     productOverrideService.deleteAllOverridesForProduct(product.managerId, productId)
     

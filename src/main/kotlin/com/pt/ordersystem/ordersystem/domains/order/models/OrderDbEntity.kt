@@ -17,22 +17,29 @@ data class OrderDbEntity(
   @Id
   val id: String,
 
-  @Column(name = "user_id", nullable = false)
-  val userId: String,
+  @Column(name = "order_source", nullable = false)
+  val orderSource: String,
 
-  // User (Seller) pickup location - selected by customer
-  @Column(name = "user_street_address")
-  val userStreetAddress: String?,
+  @Column(name = "manager_id", nullable = false)
+  val managerId: String,
 
-  @Column(name = "user_city")
-  val userCity: String?,
+  @Column(name = "agent_id")
+  val agentId: Long? = null,
 
-  @Column(name = "user_phone_number")
-  val userPhoneNumber: String?,
-
-  // Customer (Buyer) data
   @Column(name = "customer_id")
   val customerId: String?,
+
+  // Store (pickup location) - selected by customer
+  @Column(name = "store_street_address")
+  val storeStreetAddress: String?,
+
+  @Column(name = "store_city")
+  val storeCity: String?,
+
+  @Column(name = "store_phone_number")
+  val storePhoneNumber: String?,
+
+  // Customer (Buyer) data
 
   @Column(name = "customer_name")
   val customerName: String?,

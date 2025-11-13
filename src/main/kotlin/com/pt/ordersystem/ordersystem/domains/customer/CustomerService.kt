@@ -33,10 +33,7 @@ class CustomerService(
     return customers.map { it.toDto() }
   }
 
-  fun getCustomerDto(managerId: String, customerId: String) =
-    getCustomer(managerId, agentId = null, customerId = customerId).toDto()
-
-  fun getCustomerDtoForAgent(managerId: String, agentId: Long, customerId: String) =
+  fun getCustomerDto(managerId: String, customerId: String, agentId: Long? = null) =
     getCustomer(managerId, agentId, customerId).toDto()
 
   @Transactional
@@ -192,15 +189,13 @@ class CustomerService(
   }
 
   private fun validateAgentExists(managerId: String, agentId: Long) {
-    val agent = agentRepository.findByManagerIdAndId(managerId, agentId)
-    if (agent == null) {
-      throw ServiceException(
+    agentRepository.findByManagerIdAndId(managerId, agentId)
+      ?: throw ServiceException(
         status = HttpStatus.NOT_FOUND,
         userMessage = CustomerFailureReason.AGENT_NOT_FOUND.userMessage,
         technicalMessage = CustomerFailureReason.AGENT_NOT_FOUND.technical + "managerId=$managerId agentId=$agentId",
         severity = SeverityLevel.WARN,
       )
-    }
   }
 
 }

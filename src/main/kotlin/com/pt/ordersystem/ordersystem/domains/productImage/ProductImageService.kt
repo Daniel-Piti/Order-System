@@ -1,6 +1,5 @@
 package com.pt.ordersystem.ordersystem.domains.productImage
 
-import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.config.ConfigProvider
 import com.pt.ordersystem.ordersystem.domains.product.ProductRepository
 import com.pt.ordersystem.ordersystem.domains.productImage.models.ProductImageDbEntity
@@ -32,17 +31,13 @@ class ProductImageService(
     productId: String,
     file: MultipartFile
   ): ProductImageDto {
-    // Verify product exists and belongs to user
-    val product = productRepository.findById(productId).orElseThrow {
-      ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = "Product not found",
-        technicalMessage = "Product with id $productId not found",
-        severity = SeverityLevel.WARN
-      )
-    }
-
-    AuthUtils.checkOwnership(product.managerId)
+    // Verify product exists and belongs to manager
+    val product = productRepository.findByManagerIdAndId(managerId = managerId, id = productId) ?: throw ServiceException(
+      status = HttpStatus.NOT_FOUND,
+      userMessage = "Product not found",
+      technicalMessage = "Product with id $productId not found for managerId $managerId",
+      severity = SeverityLevel.WARN
+    )
 
     // Check existing images count
     val existingImages = productImageRepository.findByProductId(productId)
@@ -105,16 +100,12 @@ class ProductImageService(
   }
 
   fun deleteImage(managerId: String, imageId: Long) {
-    val image = productImageRepository.findById(imageId).orElseThrow {
-      ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = "Image not found",
-        technicalMessage = "Image with id $imageId not found",
-        severity = SeverityLevel.WARN
-      )
-    }
-
-    AuthUtils.checkOwnership(image.managerId)
+    val image = productImageRepository.findByIdAndManagerId(id = imageId, managerId = managerId) ?: throw ServiceException(
+      status = HttpStatus.NOT_FOUND,
+      userMessage = "Image not found",
+      technicalMessage = "Image with id $imageId not found for managerId $managerId",
+      severity = SeverityLevel.WARN
+    )
 
     // Delete from R2
     r2StorageService.deleteFile(image.s3Key)
