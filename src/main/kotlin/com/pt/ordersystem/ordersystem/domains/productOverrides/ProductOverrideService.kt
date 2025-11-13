@@ -193,6 +193,12 @@ class ProductOverrideService(
     productOverrideRepository.deleteAll(overrides)
   }
 
+  @Transactional
+  fun deleteAllOverridesForAgent(managerId: String, agentId: Long) {
+    val overrides = productOverrideRepository.findByManagerIdAndAgentId(managerId, agentId)
+    productOverrideRepository.deleteAll(overrides)
+  }
+
   private fun ProductOverrideDbEntity.toDto() = ProductOverrideDto(
     id = id,
     productId = productId,

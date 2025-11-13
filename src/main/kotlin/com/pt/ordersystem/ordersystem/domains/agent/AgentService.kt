@@ -6,18 +6,23 @@ import com.pt.ordersystem.ordersystem.domains.agent.models.AgentFailureReason
 import com.pt.ordersystem.ordersystem.domains.agent.models.NewAgentRequest
 import com.pt.ordersystem.ordersystem.domains.agent.models.UpdateAgentRequest
 import com.pt.ordersystem.ordersystem.domains.agent.models.toDto
+import com.pt.ordersystem.ordersystem.domains.customer.CustomerService
+import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideService
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import org.springframework.http.HttpStatus
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
 @Service
 class AgentService(
   private val agentRepository: AgentRepository,
   private val passwordEncoder: BCryptPasswordEncoder,
+  private val productOverrideService: ProductOverrideService,
+  private val customerService: CustomerService,
 ) {
 
   companion object {
@@ -122,6 +127,7 @@ class AgentService(
     return agentRepository.save(updated).toDto()
   }
 
+  @Transactional
   fun deleteAgent(managerId: String, agentId: Long) {
     val agent = agentRepository.findByManagerIdAndId(managerId, agentId)
       ?: throw ServiceException(
@@ -130,6 +136,12 @@ class AgentService(
         technicalMessage = AgentFailureReason.NOT_FOUND.technical + "managerId=$managerId, agentId=$agentId",
         severity = SeverityLevel.WARN,
       )
+
+    // Delete all product overrides associated with this agent
+    productOverrideService.deleteAllOverridesForAgent(managerId, agentId)
+
+    // Unassign all customers from this agent (set agentId to null)
+    customerService.unassignCustomersFromAgent(managerId, agentId)
 
     agentRepository.delete(agent)
   }

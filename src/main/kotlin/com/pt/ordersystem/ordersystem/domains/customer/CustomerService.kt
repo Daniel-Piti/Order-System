@@ -104,6 +104,18 @@ class CustomerService(
     customerRepository.delete(currentCustomer)
   }
 
+  @Transactional
+  fun unassignCustomersFromAgent(managerId: String, agentId: Long) {
+    val customers = customerRepository.findByManagerIdAndAgentId(managerId, agentId)
+    customers.forEach { customer ->
+      val updated = customer.copy(
+        agentId = null,
+        updatedAt = LocalDateTime.now()
+      )
+      customerRepository.save(updated)
+    }
+  }
+
   private fun validateUniquePhoneNumber(managerId: String, phoneNumber: String, excludeCustomerId: String?) {
     val customerWithSamePhoneNumber = customerRepository.findByManagerIdAndPhoneNumber(managerId, phoneNumber)
     if (customerWithSamePhoneNumber != null && customerWithSamePhoneNumber.id != excludeCustomerId) {
