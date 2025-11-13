@@ -270,6 +270,11 @@ class ProductService(
 
     AuthUtils.checkOwnership(product.managerId)
 
+    // If minimum price is being increased, update any invalid overrides
+    if (request.minimumPrice > product.minimumPrice) {
+      productOverrideService.updateInvalidOverridesForProduct(product.managerId, productId, request.minimumPrice)
+    }
+
     val updated = product.copy(
       name = request.name,
       brandId = request.brandId,

@@ -4,9 +4,12 @@ import com.pt.ordersystem.ordersystem.domains.productOverrides.models.ProductOve
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import java.math.BigDecimal
+import java.time.LocalDateTime
 
 @Repository
 interface ProductOverrideRepository : JpaRepository<ProductOverrideDbEntity, Long> {
@@ -19,6 +22,22 @@ interface ProductOverrideRepository : JpaRepository<ProductOverrideDbEntity, Lon
   fun findByManagerIdAndAgentId(managerId: String, agentId: Long): List<ProductOverrideDbEntity>
   fun findByManagerIdAndAgentIdAndProductId(managerId: String, agentId: Long, productId: String): List<ProductOverrideDbEntity>
   fun findByManagerIdAndAgentIdAndCustomerId(managerId: String, agentId: Long, customerId: String): List<ProductOverrideDbEntity>
+
+  @Modifying
+  @Query("""
+    UPDATE ProductOverrideDbEntity po 
+    SET po.overridePrice = :newMinimumPrice, 
+        po.updatedAt = :updatedAt 
+    WHERE po.managerId = :managerId 
+      AND po.productId = :productId 
+      AND po.overridePrice < :newMinimumPrice
+  """)
+  fun updateInvalidOverridesForProduct(
+    @Param("managerId") managerId: String,
+    @Param("productId") productId: String,
+    @Param("newMinimumPrice") newMinimumPrice: BigDecimal,
+    @Param("updatedAt") updatedAt: LocalDateTime
+  ): Int
 
   @Query("""
     SELECT po.id, po.product_id, po.manager_id, po.agent_id, po.customer_id, po.override_price, p.price as product_price, p.minimum_price as product_minimum_price

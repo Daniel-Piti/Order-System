@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 @Service
@@ -197,6 +198,16 @@ class ProductOverrideService(
   fun deleteAllOverridesForAgent(managerId: String, agentId: Long) {
     val overrides = productOverrideRepository.findByManagerIdAndAgentId(managerId, agentId)
     productOverrideRepository.deleteAll(overrides)
+  }
+
+  @Transactional
+  fun updateInvalidOverridesForProduct(managerId: String, productId: String, newMinimumPrice: BigDecimal) {
+    productOverrideRepository.updateInvalidOverridesForProduct(
+      managerId = managerId,
+      productId = productId,
+      newMinimumPrice = newMinimumPrice,
+      updatedAt = LocalDateTime.now()
+    )
   }
 
   private fun ProductOverrideDbEntity.toDto() = ProductOverrideDto(
