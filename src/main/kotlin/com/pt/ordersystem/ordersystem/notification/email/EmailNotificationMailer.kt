@@ -116,6 +116,37 @@ class EmailNotificationMailer(
     }
   }
 
+  fun sendOrderUpdatedEmail(order: OrderDto, recipientEmail: String) {
+    try {
+      val message: MimeMessage = mailSender.createMimeMessage()
+      val helper = MimeMessageHelper(message, true, "UTF-8")
+
+      helper.setTo(recipientEmail)
+      helper.setSubject("Order Updated - Order #${order.id}")
+      helper.setFrom(fromEmail)
+      helper.setText(buildOrderUpdatedBody(order), true)
+
+      mailSender.send(message)
+
+      logger.info(
+        "Order updated email sent successfully | orderId={} | customer={} | to={} | total={}",
+        order.id,
+        order.customerName ?: "unknown",
+        recipientEmail,
+        order.totalPrice
+      )
+    } catch (e: Exception) {
+      logger.error(
+        "Failed to send order updated email | orderId={} | to={} | error={}",
+        order.id,
+        recipientEmail,
+        e.message,
+        e
+      )
+      throw e
+    }
+  }
+
   private fun buildOrderPlacedBody(order: OrderDto): String {
     val locale = Locale.Builder().setLanguage("en").setRegion("IL").build()
     val currencyFormatter = NumberFormat.getCurrencyInstance(locale)
@@ -333,6 +364,86 @@ class EmailNotificationMailer(
               ${buildProductList(order)}
 
               <p style="margin: 22px 0 0; font-size: 14px; color: #4b5563;">If this cancellation was unexpected, please reach out so we can help sort things out.</p>
+              <p style="margin: 14px 0 0; font-size: 14px; color: #4b5563;">Warm regards,<br><strong>Order System Team</strong></p>
+            </div>
+            <div class="footer">
+              This is an automated message. Please do not reply.
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    """.trimIndent()
+  }
+
+  private fun buildOrderUpdatedBody(order: OrderDto): String {
+    val locale = Locale.Builder().setLanguage("en").setRegion("IL").build()
+    val currencyFormatter = NumberFormat.getCurrencyInstance(locale)
+    val formattedTotal = currencyFormatter.format(order.totalPrice)
+    val updatedAt = formatDateTime(order.updatedAt)
+    val placedAtFormatted = order.placedAt?.let { formatDateTime(it) }
+
+    val placedAtRow = placedAtFormatted?.let {
+      "<div class=\"summary-row\"><span>Originally Placed:&nbsp;</span><span>$it</span></div>"
+    } ?: ""
+
+    return """
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body { font-family: 'Inter', Arial, sans-serif; background-color: #fef3c7; padding: 32px 12px; color: #1f2937; }
+          .wrapper { max-width: 560px; margin: 0 auto; }
+          .card { background: #fffbeb; border-radius: 18px; border: 1px solid #fde68a; box-shadow: 0 18px 36px rgba(245, 158, 11, 0.12); overflow: hidden; }
+          .card-header { padding: 28px 32px 18px; background: linear-gradient(135deg, #d97706, #f59e0b); color: #ffffff; }
+          .card-header h2 { margin: 0; font-size: 22px; font-weight: 600; }
+          .card-header p { margin: 6px 0 0; font-size: 14px; opacity: 0.85; }
+          .card-body { padding: 26px 32px 32px; }
+          .summary { border: 1px solid #e5e7eb; border-radius: 16px; padding: 18px 20px; background: #f9fafb; margin-top: 20px; }
+          .summary-row { display: flex; justify-content: space-between; font-size: 14px; padding: 6px 0; }
+          .summary-row span:first-child { color: #6b7280; }
+          .summary-row span:last-child { font-weight: 600; color: #111827; margin-left: 8px; }
+          .total { margin-top: 18px; text-align: center; font-size: 18px; font-weight: 600; color: #d97706; }
+          .products { margin-top: 26px; border: 1px solid #fde68a; border-radius: 16px; padding: 18px 20px; background: #ffffff; }
+          .products-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #f59e0b; font-weight: 700; }
+          .products-body { margin-top: 12px; }
+          .product-row { padding: 16px 0; border-top: 1px solid #e5e7eb; }
+          .product-row:first-child { border-top: none; padding-top: 12px; }
+          .product-name { font-weight: 600; color: #111827; font-size: 15px; }
+          .product-meta { color: #6b7280; font-size: 12px; margin-top: 6px; display: block; }
+          .product-total { margin-top: 8px; font-weight: 700; color: #d97706; font-size: 16px; display: block; text-align: left; }
+          .products-empty { margin-top: 26px; border: 1px solid #fde68a; border-radius: 16px; background: #ffffff; padding: 18px 20px; text-align: center; font-size: 13px; color: #6b7280; }
+          .footer { padding: 20px 32px 24px; text-align: center; font-size: 12px; color: #6b7280; }
+          .changes-note { margin-top: 22px; padding: 14px 18px; background: #fef3c7; border-radius: 12px; border-left: 4px solid #f59e0b; font-size: 13px; color: #92400e; }
+        </style>
+      </head>
+      <body>
+        <div class="wrapper">
+          <div class="card">
+            <div class="card-header">
+              <h2>Your order has been updated</h2>
+              <p>We've made changes to your order details.</p>
+            </div>
+            <div class="card-body">
+              <p style="margin: 0 0 14px; font-size: 15px;">Hello ${order.customerName ?: "Customer"},</p>
+              <p style="margin: 0 0 18px; font-size: 14px; color: #4b5563;">We wanted to let you know that your order has been updated. Here are the current details:</p>
+
+              <div class="summary">
+                <div class="summary-row"><span>Order ID:&nbsp;</span><span>${order.id}</span></div>
+                <div class="summary-row"><span>Updated:&nbsp;</span><span>$updatedAt</span></div>
+                $placedAtRow
+              </div>
+
+              <div class="total">Current total: $formattedTotal</div>
+
+              ${buildProductList(order)}
+
+              <div class="changes-note">
+                <strong>Note:</strong> Your order details (products, location, or notes) have been updated. Please review the information above to ensure everything is correct.
+              </div>
+
+              <p style="margin: 22px 0 0; font-size: 14px; color: #4b5563;">If you have any questions about these changes, please don't hesitate to reach out to us.</p>
               <p style="margin: 14px 0 0; font-size: 14px; color: #4b5563;">Warm regards,<br><strong>Order System Team</strong></p>
             </div>
             <div class="footer">

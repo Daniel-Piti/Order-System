@@ -30,6 +30,15 @@ data class EmailOrderCancelledNotificationRequest(
   val recipientEmail: String,
 )
 
+data class EmailOrderUpdatedNotificationRequest(
+  @field:NotBlank
+  val orderId: String,
+
+  @field:NotBlank
+  @field:Email
+  val recipientEmail: String,
+)
+
 data class EmailNotificationResponse(
   val success: Boolean,
   val message: String,

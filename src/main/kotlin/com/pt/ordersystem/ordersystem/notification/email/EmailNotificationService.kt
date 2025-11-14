@@ -9,6 +9,7 @@ import com.pt.ordersystem.ordersystem.notification.email.models.EmailNotificatio
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderCancelledNotificationRequest
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderDoneNotificationRequest
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderPlacedNotificationRequest
+import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderUpdatedNotificationRequest
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 
@@ -75,6 +76,27 @@ class EmailNotificationService(
     return EmailNotificationResponse(
       success = true,
       message = "Order cancelled notification sent",
+    )
+  }
+
+  fun sendOrderUpdatedNotification(request: EmailOrderUpdatedNotificationRequest): EmailNotificationResponse {
+    val order = orderService.getOrderByIdInternal(request.orderId)
+
+    // Updated orders should still be in PLACED status (status doesn't change on update)
+    if (order.status != OrderStatus.PLACED) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = EmailNotificationFailureReason.ORDER_NOT_PLACED.userMessage,
+        technicalMessage = EmailNotificationFailureReason.ORDER_NOT_PLACED.technical + "orderId=${order.id} status=${order.status}",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    emailNotificationMailer.sendOrderUpdatedEmail(order, request.recipientEmail)
+
+    return EmailNotificationResponse(
+      success = true,
+      message = "Order updated notification sent",
     )
   }
 }

@@ -5,6 +5,7 @@ import com.pt.ordersystem.ordersystem.notification.email.models.EmailNotificatio
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderCancelledNotificationRequest
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderDoneNotificationRequest
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderPlacedNotificationRequest
+import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderUpdatedNotificationRequest
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
@@ -45,6 +46,14 @@ class EmailNotificationController(
     @Valid @RequestBody request: EmailOrderCancelledNotificationRequest,
   ): ResponseEntity<EmailNotificationResponse> {
     val response = emailNotificationService.sendOrderCancelledNotification(request)
+    return ResponseEntity.ok(response)
+  }
+
+  @PostMapping("/order-updated")
+  fun sendOrderUpdatedNotification(
+    @Valid @RequestBody request: EmailOrderUpdatedNotificationRequest,
+  ): ResponseEntity<EmailNotificationResponse> {
+    val response = emailNotificationService.sendOrderUpdatedNotification(request)
     return ResponseEntity.ok(response)
   }
 }
