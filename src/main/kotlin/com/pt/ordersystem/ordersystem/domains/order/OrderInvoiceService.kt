@@ -1,5 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.order
 
+import com.pt.ordersystem.ordersystem.domains.agent.AgentService
+import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDbEntity
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderFailureReason
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderStatus
@@ -30,7 +32,9 @@ import java.text.Bidi
 
 @Service
 class OrderInvoiceService(
-  private val orderRepository: OrderRepository
+  private val orderRepository: OrderRepository,
+  private val managerService: ManagerService,
+  private val agentService: AgentService
 ) {
 
   private data class InvoiceTheme(
@@ -102,12 +106,11 @@ class OrderInvoiceService(
 
   private fun validateInvoiceEligibility(order: OrderDbEntity) {
     val status = OrderStatus.valueOf(order.status)
-    val eligibleStatuses = setOf(OrderStatus.PLACED, OrderStatus.DONE)
 
-    if (status !in eligibleStatuses) {
+    if (status != OrderStatus.DONE) {
       throw ServiceException(
         status = HttpStatus.BAD_REQUEST,
-        userMessage = "Invoice is only available for placed or completed orders",
+        userMessage = "Invoice is only available for completed orders",
         technicalMessage = "Invoice requested for order ${order.id} with status ${order.status}",
         severity = SeverityLevel.INFO
       )
@@ -138,6 +141,7 @@ class OrderInvoiceService(
     theme: InvoiceTheme,
     invoiceNumber: String,
     invoiceDate: String,
+    businessName: String,
     headerHeight: Float,
     margin: Float
   ): PageContext {
@@ -155,7 +159,8 @@ class OrderInvoiceService(
       pageHeight = pageHeight,
       height = headerHeight,
       invoiceNumber = invoiceNumber,
-      invoiceDate = invoiceDate
+      invoiceDate = invoiceDate,
+      businessName = businessName
     )
 
     return PageContext(
@@ -196,6 +201,17 @@ class OrderInvoiceService(
   }
 
   private fun renderPdf(order: OrderDbEntity): ByteArray {
+    // Fetch manager and agent information
+    val manager = managerService.getManagerById(order.managerId)
+    val agent = order.agentId?.let { agentId ->
+      try {
+        agentService.getAgentEntity(agentId.toString())
+      } catch (e: Exception) {
+        // Agent might not exist anymore, ignore
+        null
+      }
+    }
+
     val invoiceNumber = "INV-${order.id.uppercase(Locale.ENGLISH)}"
     val invoiceDate = formatDate(order.doneAt ?: order.placedAt ?: order.createdAt)
 
@@ -205,7 +221,7 @@ class OrderInvoiceService(
 
       val theme = createTheme(document)
       val margin = 50f
-      val headerHeight = 88f
+      val headerHeight = 100f // Increased height for business name
       val footerHeight = 70f
       val contentWidth = PDRectangle.LETTER.width - (margin * 2)
 
@@ -214,6 +230,7 @@ class OrderInvoiceService(
         theme = theme,
         invoiceNumber = invoiceNumber,
         invoiceDate = invoiceDate,
+        businessName = manager.businessName,
         headerHeight = headerHeight,
         margin = margin
       )
@@ -226,6 +243,7 @@ class OrderInvoiceService(
           theme = theme,
           invoiceNumber = invoiceNumber,
           invoiceDate = invoiceDate,
+          businessName = manager.businessName,
           headerHeight = headerHeight,
           margin = margin
         )
@@ -243,7 +261,6 @@ class OrderInvoiceService(
       val metaSpacing = 14f
       val metaLines = listOf(
         "Order ID: ${order.id}",
-        "Status: ${OrderStatus.valueOf(order.status).name}",
         "Date: ${formatDate(order.doneAt!!)}"
       )
       val metaHeight = metaSpacing * metaLines.size + 12f
@@ -258,37 +275,75 @@ class OrderInvoiceService(
           color = theme.textSecondary
         )
       }
-      context.currentY -= metaHeight + 10f
+      context.currentY -= metaHeight + 20f
 
       val panelGap = 16f
       val panelWidth = (contentWidth - panelGap) / 2f
-      val panelPadding = 16f
-      val panelLineHeight = 14f
+      val panelPadding = 18f
+      val panelLineHeight = 15f
       val panelInnerWidth = panelWidth - (panelPadding * 2)
 
-      val sellerLines = listOf(
-        "Street: ${sanitize(order.storeStreetAddress)}",
-        "City: ${sanitize(order.storeCity)}",
-        "Phone: ${sanitize(order.storePhoneNumber)}"
-      ).flatMap { wrapWithFont(theme.regularFont, it, panelInnerWidth, 11f) }
+      // Build seller lines with manager and agent information
+      val sellerLines = mutableListOf<String>()
+      
+      // Business name (bold, will be handled separately)
+      // Manager name
+      sellerLines.add("${manager.firstName} ${manager.lastName}")
+      sellerLines.add("Email: ${manager.email}")
+      sellerLines.add("Phone: ${manager.phoneNumber}")
+      sellerLines.add("${manager.streetAddress}")
+      sellerLines.add("${manager.city}")
+      
+      // Agent information if exists
+      if (agent != null) {
+        sellerLines.add("")
+        sellerLines.add("Agent: ${agent.firstName} ${agent.lastName}")
+        sellerLines.add("Email: ${agent.email}")
+        sellerLines.add("Phone: ${agent.phoneNumber}")
+      }
+      
+      // Store (pickup location) information
+      if (order.storeStreetAddress != null || order.storeCity != null || order.storePhoneNumber != null) {
+        sellerLines.add("")
+        sellerLines.add("Location:")
+        if (order.storeStreetAddress != null) {
+          sellerLines.add("${order.storeStreetAddress}")
+        }
+        if (order.storeCity != null) {
+          sellerLines.add("${order.storeCity}")
+        }
+        if (order.storePhoneNumber != null) {
+          sellerLines.add("Phone: ${order.storePhoneNumber}")
+        }
+      }
+      
+      val wrappedSellerLines = sellerLines.flatMap { line ->
+        if (line.isBlank()) {
+          listOf("")
+        } else {
+          wrapWithFont(theme.regularFont, line, panelInnerWidth, 11f)
+        }
+      }
 
       val customerLines = listOf(
-        "Name: ${sanitize(order.customerName)}",
-        "Street: ${sanitize(order.customerStreetAddress)}",
-        "City: ${sanitize(order.customerCity)}",
-        "Phone: ${sanitize(order.customerPhone)}",
-        "Email: ${sanitize(order.customerEmail)}"
-      ).flatMap { wrapWithFont(theme.regularFont, it, panelInnerWidth, 11f) }
+        sanitize(order.customerName)?.takeIf { it != "Not provided" }?.let { "Name: $it" },
+        sanitize(order.customerStreetAddress)?.takeIf { it != "Not provided" }?.let { it },
+        sanitize(order.customerCity)?.takeIf { it != "Not provided" }?.let { it },
+        sanitize(order.customerPhone)?.takeIf { it != "Not provided" }?.let { "Phone: $it" },
+        sanitize(order.customerEmail)?.takeIf { it != "Not provided" }?.let { "Email: $it" }
+      ).filterNotNull().flatMap { wrapWithFont(theme.regularFont, it, panelInnerWidth, 11f) }
 
-      val sellerHeight = panelPadding * 2 + (sellerLines.size + 1) * panelLineHeight
-      val customerHeight = panelPadding * 2 + (customerLines.size + 1) * panelLineHeight
-      val panelHeight = maxOf(sellerHeight, customerHeight)
+      // Calculate heights - seller panel includes business name as title
+      val businessNameTitleHeight = 20f // Extra height for business name
+      val sellerContentHeight = panelPadding * 2 + wrappedSellerLines.size * panelLineHeight + businessNameTitleHeight
+      val customerContentHeight = panelPadding * 2 + (customerLines.size + 1) * panelLineHeight
+      val panelHeight = maxOf(sellerContentHeight, customerContentHeight)
 
       ensureSpace(panelHeight)
-      val sellerBottom = context.content.drawInfoPanel(
+      val sellerBottom = context.content.drawSellerPanel(
         theme = theme,
-        title = "Seller",
-        lines = sellerLines,
+        businessName = manager.businessName,
+        lines = wrappedSellerLines,
         topLeftX = margin,
         topY = context.currentY,
         width = panelWidth
@@ -489,7 +544,7 @@ class OrderInvoiceService(
   }
 
   private fun formatDate(dateTime: LocalDateTime): String =
-    dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
+    dateTime.format(DateTimeFormatter.ofPattern("MMMM dd, yyyy", Locale.ENGLISH))
 
   private fun sanitize(value: String?): String =
     value?.takeIf { it.isNotBlank() } ?: "Not provided"
@@ -637,57 +692,89 @@ class OrderInvoiceService(
     pageHeight: Float,
     height: Float,
     invoiceNumber: String,
-    invoiceDate: String
+    invoiceDate: String,
+    businessName: String
   ) {
+    // Header background with gradient effect (solid for now)
     content.setNonStrokingColor(theme.accentColor)
     content.addRect(0f, pageHeight - height, pageWidth, height)
     content.fill()
 
     val headerLeftX = 50f
-    val headerTopY = pageHeight - 34f
+    val headerTopY = pageHeight - 28f
 
+    // Business name (prominent)
     content.writeText(
-      text = "Invoice",
+      text = businessName,
       x = headerLeftX,
       y = headerTopY,
       font = theme.boldFont,
-      fontSize = 26f,
+      fontSize = 20f,
       color = Color.WHITE
     )
 
+    // Invoice title
     content.writeText(
-      text = invoiceNumber,
+      text = "INVOICE",
       x = headerLeftX,
-      y = headerTopY - 24f,
-      font = theme.regularFont,
-      fontSize = 12f,
-      color = Color.WHITE
+      y = headerTopY - 22f,
+      font = theme.boldFont,
+      fontSize = 14f,
+      color = Color(240, 240, 255) // Light white/blue tint
     )
 
+    // Invoice number
     content.writeText(
-      text = invoiceDate,
+      text = "Invoice #: $invoiceNumber",
       x = headerLeftX,
-      y = headerTopY - 40f,
+      y = headerTopY - 38f,
       font = theme.regularFont,
-      fontSize = 12f,
+      fontSize = 11f,
       color = Color.WHITE
     )
 
-    val badgeWidth = 180f
-    val badgeHeight = 30f
+    // Invoice date
+    content.writeText(
+      text = "Date: $invoiceDate",
+      x = headerLeftX,
+      y = headerTopY - 52f,
+      font = theme.regularFont,
+      fontSize = 11f,
+      color = Color.WHITE
+    )
+
+    // Payment badge (right side)
+    val badgeWidth = 200f
+    val badgeHeight = 36f
     val badgeX = pageWidth - headerLeftX - badgeWidth
-    val badgeY = headerTopY - 12f
+    val badgeY = headerTopY - 18f
 
+    // Badge background with rounded corners effect (white with border)
     content.setNonStrokingColor(Color.WHITE)
     content.addRect(badgeX, badgeY, badgeWidth, badgeHeight)
     content.fill()
 
+    // Badge border
+    content.setStrokingColor(theme.accentColorMuted)
+    content.setLineWidth(1.5f)
+    content.addRect(badgeX, badgeY, badgeWidth, badgeHeight)
+    content.stroke()
+
     content.writeText(
-      text = "Payment Due: On receipt",
-      x = badgeX + 14f,
-      y = badgeY + 9f,
+      text = "PAYMENT DUE",
+      x = badgeX + 16f,
+      y = badgeY + 22f,
       font = theme.boldFont,
-      fontSize = 11f,
+      fontSize = 10f,
+      color = theme.textSecondary
+    )
+
+    content.writeText(
+      text = "On Receipt",
+      x = badgeX + 16f,
+      y = badgeY + 10f,
+      font = theme.boldFont,
+      fontSize = 12f,
       color = theme.accentColor
     )
   }
@@ -710,6 +797,76 @@ class OrderInvoiceService(
     setNonStrokingColor(Color.BLACK)
   }
 
+  private fun PDPageContentStream.drawSellerPanel(
+    theme: InvoiceTheme,
+    businessName: String,
+    lines: List<String>,
+    topLeftX: Float,
+    topY: Float,
+    width: Float
+  ): Float {
+    val padding = 18f
+    val lineHeight = 15f
+    val titleHeight = 22f // Height for business name title
+    val contentHeight = padding * 2 + titleHeight + lines.size * lineHeight
+    val bottomY = topY - contentHeight
+
+    // Panel background
+    setNonStrokingColor(theme.panelBackground)
+    addRect(topLeftX, bottomY, width, contentHeight)
+    fill()
+
+    // Business name as title (bold, larger)
+    writeText(
+      text = "FROM",
+      x = topLeftX + padding,
+      y = topY - padding,
+      font = theme.boldFont,
+      fontSize = 9f,
+      color = theme.textSecondary
+    )
+
+    writeText(
+      text = businessName,
+      x = topLeftX + padding,
+      y = topY - padding - 14f,
+      font = theme.boldFont,
+      fontSize = 14f,
+      color = theme.textPrimary
+    )
+
+    var cursorY = topY - padding - titleHeight - 2f
+    lines.forEach { line ->
+      if (line.isNotBlank()) {
+        // Check if line starts with "Agent:" or "Location:" to make it bold
+        val isBold = line.startsWith("Agent:") || line.startsWith("Location:")
+        val fontSize = if (isBold) 10f else 11f
+        val font = if (isBold) theme.boldFont else theme.regularFont
+        val color = if (isBold) theme.textPrimary else theme.textSecondary
+        
+        writeText(
+          text = line,
+          x = topLeftX + padding,
+          y = cursorY,
+          font = font,
+          fontSize = fontSize,
+          color = color
+        )
+        cursorY -= lineHeight
+      } else {
+        cursorY -= lineHeight * 0.5f // Smaller gap for blank lines
+      }
+    }
+
+    // Border
+    setStrokingColor(theme.borderColor)
+    setLineWidth(1f)
+    addRect(topLeftX, bottomY, width, contentHeight)
+    stroke()
+
+    return bottomY
+  }
+
   private fun PDPageContentStream.drawInfoPanel(
     theme: InvoiceTheme,
     title: String,
@@ -718,9 +875,10 @@ class OrderInvoiceService(
     topY: Float,
     width: Float
   ): Float {
-    val padding = 16f
-    val lineHeight = 14f
-    val contentHeight = padding * 2 + (lines.size + 1) * lineHeight
+    val padding = 18f
+    val lineHeight = 15f
+    val titleHeight = 18f
+    val contentHeight = padding * 2 + titleHeight + lines.size * lineHeight
     val bottomY = topY - contentHeight
 
     setNonStrokingColor(theme.panelBackground)
@@ -736,20 +894,25 @@ class OrderInvoiceService(
       color = theme.textPrimary
     )
 
-    var cursorY = topY - padding - lineHeight
+    var cursorY = topY - padding - titleHeight - 2f
     lines.forEach { line ->
-      writeText(
-        text = line,
-        x = topLeftX + padding,
-        y = cursorY,
-        font = theme.regularFont,
-        fontSize = 11f,
-        color = theme.textSecondary
-      )
-      cursorY -= lineHeight
+      if (line.isNotBlank()) {
+        writeText(
+          text = line,
+          x = topLeftX + padding,
+          y = cursorY,
+          font = theme.regularFont,
+          fontSize = 11f,
+          color = theme.textSecondary
+        )
+        cursorY -= lineHeight
+      } else {
+        cursorY -= lineHeight * 0.5f
+      }
     }
 
     setStrokingColor(theme.borderColor)
+    setLineWidth(1f)
     addRect(topLeftX, bottomY, width, contentHeight)
     stroke()
 
