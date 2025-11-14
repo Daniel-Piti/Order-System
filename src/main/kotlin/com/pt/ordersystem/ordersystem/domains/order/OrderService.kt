@@ -3,6 +3,7 @@ package com.pt.ordersystem.ordersystem.domains.order
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerService
 import com.pt.ordersystem.ordersystem.domains.location.LocationRepository
 import com.pt.ordersystem.ordersystem.domains.location.LocationService
+import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
 import com.pt.ordersystem.ordersystem.domains.order.models.*
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.exception.ServiceException
@@ -22,6 +23,7 @@ class OrderService(
   private val customerService: CustomerService,
   private val locationRepository: LocationRepository,
   private val locationService: LocationService,
+  private val managerService: ManagerService,
 ) {
 
   companion object {
@@ -265,6 +267,65 @@ class OrderService(
     )
 
     orderRepository.save(updatedOrder)
+  }
+
+  @Transactional
+  fun createAndPlacePublicOrder(managerId: String, request: PlaceOrderRequest): String {
+    // Validate manager exists
+    managerService.getManagerById(managerId)
+
+    // Validate products are not empty
+    if (request.products.isEmpty()) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Cannot place an order with no products",
+        technicalMessage = "Public order attempted to be placed with empty products list for managerId=$managerId",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    // Validate and fetch pickup location (will throw exception if location doesn't exist or doesn't belong to manager)
+    val selectedLocation = locationService.getLocationById(managerId, request.pickupLocationId)
+
+    // Calculate total price
+    val totalPrice = request.products.fold(BigDecimal.ZERO) { sum, product ->
+      sum + (product.pricePerUnit.multiply(BigDecimal.valueOf(product.quantity.toLong())))
+    }
+
+    val now = LocalDateTime.now()
+    val linkExpiresAt = now.plusDays(7)
+
+    // Create order with PUBLIC source, no agentId, no customerId
+    val order = OrderDbEntity(
+      id = GeneralUtils.genId(),
+      managerId = managerId,
+      agentId = null, // No agent for public orders
+      orderSource = OrderSource.PUBLIC.name,
+      // Store (pickup) location from selected location
+      storeStreetAddress = selectedLocation.streetAddress,
+      storeCity = selectedLocation.city,
+      storePhoneNumber = selectedLocation.phoneNumber,
+      // Customer data (from request, no customer linked)
+      customerId = null, // No customer linked for public orders
+      customerName = request.customerName,
+      customerPhone = request.customerPhone,
+      customerEmail = request.customerEmail,
+      customerStreetAddress = request.customerStreetAddress,
+      customerCity = request.customerCity,
+      // Order details (placed immediately)
+      status = OrderStatus.PLACED.name,
+      products = request.products,
+      productsVersion = 1,
+      totalPrice = totalPrice,
+      linkExpiresAt = linkExpiresAt,
+      notes = request.notes,
+      placedAt = now,
+      doneAt = null,
+      createdAt = now,
+      updatedAt = now,
+    )
+
+    return orderRepository.save(order).id
   }
 
   @Transactional

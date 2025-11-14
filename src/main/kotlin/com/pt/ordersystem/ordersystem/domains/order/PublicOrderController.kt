@@ -27,4 +27,13 @@ class PublicOrderController(
     return ResponseEntity.ok("Order placed successfully")
   }
 
+  @PostMapping("/manager/{managerId}/create")
+  fun createAndPlacePublicOrder(
+    @PathVariable managerId: String,
+    @RequestBody request: PlaceOrderRequest
+  ): ResponseEntity<String> {
+    val orderId = orderService.createAndPlacePublicOrder(managerId, request)
+    return ResponseEntity.status(HttpStatus.CREATED).body(orderId)
+  }
+
 }
