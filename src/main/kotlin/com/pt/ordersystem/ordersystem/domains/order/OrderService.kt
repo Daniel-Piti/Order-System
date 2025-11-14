@@ -150,9 +150,9 @@ class OrderService(
     }
 
     // Determine order source
-    val orderSource = when {
-      agentId != null -> OrderSource.AGENT
-      else -> OrderSource.MANAGER
+    val orderSource = when (agentId) {
+      null -> OrderSource.MANAGER
+      else -> OrderSource.AGENT
     }
 
     // If customerId is provided, fetch customer data to pre-fill
@@ -296,11 +296,21 @@ class OrderService(
   }
 
   @Transactional
-  fun cancelOrder(orderId: String, managerId: String) {
-    val order = orderRepository.findByIdAndManagerId(orderId, managerId) ?: throw ServiceException(
+  fun cancelOrder(orderId: String, managerId: String, agentId: Long? = null) {
+    val order = when (agentId) {
+      null -> {
+        // Manager query: find order by managerId (regardless of agentId)
+        orderRepository.findByIdAndManagerId(id = orderId, managerId = managerId)
+      }
+      else -> {
+        // Agent query: find order by managerId AND agentId
+        orderRepository.findByIdAndManagerIdAndAgentId(id = orderId, managerId = managerId, agentId = agentId)
+      }
+    } ?: throw ServiceException(
       status = HttpStatus.NOT_FOUND,
       userMessage = OrderFailureReason.NOT_FOUND.userMessage,
-      technicalMessage = OrderFailureReason.NOT_FOUND.technical + "orderId=$orderId managerId=$managerId",
+      technicalMessage = OrderFailureReason.NOT_FOUND.technical + 
+        "orderId=$orderId, managerId=$managerId${if (agentId != null) ", agentId=$agentId" else ""}",
       severity = SeverityLevel.WARN
     )
 
