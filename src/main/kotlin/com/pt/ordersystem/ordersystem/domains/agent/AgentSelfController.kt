@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @Tag(name = "Agent Profile", description = "Endpoints for authenticated agents")
@@ -36,4 +37,15 @@ class AgentSelfController(
     @RequestBody request: UpdateAgentRequest,
   ): ResponseEntity<AgentDto> =
     ResponseEntity.ok(agentService.updateAgentSelf(agent.id, request))
+
+  @PutMapping("/update-password")
+  fun updateCurrentAgentPassword(
+    @RequestParam("old_password") oldPassword: String,
+    @RequestParam("new_password") newPassword: String,
+    @RequestParam("new_password_confirmation") newPasswordConfirmation: String,
+    @AuthenticationPrincipal agent: AuthUser
+  ): ResponseEntity<String> {
+    agentService.updatePassword(agent.id, oldPassword, newPassword, newPasswordConfirmation)
+    return ResponseEntity.ok("Password updated successfully")
+  }
 }

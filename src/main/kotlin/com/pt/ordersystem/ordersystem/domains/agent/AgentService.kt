@@ -128,6 +128,53 @@ class AgentService(
   }
 
   @Transactional
+  fun updatePassword(
+    agentId: String,
+    oldPassword: String,
+    newPassword: String,
+    newPasswordConfirmation: String
+  ) {
+    if (newPassword != newPasswordConfirmation)
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "New password and confirmation do not match",
+        technicalMessage = "Mismatch between passwords",
+        severity = SeverityLevel.INFO
+      )
+
+    if (oldPassword == newPassword) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "New password cannot be the same as the old password",
+        technicalMessage = "New password = old password",
+        severity = SeverityLevel.INFO
+      )
+    }
+
+    FieldValidators.validateStrongPassword(newPassword)
+
+    val numericId = parseAgentId(agentId)
+    val agent = agentRepository.findById(numericId).orElseThrow {
+      agentNotFound("agentId=$agentId")
+    }
+
+    if (!passwordEncoder.matches(oldPassword, agent.password)) {
+      throw ServiceException(
+        status = HttpStatus.UNAUTHORIZED,
+        userMessage = "Old password is incorrect",
+        technicalMessage = "Password mismatch for agent with id=$agentId",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    val updatedAgent = agent.copy(
+      password = passwordEncoder.encode(newPassword),
+      updatedAt = LocalDateTime.now()
+    )
+    agentRepository.save(updatedAgent)
+  }
+
+  @Transactional
   fun deleteAgent(managerId: String, agentId: Long) {
     val agent = agentRepository.findByManagerIdAndId(managerId, agentId)
       ?: throw ServiceException(
