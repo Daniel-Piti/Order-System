@@ -4,6 +4,7 @@ import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.order.models.CreateOrderRequest
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDto
+import com.pt.ordersystem.ordersystem.domains.order.models.UpdateOrderRequest
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
@@ -79,6 +80,16 @@ class OrderManagerController(
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<Void> {
     orderService.cancelOrder(orderId, manager.id)
+    return ResponseEntity.noContent().build()
+  }
+
+  @PutMapping("/{orderId}")
+  fun updateOrder(
+    @PathVariable orderId: String,
+    @RequestBody request: UpdateOrderRequest,
+    @AuthenticationPrincipal manager: AuthUser
+  ): ResponseEntity<Void> {
+    orderService.updateOrder(orderId = orderId, managerId = manager.id, agentId = null, request = request)
     return ResponseEntity.noContent().build()
   }
 

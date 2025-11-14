@@ -5,6 +5,7 @@ import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.agent.AgentService
 import com.pt.ordersystem.ordersystem.domains.order.models.CreateOrderRequest
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDto
+import com.pt.ordersystem.ordersystem.domains.order.models.UpdateOrderRequest
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
@@ -79,6 +80,22 @@ class OrderAgentController(
   ): ResponseEntity<Void> {
     val agentEntity = agentService.getAgentEntity(agent.id)
     orderService.cancelOrder(orderId, agentEntity.managerId, agentEntity.id)
+    return ResponseEntity.noContent().build()
+  }
+
+  @PutMapping("/{orderId}")
+  fun updateOrder(
+    @PathVariable orderId: String,
+    @RequestBody request: UpdateOrderRequest,
+    @AuthenticationPrincipal agent: AuthUser
+  ): ResponseEntity<Void> {
+    val agentEntity = agentService.getAgentEntity(agent.id)
+    orderService.updateOrder(
+      orderId = orderId,
+      managerId = agentEntity.managerId,
+      agentId = agentEntity.id,
+      request = request
+    )
     return ResponseEntity.noContent().build()
   }
 

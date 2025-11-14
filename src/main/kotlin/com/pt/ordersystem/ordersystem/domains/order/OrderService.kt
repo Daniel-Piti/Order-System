@@ -357,6 +357,73 @@ class OrderService(
   }
 
   @Transactional
+  fun updateOrder(orderId: String, managerId: String, agentId: Long?, request: UpdateOrderRequest) {
+    // Fetch order with permission validation
+    val order = when (agentId) {
+      null -> {
+        // Manager can edit any order (check managerId matches)
+        orderRepository.findByIdAndManagerId(id = orderId, managerId = managerId)
+      }
+      else -> {
+        // Agent can edit only their orders (check managerId AND agentId match)
+        orderRepository.findByIdAndManagerIdAndAgentId(id = orderId, managerId = managerId, agentId = agentId)
+      }
+    } ?: throw ServiceException(
+      status = HttpStatus.NOT_FOUND,
+      userMessage = OrderFailureReason.NOT_FOUND.userMessage,
+      technicalMessage = OrderFailureReason.NOT_FOUND.technical + 
+        "orderId=$orderId, managerId=$managerId${if (agentId != null) ", agentId=$agentId" else ""}",
+      severity = SeverityLevel.WARN
+    )
+
+    // Validate order is in PLACED status
+    if (order.status != OrderStatus.PLACED.name) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Only placed orders can be edited",
+        technicalMessage = "Order $orderId has status ${order.status}, expected PLACED",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    // Validate products are not empty
+    if (request.products.isEmpty()) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Cannot update an order with no products",
+        technicalMessage = "Order $orderId attempted to be updated with empty products list",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    // Validate and fetch pickup location (will throw exception if location doesn't exist or doesn't belong to manager)
+    val selectedLocation = locationService.getLocationById(managerId, request.pickupLocationId)
+
+    // Calculate total price
+    val totalPrice = request.products.fold(BigDecimal.ZERO) { sum, product ->
+      sum + (product.pricePerUnit.multiply(BigDecimal.valueOf(product.quantity.toLong())))
+    }
+
+    // Update order (keep customer info unchanged, keep productsVersion unchanged)
+    val now = LocalDateTime.now()
+    val updatedOrder = order.copy(
+      // Store (pickup) location from selected location
+      storeStreetAddress = selectedLocation.streetAddress,
+      storeCity = selectedLocation.city,
+      storePhoneNumber = selectedLocation.phoneNumber,
+      // Customer data - KEEP UNCHANGED (order already placed)
+      // Order details - UPDATE products, notes, totalPrice
+      products = request.products,
+      totalPrice = totalPrice,
+      notes = request.notes,
+      // Keep productsVersion unchanged (has different purpose)
+      updatedAt = now
+    )
+
+    orderRepository.save(updatedOrder)
+  }
+
+  @Transactional
   fun cancelOrder(orderId: String, managerId: String, agentId: Long? = null) {
     val order = when (agentId) {
       null -> {

@@ -21,3 +21,13 @@ data class PlaceOrderRequest(
   val products: List<ProductDataForOrder>,
   val notes: String = ""
 )
+
+data class UpdateOrderRequest(
+  // Pickup location
+  val pickupLocationId: Long,
+  
+  // Order details (editable: products, notes)
+  val products: List<ProductDataForOrder>,
+  val notes: String = ""
+  // Note: Customer info is NOT editable (order already placed)
+)
