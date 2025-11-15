@@ -24,7 +24,7 @@ data class ProductDataForOrder(
   val pricePerUnit: BigDecimal
 )
 
-fun ProductDbEntity.toDto(brandName: String? = null, categoryName: String? = null) = ProductDto(
+fun ProductDbEntity.toDto(brandName: String? = null, categoryName: String? = null, price: BigDecimal? = null) = ProductDto(
   id = id,
   managerId = managerId,
   name = name,
@@ -33,6 +33,6 @@ fun ProductDbEntity.toDto(brandName: String? = null, categoryName: String? = nul
   categoryId = categoryId,
   categoryName = categoryName,
   minimumPrice = minimumPrice,
-  price = price,
+  price = price ?: this.price,
   description = description
 )

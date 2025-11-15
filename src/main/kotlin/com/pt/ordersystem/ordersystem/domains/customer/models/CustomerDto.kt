@@ -4,6 +4,7 @@ data class CustomerDto(
   val id: String,
   val agentId: Long?,
   val managerId: String,
+  val discountPercentage: Int,
   val name: String,
   val phoneNumber: String,
   val email: String,

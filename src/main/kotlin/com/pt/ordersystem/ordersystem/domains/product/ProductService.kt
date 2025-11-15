@@ -4,6 +4,7 @@ import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.domains.product.models.*
 import com.pt.ordersystem.ordersystem.domains.brand.BrandService
 import com.pt.ordersystem.ordersystem.domains.category.CategoryService
+import com.pt.ordersystem.ordersystem.domains.customer.CustomerRepository
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.domains.order.OrderService
@@ -21,6 +22,8 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDateTime
 
 @Service
@@ -32,6 +35,7 @@ class ProductService(
   private val productImageService: ProductImageService,
   @Lazy private val brandService: BrandService,
   @Lazy private val categoryService: CategoryService,
+  private val customerRepository: CustomerRepository,
 ) {
 
   companion object {
@@ -139,7 +143,15 @@ class ProductService(
       }
     }
 
-    // Customer exists - get all overrides for this customer
+    // Customer exists - get customer and overrides
+    val customer = customerRepository.findByManagerIdAndId(order.managerId, order.customerId)
+      ?: throw ServiceException(
+        status = HttpStatus.NOT_FOUND,
+        userMessage = "Customer not found",
+        technicalMessage = "Customer with id ${order.customerId} not found for manager ${order.managerId}",
+        severity = SeverityLevel.WARN
+      )
+
     val overrides = productOverrideRepository.findByManagerIdAndCustomerId(
       managerId = order.managerId,
       customerId = order.customerId
@@ -148,12 +160,23 @@ class ProductService(
     // Create a map of productId -> override price for quick lookup
     val overrideMap = overrides.associate { it.productId to it.overridePrice }
 
-    // Map products to DTOs, using override price if available, otherwise default price
+    // Map products to DTOs, applying override, discount, and minimum price
     return products.map { product ->
-      val effectivePrice = overrideMap[product.id] ?: product.price
+      // Step 1: Start with override price if exists, otherwise default price
+      var priceAfterOverride = overrideMap[product.id] ?: product.price
+      
+      // Step 2: Apply discount percentage if customer has one
+      if (customer.discountPercentage > 0) {
+        val discountMultiplier = BigDecimal(100 - customer.discountPercentage).divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
+        priceAfterOverride = priceAfterOverride.multiply(discountMultiplier).setScale(2, RoundingMode.HALF_UP)
+      }
+      
+      // Step 3: Ensure price is not below minimum price
+      val finalPrice = priceAfterOverride.max(product.minimumPrice)
+      
       val brandName = product.brandId?.let { brandMap[it] }
       val categoryName = product.categoryId?.let { categoryMap[it] }
-      product.toDto(brandName = brandName, categoryName = categoryName).copy(price = effectivePrice)
+      product.toDto(brandName = brandName, categoryName = categoryName, price = finalPrice)
     }
   }
 

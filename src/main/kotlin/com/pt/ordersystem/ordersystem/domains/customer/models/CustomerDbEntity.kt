@@ -18,6 +18,9 @@ data class CustomerDbEntity(
   @Column(name = "manager_id", nullable = false)
   val managerId: String,
 
+  @Column(name = "discount_percentage", nullable = false)
+  val discountPercentage: Int = 0,
+
   @Column(nullable = false)
   val name: String,
 
@@ -44,6 +47,7 @@ fun CustomerDbEntity.toDto() = CustomerDto(
   id = id,
   agentId = agentId,
   managerId = managerId,
+  discountPercentage = discountPercentage,
   name = name,
   phoneNumber = phoneNumber,
   email = email,

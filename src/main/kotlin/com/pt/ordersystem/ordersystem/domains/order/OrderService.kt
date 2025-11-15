@@ -5,6 +5,8 @@ import com.pt.ordersystem.ordersystem.domains.location.LocationRepository
 import com.pt.ordersystem.ordersystem.domains.location.LocationService
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
 import com.pt.ordersystem.ordersystem.domains.order.models.*
+import com.pt.ordersystem.ordersystem.domains.product.ProductRepository
+import com.pt.ordersystem.ordersystem.domains.product.models.ProductDataForOrder
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
@@ -24,6 +26,7 @@ class OrderService(
   private val locationRepository: LocationRepository,
   private val locationService: LocationService,
   private val managerService: ManagerService,
+  private val productRepository: ProductRepository,
 ) {
 
   companion object {
@@ -230,6 +233,9 @@ class OrderService(
       )
     }
 
+    // Validate that all product prices are >= minimum price
+    validateProductPrices(request.products, order.managerId)
+
     // Fetch pickup location
     val selectedLocation = locationService.getLocationById(order.managerId, request.pickupLocationId)
 
@@ -283,6 +289,9 @@ class OrderService(
         severity = SeverityLevel.WARN
       )
     }
+
+    // Validate that all product prices are >= minimum price
+    validateProductPrices(request.products, managerId)
 
     // Validate and fetch pickup location (will throw exception if location doesn't exist or doesn't belong to manager)
     val selectedLocation = locationService.getLocationById(managerId, request.pickupLocationId)
@@ -396,6 +405,9 @@ class OrderService(
       )
     }
 
+    // Validate that all product prices are >= minimum price
+    validateProductPrices(request.products, managerId)
+
     // Validate and fetch pickup location (will throw exception if location doesn't exist or doesn't belong to manager)
     val selectedLocation = locationService.getLocationById(managerId, request.pickupLocationId)
 
@@ -460,4 +472,30 @@ class OrderService(
 
     orderRepository.save(updatedOrder)
   }
+
+  private fun validateProductPrices(products: List<ProductDataForOrder>, managerId: String) {
+    if (products.isEmpty()) {
+      return // Empty products validation is handled separately
+    }
+
+    val productIds = products.map { it.productId }.distinct()
+    val productEntities = productRepository.findAllById(productIds)
+      .filter { it.managerId == managerId }
+
+    val invalidProducts = products.filter { orderProduct ->
+      val product = productEntities.find { it.id == orderProduct.productId }
+      product != null && orderProduct.pricePerUnit < product.minimumPrice
+    }
+
+    if (invalidProducts.isNotEmpty()) {
+      val productNames = invalidProducts.joinToString(", ") { it.productName }
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "The following products have prices below their minimum price: $productNames",
+        technicalMessage = "Products below minimum price for managerId=$managerId: ${invalidProducts.map { "${it.productName} (price=${it.pricePerUnit})" }}",
+        severity = SeverityLevel.WARN
+      )
+    }
+  }
+
 }

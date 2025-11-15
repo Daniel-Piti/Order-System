@@ -52,6 +52,7 @@ class CustomerService(
       id = GeneralUtils.genId(),
       agentId = agentId,
       managerId = managerId,
+      discountPercentage = normalizedPayload.discountPercentage,
       name = normalizedPayload.name,
       phoneNumber = normalizedPayload.phoneNumber,
       email = normalizedPayload.email,
@@ -85,6 +86,7 @@ class CustomerService(
       email = normalizedPayload.email,
       streetAddress = normalizedPayload.streetAddress,
       city = normalizedPayload.city,
+      discountPercentage = normalizedPayload.discountPercentage,
       updatedAt = LocalDateTime.now(),
     )
 
@@ -129,6 +131,7 @@ class CustomerService(
     CustomerPayload(
       name = customerPayload.name.trim(),
       phoneNumber = customerPayload.phoneNumber.trim(),
+      discountPercentage = customerPayload.discountPercentage.coerceIn(0, 100),
       email = customerPayload.email.trim(),
       streetAddress = customerPayload.streetAddress.trim(),
       city = customerPayload.city.trim(),
