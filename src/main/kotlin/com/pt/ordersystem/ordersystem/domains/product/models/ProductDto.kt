@@ -9,6 +9,7 @@ data class ProductDto(
   val brandId: Long?,
   val brandName: String?,
   val categoryId: Long?,
+  val categoryName: String?,
   val minimumPrice: BigDecimal,
   val price: BigDecimal,
   val description: String
@@ -23,13 +24,14 @@ data class ProductDataForOrder(
   val pricePerUnit: BigDecimal
 )
 
-fun ProductDbEntity.toDto(brandName: String? = null) = ProductDto(
+fun ProductDbEntity.toDto(brandName: String? = null, categoryName: String? = null) = ProductDto(
   id = id,
   managerId = managerId,
   name = name,
   brandId = brandId,
   brandName = brandName,
   categoryId = categoryId,
+  categoryName = categoryName,
   minimumPrice = minimumPrice,
   price = price,
   description = description

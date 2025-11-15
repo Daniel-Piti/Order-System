@@ -1,9 +1,9 @@
 package com.pt.ordersystem.ordersystem.domains.product
 
 import com.pt.ordersystem.ordersystem.exception.ServiceException
-import com.pt.ordersystem.ordersystem.auth.AuthUtils
 import com.pt.ordersystem.ordersystem.domains.product.models.*
 import com.pt.ordersystem.ordersystem.domains.brand.BrandService
+import com.pt.ordersystem.ordersystem.domains.category.CategoryService
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.domains.order.OrderService
@@ -11,8 +11,10 @@ import com.pt.ordersystem.ordersystem.domains.productImage.ProductImageService
 import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideRepository
 import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideService
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
+import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Lazy
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
@@ -29,9 +31,11 @@ class ProductService(
   private val productOverrideRepository: ProductOverrideRepository,
   private val productImageService: ProductImageService,
   @Lazy private val brandService: BrandService,
+  @Lazy private val categoryService: CategoryService,
 ) {
 
   companion object {
+    private val logger = LoggerFactory.getLogger(ProductService::class.java)
     const val MAXIMUM_PRODUCTS_FOR_CUSTOMER = 1000
     const val MAX_PAGE_SIZE = 100
   }
@@ -84,16 +88,33 @@ class ProductService(
       }
     }
 
-    // Enrich with brand names
-    val brands = brandService.getManagerBrands(managerId)
-    val brandMap = brands.associateBy { it.id }
-    
-    val enrichedContent = productPage.content.map { product ->
-      val brandName = product.brandId?.let { brandMap[it]?.name }
-      product.toDto(brandName = brandName)
+    // Early return if no products
+    if (productPage.content.isEmpty()) {
+      return PageImpl(emptyList(), pageable, productPage.totalElements)
     }
 
-    return org.springframework.data.domain.PageImpl(enrichedContent, pageable, productPage.totalElements)
+    // Enrich with brand names and category names
+    val brands = brandService.getManagerBrands(managerId)
+    val brandMap = brands.associate { it.id to it.name }
+    
+    val categories = categoryService.getManagerCategories(managerId)
+    val categoryMap = categories.associate { it.id to it.category }
+    
+    val enrichedContent = productPage.content.map { product ->
+      val brandName = product.brandId?.let { brandMap[it] }
+      if (product.brandId != null && brandName == null) {
+        logger.warn("Brand with ID=${product.brandId} not found for manager $managerId")
+      }
+      
+      val categoryName = product.categoryId?.let { categoryMap[it] }
+      if (product.categoryId != null && categoryName == null) {
+        logger.warn("Category with ID=${product.categoryId} not found for manager $managerId")
+      }
+      
+      product.toDto(brandName = brandName, categoryName = categoryName)
+    }
+
+    return PageImpl(enrichedContent, pageable, productPage.totalElements)
   }
 
   fun getAllProductsForOrder(orderId: String): List<ProductDto> {
@@ -102,15 +123,19 @@ class ProductService(
     // Fetch all products for the manager
     val products = productRepository.findAllByManagerId(order.managerId)
 
-    // Fetch brands for enrichment
+    // Fetch brands and categories for enrichment
     val brands = brandService.getManagerBrands(order.managerId)
-    val brandMap = brands.associateBy { it.id }
+    val brandMap = brands.associate { it.id to it.name }
+    
+    val categories = categoryService.getManagerCategories(order.managerId)
+    val categoryMap = categories.associate { it.id to it.category }
 
     // If no customer assigned, return products with default prices
     if (order.customerId == null) {
       return products.map { product ->
-        val brandName = product.brandId?.let { brandMap[it]?.name }
-        product.toDto(brandName = brandName)
+        val brandName = product.brandId?.let { brandMap[it] }
+        val categoryName = product.categoryId?.let { categoryMap[it] }
+        product.toDto(brandName = brandName, categoryName = categoryName)
       }
     }
 
@@ -126,8 +151,9 @@ class ProductService(
     // Map products to DTOs, using override price if available, otherwise default price
     return products.map { product ->
       val effectivePrice = overrideMap[product.id] ?: product.price
-      val brandName = product.brandId?.let { brandMap[it]?.name }
-      product.toDto(brandName = brandName).copy(price = effectivePrice)
+      val brandName = product.brandId?.let { brandMap[it] }
+      val categoryName = product.categoryId?.let { categoryMap[it] }
+      product.toDto(brandName = brandName, categoryName = categoryName).copy(price = effectivePrice)
     }
   }
 
@@ -139,16 +165,25 @@ class ProductService(
       severity = SeverityLevel.WARN
     )
 
-    // Fetch brand name if brandId exists
     val brandName = product.brandId?.let {
       try {
         brandService.getBrandById(managerId, it).name
       } catch (e: Exception) {
-        null // Brand might have been deleted
-}
+        logger.warn("Brand with ID=${product.brandId} not found")
+        null
+      }
     }
 
-    return product.toDto(brandName = brandName)
+    val categoryName = product.categoryId?.let {
+      try {
+        categoryService.getCategoryById(managerId, it).category
+      } catch (e: Exception) {
+        logger.warn("category with ID=${product.categoryId} not found")
+        null
+      }
+    }
+
+    return product.toDto(brandName = brandName, categoryName = categoryName)
   }
 
   @Transactional
