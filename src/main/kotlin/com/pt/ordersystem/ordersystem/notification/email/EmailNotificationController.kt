@@ -1,7 +1,6 @@
 package com.pt.ordersystem.ordersystem.notification.email
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_ADMIN
-import com.pt.ordersystem.ordersystem.notification.email.models.EmailNotificationResponse
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderCancelledNotificationRequest
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderDoneNotificationRequest
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderPlacedNotificationRequest
@@ -9,6 +8,7 @@ import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderUpdate
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PostMapping
@@ -28,32 +28,32 @@ class EmailNotificationController(
   @PostMapping("/order-placed")
   fun sendOrderPlacedNotification(
     @Valid @RequestBody request: EmailOrderPlacedNotificationRequest,
-  ): ResponseEntity<EmailNotificationResponse> {
-    val response = emailNotificationService.sendOrderPlacedNotification(request)
-    return ResponseEntity.ok(response)
+  ): ResponseEntity<Void> {
+    emailNotificationService.sendOrderPlacedNotification(request)
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).build()
   }
 
   @PostMapping("/order-done")
   fun sendOrderDoneNotification(
     @Valid @RequestBody request: EmailOrderDoneNotificationRequest,
-  ): ResponseEntity<EmailNotificationResponse> {
-    val response = emailNotificationService.sendOrderDoneNotification(request)
-    return ResponseEntity.ok(response)
+  ): ResponseEntity<Void> {
+    emailNotificationService.sendOrderDoneNotification(request)
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).build()
   }
 
   @PostMapping("/order-cancelled")
   fun sendOrderCancelledNotification(
     @Valid @RequestBody request: EmailOrderCancelledNotificationRequest,
-  ): ResponseEntity<EmailNotificationResponse> {
-    val response = emailNotificationService.sendOrderCancelledNotification(request)
-    return ResponseEntity.ok(response)
+  ): ResponseEntity<Void> {
+    emailNotificationService.sendOrderCancelledNotification(request)
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).build()
   }
 
   @PostMapping("/order-updated")
   fun sendOrderUpdatedNotification(
     @Valid @RequestBody request: EmailOrderUpdatedNotificationRequest,
-  ): ResponseEntity<EmailNotificationResponse> {
-    val response = emailNotificationService.sendOrderUpdatedNotification(request)
-    return ResponseEntity.ok(response)
+  ): ResponseEntity<Void> {
+    emailNotificationService.sendOrderUpdatedNotification(request)
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).build()
   }
 }

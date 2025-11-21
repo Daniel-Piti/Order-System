@@ -42,3 +42,6 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+### Email Previews ###
+src/test/resources/email-previews/

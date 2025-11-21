@@ -1,102 +1,92 @@
 package com.pt.ordersystem.ordersystem.notification.email
 
 import com.pt.ordersystem.ordersystem.domains.order.OrderService
-import com.pt.ordersystem.ordersystem.domains.order.models.OrderStatus
-import com.pt.ordersystem.ordersystem.exception.SeverityLevel
-import com.pt.ordersystem.ordersystem.exception.ServiceException
-import com.pt.ordersystem.ordersystem.notification.email.models.EmailNotificationFailureReason
-import com.pt.ordersystem.ordersystem.notification.email.models.EmailNotificationResponse
+import com.pt.ordersystem.ordersystem.notification.email.emails.OrderCancelledEmail
+import com.pt.ordersystem.ordersystem.notification.email.emails.OrderDoneEmail
+import com.pt.ordersystem.ordersystem.notification.email.emails.OrderPlacedEmail
+import com.pt.ordersystem.ordersystem.notification.email.emails.OrderUpdatedEmail
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderCancelledNotificationRequest
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderDoneNotificationRequest
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderPlacedNotificationRequest
 import com.pt.ordersystem.ordersystem.notification.email.models.EmailOrderUpdatedNotificationRequest
-import org.springframework.http.HttpStatus
+import jakarta.mail.internet.MimeMessage
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.mail.javamail.JavaMailSender
+import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Service
 
+/**
+ * Service for sending email notifications.
+ * 
+ * To create a new email:
+ * 1. Create an object in emails/ with buildSubject(data) and buildHtml(data) methods
+ * 2. Add HTML template in resources/templates/notification/
+ * 3. Add service method here that calls: emailObject.validate(data), emailObject.buildSubject(data), emailObject.buildHtml(data), sendEmail(...)
+ */
 @Service
 class EmailNotificationService(
   private val orderService: OrderService,
-  private val emailNotificationMailer: EmailNotificationMailer,
+  private val mailSender: JavaMailSender
 ) {
+  @Value("\${spring.mail.from-email}")
+  private lateinit var fromEmail: String
 
-  fun sendOrderPlacedNotification(request: EmailOrderPlacedNotificationRequest): EmailNotificationResponse {
+  private val logger = LoggerFactory.getLogger(EmailNotificationService::class.java)
+
+  fun sendOrderPlacedNotification(request: EmailOrderPlacedNotificationRequest) {
     val order = orderService.getOrderByIdInternal(request.orderId)
-
-    if (order.status != OrderStatus.PLACED) {
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = EmailNotificationFailureReason.ORDER_NOT_PLACED.userMessage,
-        technicalMessage = EmailNotificationFailureReason.ORDER_NOT_PLACED.technical + "orderId=${order.id} status=${order.status}",
-        severity = SeverityLevel.WARN
-      )
-    }
-
-    emailNotificationMailer.sendOrderPlacedEmail(order, request.recipientEmail)
-
-    return EmailNotificationResponse(
-      success = true,
-      message = "Order placed notification sent",
-    )
+    OrderPlacedEmail.validate(order)
+    val subject = OrderPlacedEmail.buildSubject(order)
+    val htmlBody = OrderPlacedEmail.buildHtml(order)
+    sendEmail(subject, htmlBody, request.recipientEmail)
   }
 
-  fun sendOrderDoneNotification(request: EmailOrderDoneNotificationRequest): EmailNotificationResponse {
+  fun sendOrderDoneNotification(request: EmailOrderDoneNotificationRequest) {
     val order = orderService.getOrderByIdInternal(request.orderId)
-
-    if (order.status != OrderStatus.DONE) {
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = EmailNotificationFailureReason.ORDER_NOT_DONE.userMessage,
-        technicalMessage = EmailNotificationFailureReason.ORDER_NOT_DONE.technical + "orderId=${order.id} status=${order.status}",
-        severity = SeverityLevel.WARN
-      )
-    }
-
-    emailNotificationMailer.sendOrderDoneEmail(order, request.recipientEmail)
-
-    return EmailNotificationResponse(
-      success = true,
-      message = "Order done notification sent",
-    )
+    OrderDoneEmail.validate(order)
+    val subject = OrderDoneEmail.buildSubject(order)
+    val htmlBody = OrderDoneEmail.buildHtml(order)
+    sendEmail(subject, htmlBody, request.recipientEmail)
   }
 
-  fun sendOrderCancelledNotification(request: EmailOrderCancelledNotificationRequest): EmailNotificationResponse {
+  fun sendOrderCancelledNotification(request: EmailOrderCancelledNotificationRequest) {
     val order = orderService.getOrderByIdInternal(request.orderId)
-
-    if (order.status != OrderStatus.CANCELLED) {
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = EmailNotificationFailureReason.ORDER_NOT_CANCELLED.userMessage,
-        technicalMessage = EmailNotificationFailureReason.ORDER_NOT_CANCELLED.technical + "orderId=${order.id} status=${order.status}",
-        severity = SeverityLevel.WARN
-      )
-    }
-
-    emailNotificationMailer.sendOrderCancelledEmail(order, request.recipientEmail)
-
-    return EmailNotificationResponse(
-      success = true,
-      message = "Order cancelled notification sent",
-    )
+    OrderCancelledEmail.validate(order)
+    val subject = OrderCancelledEmail.buildSubject(order)
+    val htmlBody = OrderCancelledEmail.buildHtml(order)
+    sendEmail(subject, htmlBody, request.recipientEmail)
   }
 
-  fun sendOrderUpdatedNotification(request: EmailOrderUpdatedNotificationRequest): EmailNotificationResponse {
+  fun sendOrderUpdatedNotification(request: EmailOrderUpdatedNotificationRequest) {
     val order = orderService.getOrderByIdInternal(request.orderId)
-
-    // Updated orders should still be in PLACED status (status doesn't change on update)
-    if (order.status != OrderStatus.PLACED) {
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = EmailNotificationFailureReason.ORDER_NOT_PLACED.userMessage,
-        technicalMessage = EmailNotificationFailureReason.ORDER_NOT_PLACED.technical + "orderId=${order.id} status=${order.status}",
-        severity = SeverityLevel.WARN
-      )
-    }
-
-    emailNotificationMailer.sendOrderUpdatedEmail(order, request.recipientEmail)
-
-    return EmailNotificationResponse(
-      success = true,
-      message = "Order updated notification sent",
-    )
+    OrderUpdatedEmail.validate(order)
+    val subject = OrderUpdatedEmail.buildSubject(order)
+    val htmlBody = OrderUpdatedEmail.buildHtml(order)
+    sendEmail(subject, htmlBody, request.recipientEmail)
   }
+
+  /**
+   * Sends an email with the provided subject, HTML body, and recipient.
+   * This is the most generic email sending function.
+   */
+  private fun sendEmail(subject: String, htmlBody: String, to: String) {
+    try {
+      val message: MimeMessage = mailSender.createMimeMessage()
+      val helper = MimeMessageHelper(message, true, "UTF-8")
+
+      helper.setTo(to)
+      helper.setSubject(subject)
+      helper.setFrom(fromEmail)
+      helper.setText(htmlBody, true) // true = HTML
+
+      mailSender.send(message)
+
+      logger.info("Email sent | to=$to | subject=$subject")
+    } catch (e: Exception) {
+      logger.error("Failed to send email | to=$to | subject=$subject | error=$e")
+      throw e
+    }
+  }
+
 }
