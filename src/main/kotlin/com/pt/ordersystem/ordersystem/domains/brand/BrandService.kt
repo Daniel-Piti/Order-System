@@ -6,7 +6,7 @@ import com.pt.ordersystem.ordersystem.domains.productImage.ProductImageService
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
-import com.pt.ordersystem.ordersystem.storage.R2StorageService
+import com.pt.ordersystem.ordersystem.storage.S3StorageService
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -17,7 +17,7 @@ import java.time.LocalDateTime
 class BrandService(
     private val brandRepository: BrandRepository,
     private val productService: ProductService,
-    private val r2StorageService: R2StorageService,
+    private val s3StorageService: S3StorageService,
     private val productImageService: ProductImageService
 ) {
 
@@ -34,7 +34,7 @@ class BrandService(
                 severity = SeverityLevel.WARN
             )
 
-        val imageUrl = r2StorageService.getPublicUrl(brand.s3Key)
+        val imageUrl = s3StorageService.getPublicUrl(brand.s3Key)
 
         return brand.toDto(imageUrl)
     }
@@ -43,7 +43,7 @@ class BrandService(
         val brands = brandRepository.findByManagerId(managerId)
         
         return brands.map { brand ->
-            val imageUrl = r2StorageService.getPublicUrl(brand.s3Key)
+            val imageUrl = s3StorageService.getPublicUrl(brand.s3Key)
             brand.toDto(imageUrl)
         }
     }
@@ -66,10 +66,10 @@ class BrandService(
             // Generate S3 key with base path
             val originalFileName = image.originalFilename ?: "brand-image"
             val basePath = "managers/$managerId/brands"
-            s3Key = r2StorageService.generateKey(basePath, originalFileName)
+            s3Key = s3StorageService.generateKey(basePath, originalFileName)
             
-            // Upload to R2
-            r2StorageService.uploadFile(image, s3Key)
+            // Upload to S3
+            s3StorageService.uploadFile(image, s3Key)
             
             fileName = originalFileName
             fileSizeBytes = image.size
@@ -149,7 +149,7 @@ class BrandService(
             // Delete old image if exists
             brand.s3Key?.let { oldS3Key ->
                 try {
-                    r2StorageService.deleteFile(oldS3Key)
+                    s3StorageService.deleteFile(oldS3Key)
                 } catch (e: Exception) {
                     // Log but don't fail if deletion fails
                     println("Warning: Failed to delete old brand image: ${e.message}")
@@ -159,8 +159,8 @@ class BrandService(
             // Upload new image
             val originalFileName = image.originalFilename ?: "brand-image"
             val basePath = "managers/$managerId/brands"
-            s3Key = r2StorageService.generateKey(basePath, originalFileName)
-            r2StorageService.uploadFile(image, s3Key)
+            s3Key = s3StorageService.generateKey(basePath, originalFileName)
+            s3StorageService.uploadFile(image, s3Key)
             
             fileName = originalFileName
             fileSizeBytes = image.size
@@ -189,10 +189,10 @@ class BrandService(
                 severity = SeverityLevel.WARN
             )
 
-        // Delete image from R2 if exists
+        // Delete image from S3 if exists
         brand.s3Key?.let { s3Key ->
             try {
-                r2StorageService.deleteFile(s3Key)
+                s3StorageService.deleteFile(s3Key)
             } catch (e: Exception) {
                 // Log but don't fail if deletion fails
                 println("Warning: Failed to delete brand image: ${e.message}")

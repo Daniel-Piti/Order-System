@@ -7,7 +7,7 @@ import com.pt.ordersystem.ordersystem.domains.productImage.models.ProductImageDt
 import com.pt.ordersystem.ordersystem.domains.productImage.models.toDto
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
-import com.pt.ordersystem.ordersystem.storage.R2StorageService
+import com.pt.ordersystem.ordersystem.storage.S3StorageService
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
@@ -17,7 +17,7 @@ import java.time.LocalDateTime
 class ProductImageService(
   private val productImageRepository: ProductImageRepository,
   private val productRepository: ProductRepository,
-  private val r2StorageService: R2StorageService,
+  private val s3StorageService: S3StorageService,
   private val configProvider: ConfigProvider
 ) {
   companion object {
@@ -62,11 +62,11 @@ class ProductImageService(
 
     // Generate S3 key with base path
     val fileName = file.originalFilename ?: "image"
-    val basePath = "users/$managerId/products/$productId"
-    val s3Key = r2StorageService.generateKey(basePath, fileName)
+    val basePath = "managers/$managerId/products/$productId"
+    val s3Key = s3StorageService.generateKey(basePath, fileName)
 
-    // Upload to R2
-    val publicUrl = r2StorageService.uploadFile(file, s3Key)
+    // Upload to S3
+    val publicUrl = s3StorageService.uploadFile(file, s3Key)
 
     // Save to database
     val productImage = ProductImageDbEntity(
@@ -88,7 +88,7 @@ class ProductImageService(
     val images = productImageRepository.findByProductId(productId)
 
     return images.map { image ->
-      val publicUrl = r2StorageService.getPublicUrl(image.s3Key)
+      val publicUrl = s3StorageService.getPublicUrl(image.s3Key)
         ?: throw ServiceException(
           status = HttpStatus.INTERNAL_SERVER_ERROR,
           userMessage = "Failed to get image URL",
@@ -107,8 +107,8 @@ class ProductImageService(
       severity = SeverityLevel.WARN
     )
 
-    // Delete from R2
-    r2StorageService.deleteFile(image.s3Key)
+    // Delete from S3
+    s3StorageService.deleteFile(image.s3Key)
 
     // Delete from database
     productImageRepository.delete(image)
@@ -117,7 +117,7 @@ class ProductImageService(
   fun deleteAllImagesForProduct(productId: String) {
     val images = productImageRepository.findByProductId(productId)
     images.forEach { image ->
-      r2StorageService.deleteFile(image.s3Key)
+      s3StorageService.deleteFile(image.s3Key)
     }
     productImageRepository.deleteByProductId(productId)
   }

@@ -34,7 +34,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-mail")
 	implementation("org.apache.pdfbox:pdfbox:3.0.3")
 	
-	// AWS SDK for S3 (compatible with Cloudflare R2)
+	// AWS SDK for S3
 	implementation("software.amazon.awssdk:s3:2.29.45")
 
 	developmentOnly("org.springframework.boot:spring-boot-devtools")

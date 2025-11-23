@@ -9,7 +9,7 @@ class ConfigProvider(
   private val config: ApplicationConfig
 ) {
   
-  val jwtSigningKey: SecretKey = run {
+  val jwtSigningKey: SecretKey = run { // TODO CHECK IF WE MAKE IT BETTER (SAVE AFTER)
     require(config.jwt.isNotBlank()) { "config.jwt is not set" }
     require(config.jwt.length >= 32) { "config.jwt must be at least 32 characters for HS256" }
     Keys.hmacShaKeyFor(config.jwt.toByteArray())
@@ -19,7 +19,7 @@ class ConfigProvider(
 
   val adminPasswordHash: String = config.adminPasswordHash
 
-  val r2: R2Properties = config.r2
+  val s3: S3Properties = config.s3
 
   val maxUploadFileSizeMb: Int = config.maxUploadFileSizeMb
 }

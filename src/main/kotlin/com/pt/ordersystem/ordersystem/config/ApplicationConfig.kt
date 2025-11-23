@@ -9,16 +9,13 @@ data class ApplicationConfig(
   val adminUsernameHash: String = "",
   val adminPasswordHash: String = "",
 
-  val r2: R2Properties = R2Properties(),
+  val s3: S3Properties = S3Properties(),
 
   val maxUploadFileSizeMb: Int = 5 // Default value 5
 )
 
-data class R2Properties(
+data class S3Properties(
   val bucketName: String = "",
   val region: String = "",
-  val accountId: String = "",
-  val accessKey: String = "",
-  val secretKey: String = "",
-  val publicDomain: String = ""
+  val publicDomain: String = "" // CloudFront's domain
 )

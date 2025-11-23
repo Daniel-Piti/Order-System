@@ -7,8 +7,7 @@ import jakarta.annotation.PostConstruct
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
@@ -17,37 +16,32 @@ import software.amazon.awssdk.services.s3.model.S3Exception
 import java.util.*
 
 @Service
-class R2StorageService(
+class S3StorageService(
   private val configProvider: ConfigProvider
 ) {
   private lateinit var s3Client: S3Client
-  private val r2 = configProvider.r2
+  private val s3 = configProvider.s3
 
   @PostConstruct
   fun init() {
-    val credentials = AwsBasicCredentials.create(r2.accessKey, r2.secretKey)
-    val credentialsProvider = StaticCredentialsProvider.create(credentials)
-
-    // For R2, we use a custom endpoint
-    val endpoint = "https://${r2.accountId}.r2.cloudflarestorage.com"
-
+    // Use default credentials provider (IAM role, environment variables, or AWS credentials file)
+    // This will work with IAM roles in ECS or AWS credentials locally
     s3Client = S3Client.builder()
-      .region(Region.of(r2.region))
-      .credentialsProvider(credentialsProvider)
-      .endpointOverride(java.net.URI.create(endpoint))
-      .forcePathStyle(true)
+      .region(Region.of(s3.region))
+      .credentialsProvider(DefaultCredentialsProvider.create())
       .build()
   }
 
   fun uploadFile(file: MultipartFile, key: String): String {
     try {
       val putObjectRequest = PutObjectRequest.builder()
-        .bucket(r2.bucketName)
+        .bucket(s3.bucketName)
         .key(key)
         .contentType(file.contentType ?: "application/octet-stream")
         .build()
 
       val requestBody = RequestBody.fromInputStream(file.inputStream, file.size)
+
       s3Client.putObject(putObjectRequest, requestBody)
 
       // Return the public URL
@@ -76,10 +70,10 @@ class R2StorageService(
 
   fun deleteFile(key: String) {
     try {
-      s3Client.deleteObject { it.bucket(r2.bucketName).key(key) }
+      s3Client.deleteObject { it.bucket(s3.bucketName).key(key) }
     } catch (e: Exception) {
       // Log but don't throw - file might not exist
-      println("Warning: Failed to delete file from R2: $key - ${e.message}")
+      println("Warning: Failed to delete file from S3: $key - ${e.message}")
     }
   }
 
@@ -92,10 +86,15 @@ class R2StorageService(
   fun getPublicUrl(s3Key: String?): String? {
     if (s3Key == null) return null
     
-    val publicDomain = if (r2.publicDomain.endsWith("/")) {
-      r2.publicDomain
-    } else {
-      "${r2.publicDomain}/"
+    // CloudFront domain is required (best practice: private bucket + CloudFront)
+    require(s3.publicDomain.isNotBlank()) {
+      "S3 public domain (CloudFront) must be configured. " +
+      "Set config.s3.publicDomain in your configuration."
+    }
+    
+    // Ensure domain ends with "/" for proper URL construction
+    val publicDomain = s3.publicDomain.let {
+      if (it.endsWith("/")) it else "$it/"
     }
     
     return "${publicDomain}${s3Key}"

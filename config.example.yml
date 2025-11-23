@@ -34,14 +34,11 @@ config:
   admin-username-hash: ${ADMIN_USERNAME_HASH:}
   admin-password-hash: ${ADMIN_PASSWORD_HASH:}
   
-  # Cloudflare R2 configuration (all R2 settings in one place)
-  r2:
-    bucket-name: ${R2_BUCKET_NAME:order-system-test}
-    region: ${R2_REGION:auto}
-    account-id: ${R2_ACCOUNT_ID}
-    access-key: ${R2_ACCESS_KEY_ID}
-    secret-key: ${R2_SECRET_ACCESS_KEY}
-    public-domain: ${R2_PUBLIC_DOMAIN}
+  # AWS S3 configuration
+  s3:
+    bucket-name: ${S3_BUCKET_NAME:ordersystem-uploads}
+    region: ${S3_REGION:il-central-1}
+    public-domain: ${S3_PUBLIC_DOMAIN:} # CloudFront's domain for public URLs (e.g., https://d1234abcd.cloudfront.net/)
   
   # File upload configuration
   max-upload-file-size-mb: ${MAX_FILE_SIZE_MB:5}
