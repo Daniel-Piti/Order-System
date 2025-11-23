@@ -1,6 +1,6 @@
 package com.pt.ordersystem.ordersystem.storage
 
-import com.pt.ordersystem.ordersystem.config.ConfigProvider
+import com.pt.ordersystem.ordersystem.config.ApplicationConfig
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import jakarta.annotation.PostConstruct
@@ -17,10 +17,10 @@ import java.util.*
 
 @Service
 class S3StorageService(
-  private val configProvider: ConfigProvider
+  private val config: ApplicationConfig
 ) {
   private lateinit var s3Client: S3Client
-  private val s3 = configProvider.s3
+  private val s3 = config.s3
 
   @PostConstruct
   fun init() {

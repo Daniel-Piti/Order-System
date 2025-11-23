@@ -2,7 +2,7 @@ package com.pt.ordersystem.ordersystem.domains.login
 
 import com.pt.ordersystem.ordersystem.auth.JwtUtil
 import com.pt.ordersystem.ordersystem.auth.Roles
-import com.pt.ordersystem.ordersystem.config.ConfigProvider
+import com.pt.ordersystem.ordersystem.config.ApplicationConfig
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.domains.login.models.AdminLoginRequest
@@ -21,7 +21,7 @@ class LoginService(
   private val managerService: ManagerService,
   private val agentService: AgentService,
   private val jwtUtil: JwtUtil,
-  private val configProvider: ConfigProvider,
+  private val config: ApplicationConfig,
 ) {
 
   fun loginManager(request: ManagerLoginRequest): LoginResponse {
@@ -86,8 +86,8 @@ class LoginService(
   }
 
   fun loginAdmin(request: AdminLoginRequest): LoginResponse {
-    val isUsernameValid = passwordEncoder.matches(request.adminUserName, configProvider.adminUsernameHash)
-    val isPasswordValid = passwordEncoder.matches(request.password, configProvider.adminPasswordHash)
+    val isUsernameValid = passwordEncoder.matches(request.adminUserName, config.adminUsernameHash)
+    val isPasswordValid = passwordEncoder.matches(request.password, config.adminPasswordHash)
 
     if (!isUsernameValid || !isPasswordValid) {
       // Log the actual reason for debugging

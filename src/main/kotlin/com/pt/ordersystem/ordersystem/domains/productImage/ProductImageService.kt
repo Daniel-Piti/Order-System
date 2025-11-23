@@ -1,6 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.productImage
 
-import com.pt.ordersystem.ordersystem.config.ConfigProvider
+import com.pt.ordersystem.ordersystem.config.ApplicationConfig
 import com.pt.ordersystem.ordersystem.domains.product.ProductRepository
 import com.pt.ordersystem.ordersystem.domains.productImage.models.ProductImageDbEntity
 import com.pt.ordersystem.ordersystem.domains.productImage.models.ProductImageDto
@@ -18,7 +18,7 @@ class ProductImageService(
   private val productImageRepository: ProductImageRepository,
   private val productRepository: ProductRepository,
   private val s3StorageService: S3StorageService,
-  private val configProvider: ConfigProvider
+  private val config: ApplicationConfig
 ) {
   companion object {
     private val ALLOWED_MIME_TYPES = setOf("image/jpeg", "image/jpg", "image/png", "image/webp")
@@ -132,12 +132,12 @@ class ProductImageService(
       )
     }
 
-    val maxSizeBytes = configProvider.maxUploadFileSizeMb * 1024L * 1024L
+    val maxSizeBytes = config.maxUploadFileSizeMb * 1024L * 1024L
 
     if (file.size > maxSizeBytes) {
       throw ServiceException(
         status = HttpStatus.PAYLOAD_TOO_LARGE,
-        userMessage = "File size exceeds the maximum allowed limit of ${configProvider.maxUploadFileSizeMb}MB",
+        userMessage = "File size exceeds the maximum allowed limit of ${config.maxUploadFileSizeMb}MB",
         technicalMessage = "File size: ${file.size} bytes, max: $maxSizeBytes bytes",
         severity = SeverityLevel.WARN
       )

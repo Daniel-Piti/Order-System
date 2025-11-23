@@ -1,6 +1,6 @@
 package com.pt.ordersystem.ordersystem.exception
 
-import com.pt.ordersystem.ordersystem.config.ConfigProvider
+import com.pt.ordersystem.ordersystem.config.ApplicationConfig
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -9,7 +9,7 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException
 
 @RestControllerAdvice
 class GlobalExceptionHandler(
-  private val configProvider: ConfigProvider
+  private val config: ApplicationConfig
 ) {
 
   @ExceptionHandler(ServiceException::class)
@@ -27,7 +27,7 @@ class GlobalExceptionHandler(
   fun handleMaxUploadSizeException(ex: MaxUploadSizeExceededException): ResponseEntity<FailureResponse> {
     val failureResponse = FailureResponse(
       status = HttpStatus.PAYLOAD_TOO_LARGE,
-      userMessage = "File size exceeds the maximum allowed limit of ${configProvider.maxUploadFileSizeMb}MB",
+      userMessage = "File size exceeds the maximum allowed limit of ${config.maxUploadFileSizeMb}MB",
       technicalMessage = ex.message ?: "File upload size limit exceeded",
       severity = SeverityLevel.WARN
     )
