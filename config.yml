@@ -1,12 +1,17 @@
-# Application configuration file containing both secrets and other sensitive config
-# This file is imported by application.yml and should be gitignored
-# Copy this to config.yml and fill in your actual values
+# Application configuration file with environment variable placeholders
+# This file is in git (only placeholders, no secrets)
+# 
+# Local Development:
+#   - Create .env file with actual values (DB_USERNAME=..., DB_PASSWORD=..., etc.)
+#   - Spring Boot will load .env and resolve placeholders
+#
+# Production (ECS):
+#   - This file is copied to Docker image as config.yml
+#   - Set environment variables in ECS task definition (same names: DB_USERNAME, DB_PASSWORD, etc.)
+#   - Spring Boot will read environment variables and resolve placeholders
 
 spring:
   datasource:
-    # Database URL - change this per environment
-    # Dev: jdbc:mysql://localhost:3306/orders_system
-    # Prod: jdbc:mysql://your-prod-server:3306/orders_system
     url: ${DB_URL:jdbc:mysql://localhost:3306/orders_system}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
@@ -24,13 +29,10 @@ spring:
           starttls:
             enable: true
             required: true
-    # From email address (sender)
     from-email: ${SMTP_FROM_EMAIL}
 
 config:
-  # HS256 secret, min 32 chars. Set via env var APP_SECRETS_JWT in CI/hosts
   jwt: ${APP_SECRETS_JWT}
-  # BCrypt hashes only (do NOT store plaintext). Optional: leave blank to disable admin login.
   admin-username-hash: ${ADMIN_USERNAME_HASH:}
   admin-password-hash: ${ADMIN_PASSWORD_HASH:}
   
@@ -38,7 +40,7 @@ config:
   s3:
     bucket-name: ${S3_BUCKET_NAME:ordersystem-uploads}
     region: ${S3_REGION:il-central-1}
-    public-domain: ${S3_PUBLIC_DOMAIN:} # CloudFront's domain for public URLs (e.g., https://d1234abcd.cloudfront.net/)
+    public-domain: ${S3_PUBLIC_DOMAIN:}
   
   # File upload configuration
   max-upload-file-size-mb: ${MAX_FILE_SIZE_MB:5}

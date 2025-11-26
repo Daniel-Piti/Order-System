@@ -36,6 +36,9 @@ dependencies {
 	
 	// AWS SDK for S3
 	implementation("software.amazon.awssdk:s3:2.29.45")
+	
+	// Load .env files for local development
+	implementation("io.github.cdimascio:dotenv-java:3.0.0")
 
 	developmentOnly("org.springframework.boot:spring-boot-devtools")
 

@@ -1,5 +1,5 @@
-config.yml
-!config.example.yml
+# config.yml is in git (only has placeholders, no secrets)
+# .env is gitignored (contains actual secrets)
 .env
 !.env.example
 HELP.md
