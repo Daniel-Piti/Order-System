@@ -19,6 +19,12 @@ import java.util.*
 class S3StorageService(
   private val config: ApplicationConfig
 ) {
+  companion object {
+    // Maximum file upload size in MB
+    const val MAX_FILE_SIZE_MB = 5
+    const val MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024L * 1024L
+  }
+  
   private lateinit var s3Client: S3Client
   private val s3 = config.s3
 

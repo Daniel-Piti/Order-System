@@ -9,9 +9,7 @@ data class ApplicationConfig(
   val adminUsernameHash: String = "",
   val adminPasswordHash: String = "",
 
-  val s3: S3Properties = S3Properties(),
-
-  val maxUploadFileSizeMb: Int = 5 // Default value 5
+  val s3: S3Properties = S3Properties()
 )
 
 data class S3Properties(

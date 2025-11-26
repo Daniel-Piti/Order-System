@@ -5,11 +5,11 @@ spring:
   config:
     import: file:config.yml
 
-  # File upload limits
+  # File upload limits (matches S3StorageService.MAX_FILE_SIZE_MB)
   servlet:
     multipart:
-      max-file-size: ${config.max-upload-file-size-mb}MB      # Maximum file size per request
-      max-request-size: ${config.max-upload-file-size-mb}MB   # Maximum request size (file + other data)
+      max-file-size: 5MB      # Maximum file size per request
+      max-request-size: 30MB   # Maximum request size (file + other data)
       enabled: true
 
   jpa:

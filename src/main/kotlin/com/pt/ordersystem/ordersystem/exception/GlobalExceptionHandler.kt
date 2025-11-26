@@ -1,6 +1,7 @@
 package com.pt.ordersystem.ordersystem.exception
 
 import com.pt.ordersystem.ordersystem.config.ApplicationConfig
+import com.pt.ordersystem.ordersystem.storage.S3StorageService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -27,7 +28,7 @@ class GlobalExceptionHandler(
   fun handleMaxUploadSizeException(ex: MaxUploadSizeExceededException): ResponseEntity<FailureResponse> {
     val failureResponse = FailureResponse(
       status = HttpStatus.PAYLOAD_TOO_LARGE,
-      userMessage = "File size exceeds the maximum allowed limit of ${config.maxUploadFileSizeMb}MB",
+      userMessage = "File size exceeds the maximum allowed limit of ${S3StorageService.MAX_FILE_SIZE_MB}MB",
       technicalMessage = ex.message ?: "File upload size limit exceeded",
       severity = SeverityLevel.WARN
     )
