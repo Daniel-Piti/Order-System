@@ -102,6 +102,16 @@ object FieldValidators {
         severity = SeverityLevel.WARN
       )
     }
+
+    // Validate that price has at most 2 decimal places
+    if (price.scale() > 2) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Price can have at most 2 decimal places",
+        technicalMessage = "Price `$price` has ${price.scale()} decimal places, maximum allowed is 2",
+        severity = SeverityLevel.WARN
+      )
+    }
   }
 
 }
