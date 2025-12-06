@@ -33,14 +33,13 @@ RUN addgroup -S spring && adduser -S spring -G spring
 COPY config.yml /app/config.yml
 RUN chown spring:spring /app/config.yml
 
-# Copy the JAR from build stage (as root, then change ownership)
+# Copy the JAR from build stage
 COPY --from=build /app/build/libs/*.jar app.jar
-RUN chown spring:spring app.jar
 
-# Switch to non-root user
-USER spring:spring
+# Note: Running as root to allow binding to port 443 (Fargate doesn't support NET_BIND_SERVICE capability)
+# Fargate containers are isolated, so this is acceptable for this use case
 
-# Expose HTTP & HTTPS ports (443 requires NET_BIND_SERVICE capability in ECS)
+# Expose HTTP & HTTPS ports
 EXPOSE 8080 443
 
 # Health check - will use HTTP or HTTPS based on ENABLE_HTTPS env var
