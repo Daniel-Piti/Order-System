@@ -9,13 +9,18 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 
 @Configuration
-class CorsConfig : WebMvcConfigurer {
+class CorsConfig(
+    private val corsProperties: CorsProperties
+) : WebMvcConfigurer {
+    
+    private val allowedOrigins: List<String>
+        get() = corsProperties.allowedOrigins
 
     override fun addCorsMappings(registry: CorsRegistry) {
         registry.addMapping("/**")
-            .allowedOriginPatterns("*")
-            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "TRACE", "CONNECT")
-            .allowedHeaders("*")
+            .allowedOriginPatterns(*allowedOrigins.toTypedArray())
+            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
+            .allowedHeaders("Content-Type", "Authorization", "X-Requested-With", "Accept")
             .allowCredentials(true)
             .maxAge(3600)
     }
@@ -23,9 +28,9 @@ class CorsConfig : WebMvcConfigurer {
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration()
-        configuration.allowedOriginPatterns = listOf("*")
-        configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "TRACE", "CONNECT")
-        configuration.allowedHeaders = listOf("*")
+        configuration.allowedOriginPatterns = allowedOrigins
+        configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
+        configuration.allowedHeaders = listOf("Content-Type", "Authorization", "X-Requested-With", "Accept")
         configuration.allowCredentials = true
         configuration.maxAge = 3600L
 
