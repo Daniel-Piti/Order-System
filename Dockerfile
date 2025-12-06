@@ -40,13 +40,13 @@ RUN chown spring:spring app.jar
 # Switch to non-root user
 USER spring:spring
 
-# Expose HTTP & HTTPS ports (8443 instead of 443 due to non-root user)
-EXPOSE 8080 8443
+# Expose HTTP & HTTPS ports (443 requires NET_BIND_SERVICE capability in ECS)
+EXPOSE 8080 443
 
 # Health check - will use HTTP or HTTPS based on ENABLE_HTTPS env var
 # Note: ECS may override this with its own health checks
 HEALTHCHECK --interval=30s --timeout=3s --start-period=120s --retries=3 \
-  CMD sh -c 'if [ "$ENABLE_HTTPS" = "true" ]; then wget --no-verbose --tries=1 --spider --no-check-certificate https://localhost:8443/ || exit 1; else wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1; fi'
+  CMD sh -c 'if [ "$ENABLE_HTTPS" = "true" ]; then wget --no-verbose --tries=1 --spider --no-check-certificate https://localhost:443/ || exit 1; else wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1; fi'
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
