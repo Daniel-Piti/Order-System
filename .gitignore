@@ -45,3 +45,6 @@ out/
 
 ### Email Previews ###
 src/test/resources/email-previews/
+
+### SSL Certificates ###
+src/main/resources/keystore.p12

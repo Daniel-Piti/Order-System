@@ -24,3 +24,15 @@ spring:
 springdoc:
   swagger-ui:
     doc-expansion: none
+
+# Server configuration
+# Default: HTTP on port 8080 (for local development)
+# Set ENABLE_HTTPS=true and SERVER_PORT=443 in ECS to enable HTTPS
+server:
+  port: ${SERVER_PORT:8080}
+  ssl:
+    enabled: ${ENABLE_HTTPS:false}
+    key-store: classpath:keystore.p12
+    key-store-password: ${SSL_KEYSTORE_PASSWORD}
+    key-store-type: PKCS12
+    key-alias: ordersystem
