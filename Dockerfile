@@ -36,16 +36,15 @@ RUN chown spring:spring /app/config.yml
 # Copy the JAR from build stage
 COPY --from=build /app/build/libs/*.jar app.jar
 
-# Note: Running as root to allow binding to port 443 (Fargate doesn't support NET_BIND_SERVICE capability)
-# Fargate containers are isolated, so this is acceptable for this use case
+# Switch to non-root user for security
+USER spring:spring
 
-# Expose HTTP & HTTPS ports
-EXPOSE 8080 443
+# Expose HTTP port (CloudFront handles HTTPS termination)
+EXPOSE 8080
 
-# Health check - will use HTTP or HTTPS based on ENABLE_HTTPS env var
-# Note: ECS may override this with its own health checks
+# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=120s --retries=3 \
-  CMD sh -c 'if [ "$ENABLE_HTTPS" = "true" ]; then wget --no-verbose --tries=1 --spider --no-check-certificate https://localhost:443/ || exit 1; else wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1; fi'
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
