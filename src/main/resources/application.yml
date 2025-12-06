@@ -27,7 +27,7 @@ springdoc:
 
 # Server configuration
 # Default: HTTP on port 8080 (for local development)
-# Set ENABLE_HTTPS=true and SERVER_PORT=443 in ECS to enable HTTPS
+# Set ENABLE_HTTPS=true and SERVER_PORT=8443 in ECS to enable HTTPS (8443 is used instead of 443 due to non-root user)
 server:
   port: ${SERVER_PORT:8080}
   ssl:
