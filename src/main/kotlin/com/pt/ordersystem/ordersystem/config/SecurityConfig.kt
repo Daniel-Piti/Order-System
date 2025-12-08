@@ -9,20 +9,17 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
-import org.springframework.web.cors.CorsConfigurationSource
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 class SecurityConfig(
   private val jwtAuthFilter: JwtAuthFilter,
-  private val corsConfigurationSource: CorsConfigurationSource,
 ) {
   @Bean
   fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
     return http
       .csrf { it.disable() }
-      .cors { it.configurationSource(corsConfigurationSource) }
       .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
       .authorizeHttpRequests {
         it.requestMatchers(
