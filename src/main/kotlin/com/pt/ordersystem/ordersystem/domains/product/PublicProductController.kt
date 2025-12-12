@@ -1,6 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.product
 
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductDto
+import com.pt.ordersystem.ordersystem.domains.productImage.models.ProductImageDto
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
@@ -58,6 +59,18 @@ class PublicProductController(
   ): ResponseEntity<List<ProductDto>> {
     val products = productService.getAllProductsForOrder(orderId)
     return ResponseEntity.ok(products)
+  }
+
+  @GetMapping("/manager/{managerId}/product/{productId}/images")
+  fun getProductImages(
+    @PathVariable managerId: String,
+    @PathVariable productId: String
+  ): ResponseEntity<List<ProductImageDto>> {
+    // Validate product belongs to manager (this also implicitly validates manager exists)
+    productService.getProductById(managerId, productId)
+    
+    val images = productService.getImagesForProduct(productId)
+    return ResponseEntity.ok(images)
   }
 
 }

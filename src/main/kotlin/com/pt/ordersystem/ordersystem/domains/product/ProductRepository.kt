@@ -14,6 +14,7 @@ import java.time.LocalDateTime
 interface ProductRepository : JpaRepository<ProductDbEntity, String> {
   fun findAllByManagerId(managerId: String): List<ProductDbEntity>
   fun findAllByManagerId(managerId: String, pageable: Pageable): Page<ProductDbEntity>
+  fun countByManagerId(managerId: String): Long
   fun findByManagerIdAndId(managerId: String, id: String): ProductDbEntity?
   fun findByManagerIdAndCategoryId(managerId: String, categoryId: Long, pageable: Pageable): Page<ProductDbEntity>
   fun findByManagerIdAndBrandId(managerId: String, brandId: Long, pageable: Pageable): Page<ProductDbEntity>

@@ -9,13 +9,10 @@ import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
-import org.springframework.web.multipart.MultipartFile
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
-import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
-import software.amazon.awssdk.services.s3.model.S3Exception
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest
 import java.time.Duration
@@ -68,41 +65,8 @@ class S3StorageService(
     if (::s3Presigner.isInitialized) {
       s3Presigner.close()
     }
-  }
-
-  fun uploadFile(file: MultipartFile, key: String): String {
-    try {
-      val putObjectRequest = PutObjectRequest.builder()
-        .bucket(s3.bucketName)
-        .key(key)
-        .contentType(file.contentType ?: "application/octet-stream")
-        .build()
-
-      val requestBody = RequestBody.fromInputStream(file.inputStream, file.size)
-
-      s3Client.putObject(putObjectRequest, requestBody)
-
-      // Return the public URL
-      return getPublicUrl(key) ?: throw ServiceException(
-        status = HttpStatus.INTERNAL_SERVER_ERROR,
-        userMessage = "Failed to upload file to storage",
-        technicalMessage = "Unable to generate public URL",
-        severity = SeverityLevel.ERROR
-      )
-    } catch (e: S3Exception) {
-      throw ServiceException(
-        status = HttpStatus.INTERNAL_SERVER_ERROR,
-        userMessage = "Failed to upload file to storage",
-        technicalMessage = "S3 error: ${e.message}",
-        severity = SeverityLevel.ERROR
-      )
-    } catch (e: Exception) {
-      throw ServiceException(
-        status = HttpStatus.INTERNAL_SERVER_ERROR,
-        userMessage = "Failed to upload file",
-        technicalMessage = "Upload error: ${e.message}",
-        severity = SeverityLevel.ERROR
-      )
+    if (::s3Client.isInitialized) {
+      s3Client.close()
     }
   }
 
@@ -138,39 +102,54 @@ class S3StorageService(
     return "${publicDomain}${s3Key}"
   }
 
+  fun validateImageMetadata(imageMetadata: ImageMetadata) {
+    // Validate file name
+    if (imageMetadata.fileName.isBlank()) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "File name cannot be empty",
+        technicalMessage = "File name is blank",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    // Validate file size
+    if (imageMetadata.fileSizeBytes <= 0 || imageMetadata.fileSizeBytes > MAX_FILE_SIZE_BYTES) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "File size must be between 1 byte and ${MAX_FILE_SIZE_MB}MB",
+        technicalMessage = "Invalid file size: ${imageMetadata.fileSizeBytes} bytes (valid range: 1-$MAX_FILE_SIZE_BYTES bytes)",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    // Validate MIME type and file extension match
+    val normalizedContentType = imageMetadata.contentType.lowercase()
+    val extension = imageMetadata.fileName.substringAfterLast(".", "").lowercase()
+    val allowedExtensions = ALLOWED_IMAGE_TYPES[normalizedContentType]
+    
+    if (allowedExtensions == null || !allowedExtensions.contains(extension)) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Only $ALLOWED_EXTENSIONS_LIST images are allowed",
+        technicalMessage = "Invalid MIME type: ${imageMetadata.contentType} or extension: $extension",
+        severity = SeverityLevel.WARN
+      )
+    }
+  }
+
   fun generatePreSignedUploadUrl(
     basePath: String,
     imageMetadata: ImageMetadata
   ): PreSignedUploadUrlResult {
     try {
-      // 1. Validate file size
-      if (imageMetadata.fileSizeBytes <= 0 || imageMetadata.fileSizeBytes > MAX_FILE_SIZE_BYTES) {
-        throw ServiceException(
-          status = HttpStatus.BAD_REQUEST,
-          userMessage = "File size must be between 1 byte and ${MAX_FILE_SIZE_MB}MB",
-          technicalMessage = "Invalid file size: ${imageMetadata.fileSizeBytes} bytes (valid range: 1-$MAX_FILE_SIZE_BYTES bytes)",
-          severity = SeverityLevel.WARN
-        )
-      }
+      // Validate image metadata (safety check)
+      validateImageMetadata(imageMetadata)
 
-      // 2. Validate MIME type and file extension match
-      val normalizedContentType = imageMetadata.contentType.lowercase()
-      val extension = imageMetadata.fileName.substringAfterLast(".", "").lowercase()
-      val allowedExtensions = ALLOWED_IMAGE_TYPES[normalizedContentType]
-      
-      if (allowedExtensions == null || !allowedExtensions.contains(extension)) {
-        throw ServiceException(
-          status = HttpStatus.BAD_REQUEST,
-          userMessage = "Only $ALLOWED_EXTENSIONS_LIST images are allowed",
-          technicalMessage = "Invalid MIME type: ${imageMetadata.contentType} or extension: $extension",
-          severity = SeverityLevel.WARN
-        )
-      }
-
-      // 5. Build S3 key
+      // Build S3 key
       val s3Key = generateKey(basePath, imageMetadata.fileName)
 
-      // 6. Build PutObjectRequest
+      // Build PutObjectRequest
       val putObjectRequest = PutObjectRequest.builder()
         .bucket(s3.bucketName)
         .key(s3Key)
@@ -178,7 +157,7 @@ class S3StorageService(
         .contentMD5(imageMetadata.fileMd5Base64)
         .build()
 
-      // 7. Build preSignRequest and get URL
+      // Build preSignRequest and get URL
       val preSignedUrl = s3Presigner.presignPutObject(
         PutObjectPresignRequest.builder()
           .signatureDuration(Duration.ofMinutes(5))
@@ -186,7 +165,7 @@ class S3StorageService(
           .build()
       )
 
-      // 8. Return URL and S3 key
+      // Return URL and S3 key
       return PreSignedUploadUrlResult(
         preSignedUrl = preSignedUrl.url().toString(),
         s3Key = s3Key
