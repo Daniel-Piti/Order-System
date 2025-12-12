@@ -4,15 +4,15 @@ import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.brand.models.CreateBrandRequest
 import com.pt.ordersystem.ordersystem.domains.brand.models.UpdateBrandRequest
+import com.pt.ordersystem.ordersystem.domains.brand.models.BrandCreateResponse
+import com.pt.ordersystem.ordersystem.domains.brand.models.BrandUpdateResponse
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.multipart.MultipartFile
 
 @Tag(name = "Brands", description = "Manager brand management API")
 @SecurityRequirement(name = "bearerAuth")
@@ -23,27 +23,23 @@ class BrandManagerController(
     private val brandService: BrandService
 ) {
 
-    @PostMapping(consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @PostMapping
     fun createBrand(
-        @RequestParam("name") name: String,
-        @RequestPart(value = "image", required = false) image: MultipartFile?,
+        @RequestBody request: CreateBrandRequest,
         @AuthenticationPrincipal manager: AuthUser
-    ): ResponseEntity<Long> {
-        val request = CreateBrandRequest(name = name)
-        val brandId = brandService.createBrand(manager.id, request, image)
-        return ResponseEntity.status(HttpStatus.CREATED).body(brandId)
+    ): ResponseEntity<BrandCreateResponse> {
+        val response = brandService.createBrand(manager.id, request)
+        return ResponseEntity.status(HttpStatus.CREATED).body(response)
     }
 
-    @PutMapping("/{brandId}", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @PutMapping("/{brandId}")
     fun updateBrand(
         @PathVariable brandId: Long,
-        @RequestParam("name") name: String,
-        @RequestPart(value = "image", required = false) image: MultipartFile?,
+        @RequestBody request: UpdateBrandRequest,
         @AuthenticationPrincipal manager: AuthUser
-    ): ResponseEntity<Long> {
-        val request = UpdateBrandRequest(name = name)
-        val updatedBrandId = brandService.updateBrand(manager.id, brandId, request, image)
-        return ResponseEntity.ok(updatedBrandId)
+    ): ResponseEntity<BrandUpdateResponse> {
+        val response = brandService.updateBrand(manager.id, brandId, request)
+        return ResponseEntity.ok(response)
     }
 
     @DeleteMapping("/{brandId}")
