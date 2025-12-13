@@ -6,7 +6,6 @@ import com.pt.ordersystem.ordersystem.businessStats.models.BusinessStatsDto
 import com.pt.ordersystem.ordersystem.businessStats.models.LinksCreatedStats
 import com.pt.ordersystem.ordersystem.businessStats.models.MonthlyData
 import com.pt.ordersystem.ordersystem.domains.order.OrderRepository
-import com.pt.ordersystem.ordersystem.domains.order.models.OrderStatus
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 import java.time.LocalDateTime
@@ -20,13 +19,11 @@ class BusinessStatsService(
 
   fun getBusinessStats(managerId: String, year: Int? = null, month: Int? = null): BusinessStatsDto {
     val linksCreated = getLinksCreatedStats(managerId, year, month)
-    val ordersByStatus = getOrdersByStatus(managerId, year, month)
     val monthlyIncome = getMonthlyIncome(managerId, year, month)
     val yearlyData = getYearlyData(managerId, year)
 
     return BusinessStatsDto(
       linksCreatedThisMonth = linksCreated,
-      ordersByStatus = ordersByStatus,
       monthlyIncome = monthlyIncome,
       yearlyData = yearlyData
     )
@@ -71,27 +68,6 @@ class BusinessStatsService(
     )
   }
 
-  fun getOrdersByStatus(managerId: String, year: Int? = null, month: Int? = null): Map<String, Int> {
-    val targetDate = if (year != null && month != null) {
-      LocalDateTime.of(year, month, 1, 0, 0, 0)
-    } else {
-      LocalDateTime.now()
-    }
-    val startOfMonth = targetDate.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0)
-
-    val statusCounts = orderRepository.countOrdersByStatusThisMonth(managerId, startOfMonth)
-      .associate { row ->
-        val status = row["status"]?.toString() ?: ""
-        val count = (row["count"] as? Number)?.toInt() ?: 0
-        status to count
-      }
-    
-    val allStatuses = OrderStatus.values().map { it.name }
-    return allStatuses.associateWith { status ->
-      statusCounts[status] ?: 0
-    }
-  }
-
   fun getMonthlyIncome(managerId: String, year: Int? = null, month: Int? = null): BigDecimal {
     val targetDate = if (year != null && month != null) {
       LocalDateTime.of(year, month, 1, 0, 0, 0)
@@ -100,6 +76,16 @@ class BusinessStatsService(
     }
     val startOfMonth = targetDate.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0)
     return orderRepository.sumMonthlyIncome(managerId, startOfMonth)
+  }
+
+  fun getCompletedOrdersCount(managerId: String, year: Int? = null, month: Int? = null): Int {
+    val targetDate = if (year != null && month != null) {
+      LocalDateTime.of(year, month, 1, 0, 0, 0)
+    } else {
+      LocalDateTime.now()
+    }
+    val startOfMonth = targetDate.withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0)
+    return orderRepository.countCompletedOrdersThisMonth(managerId, startOfMonth).toInt()
   }
 
   fun getYearlyData(managerId: String, year: Int? = null): List<MonthlyData> {

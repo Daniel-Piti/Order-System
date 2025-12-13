@@ -42,16 +42,6 @@ class BusinessStatsController(
     return ResponseEntity.ok(stats)
   }
 
-  @GetMapping("/orders-by-status")
-  fun getOrdersByStatus(
-    @AuthenticationPrincipal manager: AuthUser,
-    @RequestParam(required = false) year: Int?,
-    @RequestParam(required = false) month: Int?
-  ): ResponseEntity<Map<String, Int>> {
-    val stats = businessStatsService.getOrdersByStatus(manager.id, year, month)
-    return ResponseEntity.ok(stats)
-  }
-
   @GetMapping("/monthly-income")
   fun getMonthlyIncome(
     @AuthenticationPrincipal manager: AuthUser,
@@ -69,6 +59,16 @@ class BusinessStatsController(
   ): ResponseEntity<List<MonthlyData>> {
     val data = businessStatsService.getYearlyData(manager.id, year)
     return ResponseEntity.ok(data)
+  }
+
+  @GetMapping("/completed-orders")
+  fun getCompletedOrdersCount(
+    @AuthenticationPrincipal manager: AuthUser,
+    @RequestParam(required = false) year: Int?,
+    @RequestParam(required = false) month: Int?
+  ): ResponseEntity<Int> {
+    val count = businessStatsService.getCompletedOrdersCount(manager.id, year, month)
+    return ResponseEntity.ok(count)
   }
 
 }

@@ -4,7 +4,6 @@ import java.math.BigDecimal
 
 data class BusinessStatsDto(
   val linksCreatedThisMonth: LinksCreatedStats,
-  val ordersByStatus: Map<String, Int>,
   val monthlyIncome: BigDecimal,
   val yearlyData: List<MonthlyData>
 )

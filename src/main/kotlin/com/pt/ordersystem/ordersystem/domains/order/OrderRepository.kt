@@ -86,22 +86,22 @@ interface OrderRepository : JpaRepository<OrderDbEntity, String> {
     @Param("startOfMonth") startOfMonth: LocalDateTime
   ): List<Map<String, Any>>
 
-  // Count orders by status created this month
+  // Count completed orders done this month
   @Query(
     value = """
-      SELECT status as status, COUNT(*) as count
-      FROM orders
+      SELECT COUNT(*) FROM orders
       WHERE manager_id = :managerId
-        AND YEAR(created_at) = YEAR(:startOfMonth)
-        AND MONTH(created_at) = MONTH(:startOfMonth)
-      GROUP BY status
+        AND status = 'DONE'
+        AND done_at IS NOT NULL
+        AND YEAR(done_at) = YEAR(:startOfMonth)
+        AND MONTH(done_at) = MONTH(:startOfMonth)
     """,
     nativeQuery = true
   )
-  fun countOrdersByStatusThisMonth(
+  fun countCompletedOrdersThisMonth(
     @Param("managerId") managerId: String,
     @Param("startOfMonth") startOfMonth: LocalDateTime
-  ): List<Map<String, Any>>
+  ): Long
 
   // Sum total price of orders done this month
   @Query(
