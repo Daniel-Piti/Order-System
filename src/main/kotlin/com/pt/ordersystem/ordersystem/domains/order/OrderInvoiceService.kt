@@ -1,6 +1,5 @@
 package com.pt.ordersystem.ordersystem.domains.order
 
-import com.pt.ordersystem.ordersystem.domains.agent.AgentService
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDbEntity
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderFailureReason
@@ -20,35 +19,43 @@ import org.springframework.stereotype.Service
 import java.awt.Color
 import java.io.ByteArrayOutputStream
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.text.Bidi
 
 @Service
 class OrderInvoiceService(
   private val orderRepository: OrderRepository,
-  private val managerService: ManagerService,
-  private val agentService: AgentService
+  private val managerService: ManagerService
 ) {
+
+  companion object {
+    const val VAT_PERCENTAGE = 18
+    val VAT_RATE = BigDecimal("1.18")
+    
+    // Layout constants
+    private const val PAGE_MARGIN = 50f
+    private const val PANEL_GAP = 30f
+    private const val LINE_SPACING = 14f
+    private const val ROW_HEIGHT = 25f
+    private const val VERTICAL_PADDING = 6f
+    private const val FONT_SIZE_REGULAR = 11f
+    private const val FONT_SIZE_SMALL = 10f
+    private const val FONT_SIZE_TITLE = 24f
+    private const val TEXT_BASELINE_OFFSET = 2.5f
+  }
 
   private data class InvoiceTheme(
     val regularFont: PDFont,
     val boldFont: PDFont,
-    val accentColor: Color = Color(109, 40, 217),
-    val accentColorMuted: Color = Color(167, 139, 250),
-    val backgroundColor: Color = Color.WHITE,
-    val textPrimary: Color = Color(17, 24, 39),
-    val textSecondary: Color = Color(75, 85, 99),
-    val borderColor: Color = Color(229, 231, 235),
-    val panelBackground: Color = Color(248, 250, 252),
-    val tableHeaderBackground: Color = Color(245, 243, 255),
-    val tableStripeBackground: Color = Color(250, 245, 255)
+    val textColor: Color = Color(0, 0, 0),
+    val borderColor: Color = Color(200, 200, 200)
   )
 
   data class InvoiceDocument(val fileName: String, val content: ByteArray)
@@ -56,40 +63,25 @@ class OrderInvoiceService(
   private val currencyFormatter = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale.US))
 
   fun generateInvoiceForUser(orderId: String, requestingUserId: String): InvoiceDocument {
-    val order = orderRepository.findById(orderId).orElseThrow {
-      ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = OrderFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = OrderFailureReason.NOT_FOUND.technical + "orderId=$orderId",
-        severity = SeverityLevel.WARN
-      )
-    }
-
+    val order = getOrder(orderId)
     validateOwnership(order, requestingUserId)
     validateInvoiceEligibility(order)
-
-    val fileName = "invoice-${order.id}.pdf"
-    val bytes = renderPdf(order)
-
-    return InvoiceDocument(fileName = fileName, content = bytes)
+    return InvoiceDocument("invoice-${order.id}.pdf", renderPdf(order))
   }
 
   fun generateInvoiceForAdmin(orderId: String): InvoiceDocument {
-    val order = orderRepository.findById(orderId).orElseThrow {
-      ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = OrderFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = OrderFailureReason.NOT_FOUND.technical + "orderId=$orderId",
-        severity = SeverityLevel.WARN
-      )
-    }
-
+    val order = getOrder(orderId)
     validateInvoiceEligibility(order)
+    return InvoiceDocument("invoice-${order.id}.pdf", renderPdf(order))
+  }
 
-    val fileName = "invoice-${order.id}.pdf"
-    val bytes = renderPdf(order)
-
-    return InvoiceDocument(fileName = fileName, content = bytes)
+  private fun getOrder(orderId: String) = orderRepository.findById(orderId).orElseThrow {
+    ServiceException(
+      status = HttpStatus.NOT_FOUND,
+      userMessage = OrderFailureReason.NOT_FOUND.userMessage,
+      technicalMessage = OrderFailureReason.NOT_FOUND.technical + "orderId=$orderId",
+      severity = SeverityLevel.WARN
+    )
   }
 
   private fun validateOwnership(order: OrderDbEntity, requestingUserId: String) {
@@ -106,549 +98,326 @@ class OrderInvoiceService(
 
   private fun validateInvoiceEligibility(order: OrderDbEntity) {
     val status = OrderStatus.valueOf(order.status)
-
     if (status != OrderStatus.DONE) {
       throw ServiceException(
         status = HttpStatus.BAD_REQUEST,
-        userMessage = "Invoice is only available for completed orders",
+        userMessage = "חשבונית זמינה רק להזמנות שהושלמו",
         technicalMessage = "Invoice requested for order ${order.id} with status ${order.status}",
         severity = SeverityLevel.INFO
       )
     }
-
     if (order.products.isEmpty()) {
       throw ServiceException(
         status = HttpStatus.BAD_REQUEST,
-        userMessage = "Cannot generate invoice for an order without products",
+        userMessage = "לא ניתן ליצור חשבונית להזמנה ללא מוצרים",
         technicalMessage = "Invoice requested for order ${order.id} with empty products list",
         severity = SeverityLevel.INFO
       )
     }
   }
 
-  private data class PageContext(
-    val page: PDPage,
-    val content: PDPageContentStream,
-    val pageWidth: Float,
-    val pageHeight: Float,
-    val margin: Float,
-    var currentY: Float,
-    var footerDrawn: Boolean = false
-  )
-
-  private fun createPage(
-    document: PDDocument,
-    theme: InvoiceTheme,
-    invoiceNumber: String,
-    invoiceDate: String,
-    businessName: String,
-    headerHeight: Float,
-    margin: Float
-  ): PageContext {
-    val page = PDPage(PDRectangle.LETTER)
-    document.addPage(page)
-
-    val pageWidth = page.mediaBox.width
-    val pageHeight = page.mediaBox.height
-    val content = PDPageContentStream(document, page)
-
-    drawHeader(
-      content = content,
-      theme = theme,
-      pageWidth = pageWidth,
-      pageHeight = pageHeight,
-      height = headerHeight,
-      invoiceNumber = invoiceNumber,
-      invoiceDate = invoiceDate,
-      businessName = businessName
-    )
-
-    return PageContext(
-      page = page,
-      content = content,
-      pageWidth = pageWidth,
-      pageHeight = pageHeight,
-      margin = margin,
-      currentY = pageHeight - headerHeight - 28f
-    )
-  }
-
-  private fun drawFooter(
-    context: PageContext,
-    theme: InvoiceTheme
-  ) {
-    if (context.footerDrawn) return
-
-    val footerY = 42f
-    val margin = context.margin
-    context.content.writeText(
-      text = "Thank you for your business!",
-      x = margin,
-      y = footerY + 12f,
-      font = theme.boldFont,
-      fontSize = 12f,
-      color = theme.textSecondary
-    )
-    context.content.writeText(
-      text = "Invoice generated automatically by Order System.",
-      x = margin,
-      y = footerY,
-      font = theme.regularFont,
-      fontSize = 10f,
-      color = theme.textSecondary
-    )
-    context.footerDrawn = true
-  }
-
   private fun renderPdf(order: OrderDbEntity): ByteArray {
-    // Fetch manager and agent information
     val manager = managerService.getManagerById(order.managerId)
-    val agent = order.agentId?.let { agentId ->
-      try {
-        agentService.getAgentEntity(agentId.toString())
-      } catch (e: Exception) {
-        // Agent might not exist anymore, ignore
-        null
-      }
-    }
+    val invoiceDate = formatCurrentDate()
 
-    val invoiceNumber = "INV-${order.id.uppercase(Locale.ENGLISH)}"
-    val invoiceDate = formatDate(order.doneAt ?: order.placedAt ?: order.createdAt)
-
-    PDDocument().use { document ->
-      document.documentInformation.title = "Invoice $invoiceNumber"
+    return PDDocument().use { document ->
+      document.documentInformation.title = "Invoice ${order.id}"
       document.documentInformation.author = "Order System"
 
       val theme = createTheme(document)
-      val margin = 50f
-      val headerHeight = 100f // Increased height for business name
-      val footerHeight = 70f
-      val contentWidth = PDRectangle.LETTER.width - (margin * 2)
+      val page = PDPage(PDRectangle.A4)
+      document.addPage(page)
 
-      var context = createPage(
-        document = document,
-        theme = theme,
-        invoiceNumber = invoiceNumber,
-        invoiceDate = invoiceDate,
-        businessName = manager.businessName,
-        headerHeight = headerHeight,
-        margin = margin
-      )
+      val pageWidth = page.mediaBox.width
+      val pageHeight = page.mediaBox.height
+      val contentWidth = pageWidth - (PAGE_MARGIN * 2)
 
-      fun newPage(): PageContext {
-        drawFooter(context, theme)
-        context.content.close()
-        context = createPage(
-          document = document,
-          theme = theme,
-          invoiceNumber = invoiceNumber,
-          invoiceDate = invoiceDate,
-          businessName = manager.businessName,
-          headerHeight = headerHeight,
-          margin = margin
-        )
-        return context
+      PDPageContentStream(document, page).use { content ->
+        var currentY = pageHeight - PAGE_MARGIN
+        
+        currentY = drawHeader(content, theme, pageWidth, currentY, order.id, invoiceDate)
+        currentY = drawCustomerAndBusinessPanels(content, theme, pageWidth, currentY, order, manager)
+        currentY = drawProductsTable(content, theme, PAGE_MARGIN, contentWidth, currentY, order)
+        currentY = drawSummary(content, theme, PAGE_MARGIN, contentWidth, currentY, order)
+        drawFooter(content, theme, pageWidth, currentY)
       }
-
-      fun ensureSpace(requiredHeight: Float): Boolean {
-        if (context.currentY - requiredHeight < footerHeight) {
-          newPage()
-          return true
-        }
-        return false
-      }
-
-      val metaSpacing = 14f
-      val metaLines = listOf(
-        "Order ID: ${order.id}",
-        "Date: ${formatDate(order.doneAt!!)}"
-      )
-      val metaHeight = metaSpacing * metaLines.size + 12f
-      ensureSpace(metaHeight)
-      metaLines.forEachIndexed { index, line ->
-        context.content.writeText(
-          text = line,
-          x = margin,
-          y = context.currentY - (metaSpacing * index),
-          font = theme.regularFont,
-          fontSize = 11f,
-          color = theme.textSecondary
-        )
-      }
-      context.currentY -= metaHeight + 20f
-
-      val panelGap = 16f
-      val panelWidth = (contentWidth - panelGap) / 2f
-      val panelPadding = 18f
-      val panelLineHeight = 15f
-      val panelInnerWidth = panelWidth - (panelPadding * 2)
-
-      // Build seller lines with manager and agent information
-      val sellerLines = mutableListOf<String>()
-      
-      // Business name (bold, will be handled separately)
-      // Manager name
-      sellerLines.add("${manager.firstName} ${manager.lastName}")
-      sellerLines.add("Email: ${manager.email}")
-      sellerLines.add("Phone: ${manager.phoneNumber}")
-      sellerLines.add("${manager.streetAddress}")
-      sellerLines.add("${manager.city}")
-      
-      // Agent information if exists
-      if (agent != null) {
-        sellerLines.add("")
-        sellerLines.add("Agent: ${agent.firstName} ${agent.lastName}")
-        sellerLines.add("Email: ${agent.email}")
-        sellerLines.add("Phone: ${agent.phoneNumber}")
-      }
-      
-      // Store (pickup location) information
-      if (order.storeStreetAddress != null || order.storeCity != null || order.storePhoneNumber != null) {
-        sellerLines.add("")
-        sellerLines.add("Location:")
-        if (order.storeStreetAddress != null) {
-          sellerLines.add("${order.storeStreetAddress}")
-        }
-        if (order.storeCity != null) {
-          sellerLines.add("${order.storeCity}")
-        }
-        if (order.storePhoneNumber != null) {
-          sellerLines.add("Phone: ${order.storePhoneNumber}")
-        }
-      }
-      
-      val wrappedSellerLines = sellerLines.flatMap { line ->
-        if (line.isBlank()) {
-          listOf("")
-        } else {
-          wrapWithFont(theme.regularFont, line, panelInnerWidth, 11f)
-        }
-      }
-
-      val customerLines = listOf(
-        sanitize(order.customerName)?.takeIf { it != "Not provided" }?.let { "Name: $it" },
-        sanitize(order.customerStreetAddress)?.takeIf { it != "Not provided" }?.let { it },
-        sanitize(order.customerCity)?.takeIf { it != "Not provided" }?.let { it },
-        sanitize(order.customerPhone)?.takeIf { it != "Not provided" }?.let { "Phone: $it" },
-        sanitize(order.customerEmail)?.takeIf { it != "Not provided" }?.let { "Email: $it" }
-      ).filterNotNull().flatMap { wrapWithFont(theme.regularFont, it, panelInnerWidth, 11f) }
-
-      // Calculate heights - seller panel includes business name as title
-      val businessNameTitleHeight = 20f // Extra height for business name
-      val sellerContentHeight = panelPadding * 2 + wrappedSellerLines.size * panelLineHeight + businessNameTitleHeight
-      val customerContentHeight = panelPadding * 2 + (customerLines.size + 1) * panelLineHeight
-      val panelHeight = maxOf(sellerContentHeight, customerContentHeight)
-
-      ensureSpace(panelHeight)
-      val sellerBottom = context.content.drawSellerPanel(
-        theme = theme,
-        businessName = manager.businessName,
-        lines = wrappedSellerLines,
-        topLeftX = margin,
-        topY = context.currentY,
-        width = panelWidth
-      )
-
-      val customerBottom = context.content.drawInfoPanel(
-        theme = theme,
-        title = "Customer",
-        lines = customerLines,
-        topLeftX = margin + panelWidth + panelGap,
-        topY = context.currentY,
-        width = panelWidth
-      )
-
-      context.currentY = minOf(sellerBottom, customerBottom) - 32f
-
-      val tableColumnWidths = floatArrayOf(
-        70f,
-        contentWidth - 70f - 95f - 95f,
-        95f,
-        95f
-      )
-      val tableHeaders = listOf("Qty", "Item", "Unit Price", "Line Total")
-      val tableHeaderHeight = 26f
-      val tableLineSpacing = 3f
-      val tableFontSize = 11f
-
-      fun drawTableHeader() {
-        ensureSpace(tableHeaderHeight)
-        val topY = context.currentY
-        context.content.setNonStrokingColor(theme.tableHeaderBackground)
-        context.content.addRect(margin, topY - tableHeaderHeight, tableColumnWidths.sum(), tableHeaderHeight)
-        context.content.fill()
-
-        var textX = margin + 12f
-        tableHeaders.forEachIndexed { index, header ->
-          context.content.writeText(
-            text = header,
-            x = textX,
-            y = topY - tableHeaderHeight + 8f,
-            font = theme.boldFont,
-            fontSize = 11f,
-            color = theme.textPrimary
-          )
-          textX += tableColumnWidths[index]
-        }
-
-        context.content.setStrokingColor(theme.borderColor)
-        context.content.addRect(margin, topY - tableHeaderHeight, tableColumnWidths.sum(), tableHeaderHeight)
-        context.content.stroke()
-        context.currentY -= tableHeaderHeight
-      }
-
-      drawTableHeader()
-
-      order.products.forEachIndexed { index, product ->
-        val rowValues = listOf(
-          product.quantity.toString(),
-          product.productName.replace("\n", " "),
-          formatCurrency(product.pricePerUnit),
-          formatCurrency(product.pricePerUnit.multiply(BigDecimal(product.quantity)))
-        )
-
-        val wrappedColumns = rowValues.mapIndexed { columnIndex, value ->
-          val maxWidth = tableColumnWidths[columnIndex] - 24f
-          wrapWithFont(theme.regularFont, value, maxWidth, tableFontSize)
-        }
-
-        val maxLines = wrappedColumns.maxOf { it.size.coerceAtLeast(1) }
-        val rowHeight = maxLines * (tableFontSize + tableLineSpacing) + 14f
-
-        if (ensureSpace(rowHeight)) {
-          drawTableHeader()
-        }
-
-        val rowTop = context.currentY
-        val rowBottom = rowTop - rowHeight
-
-        if (index % 2 == 0) {
-          context.content.setNonStrokingColor(theme.tableStripeBackground)
-          context.content.addRect(margin, rowBottom, tableColumnWidths.sum(), rowHeight)
-          context.content.fill()
-        }
-
-        var cellX = margin + 12f
-        wrappedColumns.forEachIndexed { columnIndex, lines ->
-          val textHeight = tableFontSize + tableLineSpacing
-          val totalTextHeight = lines.size * textHeight
-          val verticalPadding = (rowHeight - totalTextHeight) / 2
-          val baselineAdjustment = tableFontSize * 0.75f
-          lines.forEachIndexed { lineIdx, line ->
-            val lineY = rowBottom + verticalPadding + tableFontSize - baselineAdjustment + lineIdx * textHeight
-            context.content.writeText(
-              text = line,
-              x = cellX,
-              y = lineY,
-              font = theme.regularFont,
-              fontSize = tableFontSize,
-              color = theme.textPrimary
-            )
-          }
-          cellX += tableColumnWidths[columnIndex]
-        }
-
-        context.content.setStrokingColor(theme.borderColor)
-        context.content.moveTo(margin, rowBottom)
-        context.content.lineTo(margin + tableColumnWidths.sum(), rowBottom)
-        context.content.stroke()
-
-        context.currentY = rowBottom
-      }
-
-      context.currentY -= 24f
-
-      val summaryWidth = tableColumnWidths[2] + tableColumnWidths[3]
-      val summaryX = margin + tableColumnWidths[0] + tableColumnWidths[1]
-      val summaryHeight = 78f
-      ensureSpace(summaryHeight)
-      val summaryBottom = context.content.drawSummaryCard(
-        theme = theme,
-        topY = context.currentY,
-        leftX = summaryX,
-        width = summaryWidth,
-        total = formatCurrency(order.totalPrice)
-      )
-      context.currentY = summaryBottom - 28f
-
-      if (order.notes.isNotBlank()) {
-        val noteLines = wrapWithFont(theme.regularFont, order.notes, contentWidth - 32f, 11f)
-        val notesPadding = 16f
-        val notesLineHeight = 14f
-        var index = 0
-
-        while (index < noteLines.size) {
-          val availableHeight = context.currentY - footerHeight
-          val capacity = ((availableHeight - notesPadding * 2 - notesLineHeight) / notesLineHeight).toInt()
-            .coerceAtLeast(1)
-
-          if (capacity <= 0) {
-            newPage()
-            continue
-          }
-
-          val endIndex = minOf(index + capacity, noteLines.size)
-          val chunk = noteLines.subList(index, endIndex)
-          val blockHeight = notesPadding * 2 + (chunk.size + 1) * notesLineHeight
-          ensureSpace(blockHeight)
-
-          val bottom = context.content.drawNotes(
-            theme = theme,
-            topY = context.currentY,
-            leftX = margin,
-            width = contentWidth,
-            notes = chunk
-          )
-          context.currentY = bottom - 24f
-          index = endIndex
-        }
-      }
-
-      drawFooter(context, theme)
-      context.content.close()
 
       val output = ByteArrayOutputStream()
       document.save(output)
-      return output.toByteArray()
+      output.toByteArray()
+    }
+  }
+
+  private fun drawHeader(
+    content: PDPageContentStream,
+    theme: InvoiceTheme,
+    pageWidth: Float,
+    y: Float,
+    invoiceNumber: String,
+    date: String
+  ): Float {
+    var currentY = y
+
+    content.writeTextRightAligned("חשבונית מס", pageWidth - PAGE_MARGIN, currentY, theme.boldFont, FONT_SIZE_TITLE, theme.textColor)
+    currentY -= 40f
+
+    content.writeTextRightAligned("מספר חשבונית: $invoiceNumber", pageWidth - PAGE_MARGIN, currentY, theme.boldFont, FONT_SIZE_REGULAR, theme.textColor)
+    currentY -= 20f
+
+    content.writeTextRightAligned("תאריך: $date", pageWidth - PAGE_MARGIN, currentY, theme.regularFont, FONT_SIZE_REGULAR, theme.textColor)
+    currentY -= 50f
+
+    return currentY
+  }
+
+  private fun drawCustomerAndBusinessPanels(
+    content: PDPageContentStream,
+    theme: InvoiceTheme,
+    pageWidth: Float,
+    y: Float,
+    order: OrderDbEntity,
+    manager: com.pt.ordersystem.ordersystem.domains.manager.models.ManagerDbEntity
+  ): Float {
+    val panelWidth = (pageWidth - (PAGE_MARGIN * 2) - PANEL_GAP) / 2f
+    val rightPanelX = pageWidth - PAGE_MARGIN
+    val leftPanelX = rightPanelX - panelWidth - PANEL_GAP
+
+    val customerY = drawPanel(content, theme, rightPanelX, panelWidth, y, "לכבוד:", listOf(
+      "שם מלא: ${order.customerName ?: "לא צוין"}",
+      "תעודת זהות: ${order.customerId ?: "לא צוין"}",
+      "כתובת: ${order.customerStreetAddress ?: "לא צוין"}",
+      "עיר: ${order.customerCity ?: "לא צוין"}"
+    ))
+
+    val businessY = drawPanel(content, theme, leftPanelX, panelWidth, y, "מאת:", listOf(
+      "שם עסק: ${manager.businessName}",
+      "כתובת: ${manager.streetAddress}",
+      "עיר: ${manager.city}",
+      "טלפון: ${manager.phoneNumber}",
+      "ח.פ./ע.מ: "
+    ))
+
+    return minOf(customerY, businessY) - 30f
+  }
+
+  private fun drawPanel(
+    content: PDPageContentStream,
+    theme: InvoiceTheme,
+    rightX: Float,
+    width: Float,
+    y: Float,
+    title: String,
+    fields: List<String>
+  ): Float {
+    var currentY = y
+
+    content.writeTextRightAligned(title, rightX, currentY, theme.boldFont, 14f, theme.textColor)
+    currentY -= 25f
+
+    fields.forEach { field ->
+      currentY = content.writeWrappedTextRightAligned(
+        text = field,
+        rightX = rightX - 10f,
+        y = currentY,
+        maxWidth = width - 20f,
+        font = theme.regularFont,
+        fontSize = FONT_SIZE_REGULAR,
+        color = theme.textColor,
+        lineHeight = 18f
+      )
+    }
+
+    return currentY
+  }
+
+  private fun drawProductsTable(
+    content: PDPageContentStream,
+    theme: InvoiceTheme,
+    margin: Float,
+    contentWidth: Float,
+    y: Float,
+    order: OrderDbEntity
+  ): Float {
+    val columnWidths = floatArrayOf(60f, contentWidth - 260f, 100f, 100f)
+    var currentY = y
+
+    // Draw header
+    content.setStrokingColor(theme.borderColor)
+    content.addRect(margin, currentY - ROW_HEIGHT, contentWidth, ROW_HEIGHT)
+    content.stroke()
+
+    val headerY = currentY - 18f
+    var tableX = margin
+
+    content.writeTextCentered("כמות", tableX, columnWidths[0], headerY, theme.boldFont, FONT_SIZE_REGULAR, theme.textColor)
+    tableX += columnWidths[0]
+
+    content.writeText("תיאור מוצר", tableX + 5f, headerY, theme.boldFont, FONT_SIZE_REGULAR, theme.textColor)
+    tableX += columnWidths[1]
+
+    content.writeTextCentered("מחיר יחידה", tableX, columnWidths[2], headerY, theme.boldFont, FONT_SIZE_REGULAR, theme.textColor)
+    tableX += columnWidths[2]
+
+    content.writeTextCentered("סה\"כ", tableX, columnWidths[3], headerY, theme.boldFont, FONT_SIZE_REGULAR, theme.textColor)
+    currentY -= ROW_HEIGHT
+
+    // Draw products
+    order.products.forEach { product ->
+      val productTotal = product.pricePerUnit.multiply(BigDecimal(product.quantity))
+      val productNameLines = content.wrapTextForPdf(
+        product.productName.replace("\n", " "),
+        columnWidths[1] - 10f,
+        theme.regularFont,
+        FONT_SIZE_SMALL
+      )
+
+      val actualRowHeight = maxOf(ROW_HEIGHT, (productNameLines.size * LINE_SPACING) + (VERTICAL_PADDING * 2f))
+      val rowCenterY = (currentY - actualRowHeight) + (actualRowHeight / 2f)
+      val textBaselineY = rowCenterY - TEXT_BASELINE_OFFSET
+
+      content.setStrokingColor(theme.borderColor)
+      content.addRect(margin, currentY - actualRowHeight, contentWidth, actualRowHeight)
+      content.stroke()
+
+      tableX = margin
+
+      content.writeTextCentered(product.quantity.toString(), tableX, columnWidths[0], textBaselineY, theme.regularFont, FONT_SIZE_SMALL, theme.textColor)
+      tableX += columnWidths[0]
+
+      drawMultiLineText(content, tableX + 5f, productNameLines, rowCenterY, theme.regularFont, FONT_SIZE_SMALL, theme.textColor)
+      tableX += columnWidths[1]
+
+      content.writeTextCentered(formatCurrency(product.pricePerUnit), tableX, columnWidths[2], textBaselineY, theme.regularFont, FONT_SIZE_SMALL, theme.textColor)
+      tableX += columnWidths[2]
+
+      content.writeTextCentered(formatCurrency(productTotal), tableX, columnWidths[3], textBaselineY, theme.regularFont, FONT_SIZE_SMALL, theme.textColor)
+
+      currentY -= actualRowHeight
+    }
+
+    return currentY - 30f
+  }
+
+  private fun drawMultiLineText(
+    content: PDPageContentStream,
+    x: Float,
+    lines: List<String>,
+    rowCenterY: Float,
+    font: PDFont,
+    fontSize: Float,
+    color: Color
+  ) {
+    val middleLineIndex = (lines.size - 1) / 2
+    val middleLineBaseline = rowCenterY - TEXT_BASELINE_OFFSET
+    var nameY = middleLineBaseline + (middleLineIndex * LINE_SPACING)
+
+    lines.forEach { line ->
+      content.writeText(line, x, nameY, font, fontSize, color)
+      nameY -= LINE_SPACING
+    }
+  }
+
+  private fun drawSummary(
+    content: PDPageContentStream,
+    theme: InvoiceTheme,
+    margin: Float,
+    contentWidth: Float,
+    y: Float,
+    order: OrderDbEntity
+  ): Float {
+    val totalWithVat = order.totalPrice
+    val totalBeforeVat = totalWithVat.divide(VAT_RATE, 2, RoundingMode.HALF_UP)
+    val vatAmount = totalWithVat.subtract(totalBeforeVat)
+
+    val columnWidths = floatArrayOf(60f, contentWidth - 260f, 100f, 100f)
+    val summaryX = margin + columnWidths[0] + columnWidths[1]
+    val summaryWidth = columnWidths[2] + columnWidths[3]
+    val priceX = summaryX + 5f
+    val labelRightX = summaryX + summaryWidth - 5f
+    var currentY = y
+
+    drawSummaryLine(content, theme, priceX, labelRightX, currentY, formatCurrency(totalBeforeVat), "סה\"כ לפני מע\"מ:", false)
+    currentY -= 20f
+
+    drawSummaryLine(content, theme, priceX, labelRightX, currentY, formatCurrency(vatAmount), "מע\"מ $VAT_PERCENTAGE%:", false)
+    currentY -= 25f
+
+    content.setStrokingColor(theme.borderColor)
+    content.setLineWidth(1.5f)
+    content.moveTo(summaryX, currentY + 5f)
+    content.lineTo(summaryX + summaryWidth, currentY + 5f)
+    content.stroke()
+    currentY -= 10f
+
+    drawSummaryLine(content, theme, priceX, labelRightX, currentY, formatCurrency(totalWithVat), "סה\"כ אחרי מע\"מ:", true)
+
+    return currentY - 50f
+  }
+
+  private fun drawSummaryLine(
+    content: PDPageContentStream,
+    theme: InvoiceTheme,
+    priceX: Float,
+    labelRightX: Float,
+    y: Float,
+    price: String,
+    label: String,
+    bold: Boolean
+  ) {
+    val font = if (bold) theme.boldFont else theme.regularFont
+    val fontSize = if (bold) 12f else FONT_SIZE_REGULAR
+
+    content.writeText(price, priceX, y, font, fontSize, theme.textColor)
+    content.writeTextRightAligned(label, labelRightX, y, font, fontSize, theme.textColor)
+  }
+
+  private fun drawFooter(
+    content: PDPageContentStream,
+    theme: InvoiceTheme,
+    pageWidth: Float,
+    y: Float
+  ) {
+    var currentY = y
+    val footerLines = listOf(
+      "מסמך זה הינו חשבונית מס ממוחשבת ומאומתת.",
+      "החשבונית נשמרת במערכת ואינה דורשת חתימה ידנית.",
+      "תודה על העסק שלך!"
+    )
+
+    footerLines.forEach { line ->
+      content.writeTextRightAligned(line, pageWidth - PAGE_MARGIN, currentY, theme.regularFont, FONT_SIZE_SMALL, Color(100, 100, 100))
+      currentY -= 15f
     }
   }
 
   private fun createTheme(document: PDDocument): InvoiceTheme {
-    val regular = loadFont(document, "arial.ttf")
-      ?: PDType1Font(Standard14Fonts.FontName.HELVETICA)
-    val bold = loadFont(document, "arialbd.ttf")
-      ?: PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD)
-
-    return InvoiceTheme(
-      regularFont = regular,
-      boldFont = bold
-    )
+    val regular = loadFont(document, "arial.ttf") ?: PDType1Font(Standard14Fonts.FontName.HELVETICA)
+    val bold = loadFont(document, "arialbd.ttf") ?: PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD)
+    return InvoiceTheme(regularFont = regular, boldFont = bold)
   }
 
   private fun loadFont(document: PDDocument, fileName: String): PDFont? {
-    val candidates = mutableListOf<Path>()
-
-    System.getenv("WINDIR")?.let { windir ->
-      candidates.add(Paths.get(windir, "Fonts", fileName))
-    }
-
-    candidates.add(Paths.get("/usr/share/fonts/truetype/msttcorefonts", fileName))
-    candidates.add(Paths.get("/usr/share/fonts/truetype/microsoft", fileName))
-    candidates.add(Paths.get("/usr/share/fonts/truetype/freefont", fileName))
+    val candidates = listOfNotNull(
+      System.getenv("WINDIR")?.let { Paths.get(it, "Fonts", fileName) },
+      Paths.get("/usr/share/fonts/truetype/msttcorefonts", fileName),
+      Paths.get("/usr/share/fonts/truetype/microsoft", fileName),
+      Paths.get("/usr/share/fonts/truetype/freefont", fileName)
+    )
 
     return candidates.firstOrNull { Files.exists(it) && Files.isReadable(it) }?.let { path ->
-      Files.newInputStream(path).use { input ->
-        PDType0Font.load(document, input, true)
-      }
+      Files.newInputStream(path).use { PDType0Font.load(document, it, true) }
     }
   }
 
-  private fun formatDate(dateTime: LocalDateTime): String =
-    dateTime.format(DateTimeFormatter.ofPattern("MMMM dd, yyyy", Locale.ENGLISH))
-
-  private fun sanitize(value: String?): String =
-    value?.takeIf { it.isNotBlank() } ?: "Not provided"
-
-  private fun wrap(text: String, maxLineLength: Int): List<String> {
-    val words = text.split("\\s+".toRegex()).filter { it.isNotEmpty() }
-    if (words.isEmpty()) return emptyList()
-
-    val lines = mutableListOf<String>()
-    val currentLine = StringBuilder()
-
-    for (word in words) {
-      if (currentLine.isEmpty()) {
-        currentLine.append(word)
-      } else if (currentLine.length + 1 + word.length <= maxLineLength) {
-        currentLine.append(' ').append(word)
-      } else {
-        lines.add(currentLine.toString())
-        currentLine.clear()
-        currentLine.append(word)
-      }
-    }
-
-    if (currentLine.isNotEmpty()) {
-      lines.add(currentLine.toString())
-    }
-
-    return lines
+  private fun formatCurrentDate(): String {
+    val now = LocalDateTime.now()
+    return String.format("%02d/%02d/%d", now.dayOfMonth, now.monthValue, now.year)
   }
 
-  private fun fitTextToWidth(font: PDFont, fontSize: Float, maxWidth: Float, text: String): String {
-    if (text.isBlank()) return ""
-    val ellipsis = ""
-    var candidate = text
+  private fun formatCurrency(amount: BigDecimal): String = "${currencyFormatter.format(amount)} ₪"
 
-    while (candidate.isNotEmpty()) {
-      val shaped = shapeTextForPdf(candidate)
-      val width = font.getStringWidth(shaped) / 1000 * fontSize
-      if (width <= maxWidth) return candidate
-
-      if (candidate.length <= ellipsis.length) {
-        return ellipsis.takeIf {
-          val shapedEllipsis = shapeTextForPdf(it)
-          font.getStringWidth(shapedEllipsis) / 1000 * fontSize <= maxWidth
-        } ?: ""
-      }
-
-      candidate = candidate.dropLast(1)
-      if (!candidate.endsWith(ellipsis)) {
-        candidate = candidate.dropLast(ellipsis.length.coerceAtMost(candidate.length)) + ellipsis
-      }
-    }
-
-    return ""
-  }
-
-  private fun wrapWithFont(font: PDFont, text: String, maxWidth: Float, fontSize: Float): List<String> {
-    if (text.isBlank()) return listOf("")
-
-    val lines = mutableListOf<String>()
-    val current = StringBuilder()
-
-    text.split("\\s+".toRegex()).forEach { word ->
-      val candidate = if (current.isEmpty()) word else current.toString() + " " + word
-      val shapedCandidate = shapeTextForPdf(candidate)
-      val width = font.getStringWidth(shapedCandidate) / 1000 * fontSize
-      if (width <= maxWidth) {
-        current.clear()
-        current.append(candidate)
-      } else {
-        if (current.isNotEmpty()) {
-          lines.add(current.toString())
-          current.clear()
-        }
-
-        var remaining = word
-        var safety = 0
-        while (remaining.isNotEmpty() && safety < 1000) {
-          val fitted = fitTextToWidth(font, fontSize, maxWidth, remaining)
-          if (fitted.isBlank()) break
-          lines.add(fitted)
-          if (remaining.length <= fitted.length) {
-            remaining = ""
-          } else {
-            remaining = remaining.substring(fitted.length).trimStart()
-          }
-          safety++
-        }
-        if (remaining.isNotEmpty()) {
-          lines.add(remaining)
-          remaining = ""
-        }
-      }
-    }
-
-    if (current.isNotEmpty()) {
-      lines.add(current.toString())
-    }
-
-    return lines.ifEmpty { listOf("") }
-  }
-
-  private fun formatCurrency(amount: BigDecimal): String {
-    return "${currencyFormatter.format(amount)} ₪"
+  private fun getTextWidth(text: String, font: PDFont, fontSize: Float): Float {
+    return font.getStringWidth(shapeTextForPdf(text)) / 1000f * fontSize
   }
 
   private fun shapeTextForPdf(text: String): String {
@@ -669,116 +438,13 @@ class OrderInvoiceService(
       logicalRuns[i] = if (level % 2 == 0) runText else runText.reversed()
     }
 
-    val visualRuns = arrayOfNulls<Any>(runCount)
-    for (i in 0 until runCount) {
-      visualRuns[i] = logicalRuns[i]
-    }
-
+    val visualRuns = logicalRuns.copyOf()
     Bidi.reorderVisually(levels, 0, visualRuns, 0, runCount)
 
-    val builder = StringBuilder(text.length)
-    for (i in 0 until runCount) {
-      val run = visualRuns[i] as? String
-      if (run != null) builder.append(run)
-    }
-
-    return builder.toString()
+    return visualRuns.joinToString("")
   }
 
-  private fun drawHeader(
-    content: PDPageContentStream,
-    theme: InvoiceTheme,
-    pageWidth: Float,
-    pageHeight: Float,
-    height: Float,
-    invoiceNumber: String,
-    invoiceDate: String,
-    businessName: String
-  ) {
-    // Header background with gradient effect (solid for now)
-    content.setNonStrokingColor(theme.accentColor)
-    content.addRect(0f, pageHeight - height, pageWidth, height)
-    content.fill()
-
-    val headerLeftX = 50f
-    val headerTopY = pageHeight - 28f
-
-    // Business name (prominent)
-    content.writeText(
-      text = businessName,
-      x = headerLeftX,
-      y = headerTopY,
-      font = theme.boldFont,
-      fontSize = 20f,
-      color = Color.WHITE
-    )
-
-    // Invoice title
-    content.writeText(
-      text = "INVOICE",
-      x = headerLeftX,
-      y = headerTopY - 22f,
-      font = theme.boldFont,
-      fontSize = 14f,
-      color = Color(240, 240, 255) // Light white/blue tint
-    )
-
-    // Invoice number
-    content.writeText(
-      text = "Invoice #: $invoiceNumber",
-      x = headerLeftX,
-      y = headerTopY - 38f,
-      font = theme.regularFont,
-      fontSize = 11f,
-      color = Color.WHITE
-    )
-
-    // Invoice date
-    content.writeText(
-      text = "Date: $invoiceDate",
-      x = headerLeftX,
-      y = headerTopY - 52f,
-      font = theme.regularFont,
-      fontSize = 11f,
-      color = Color.WHITE
-    )
-
-    // Payment badge (right side)
-    val badgeWidth = 200f
-    val badgeHeight = 36f
-    val badgeX = pageWidth - headerLeftX - badgeWidth
-    val badgeY = headerTopY - 18f
-
-    // Badge background with rounded corners effect (white with border)
-    content.setNonStrokingColor(Color.WHITE)
-    content.addRect(badgeX, badgeY, badgeWidth, badgeHeight)
-    content.fill()
-
-    // Badge border
-    content.setStrokingColor(theme.accentColorMuted)
-    content.setLineWidth(1.5f)
-    content.addRect(badgeX, badgeY, badgeWidth, badgeHeight)
-    content.stroke()
-
-    content.writeText(
-      text = "PAYMENT DUE",
-      x = badgeX + 16f,
-      y = badgeY + 22f,
-      font = theme.boldFont,
-      fontSize = 10f,
-      color = theme.textSecondary
-    )
-
-    content.writeText(
-      text = "On Receipt",
-      x = badgeX + 16f,
-      y = badgeY + 10f,
-      font = theme.boldFont,
-      fontSize = 12f,
-      color = theme.accentColor
-    )
-  }
-
+  // Extension functions for PDPageContentStream
   private fun PDPageContentStream.writeText(
     text: String,
     x: Float,
@@ -797,307 +463,104 @@ class OrderInvoiceService(
     setNonStrokingColor(Color.BLACK)
   }
 
-  private fun PDPageContentStream.drawSellerPanel(
-    theme: InvoiceTheme,
-    businessName: String,
-    lines: List<String>,
-    topLeftX: Float,
-    topY: Float,
-    width: Float
-  ): Float {
-    val padding = 18f
-    val lineHeight = 15f
-    val titleHeight = 22f // Height for business name title
-    val contentHeight = padding * 2 + titleHeight + lines.size * lineHeight
-    val bottomY = topY - contentHeight
-
-    // Panel background
-    setNonStrokingColor(theme.panelBackground)
-    addRect(topLeftX, bottomY, width, contentHeight)
-    fill()
-
-    // Business name as title (bold, larger)
-    writeText(
-      text = "FROM",
-      x = topLeftX + padding,
-      y = topY - padding,
-      font = theme.boldFont,
-      fontSize = 9f,
-      color = theme.textSecondary
-    )
-
-    writeText(
-      text = businessName,
-      x = topLeftX + padding,
-      y = topY - padding - 14f,
-      font = theme.boldFont,
-      fontSize = 14f,
-      color = theme.textPrimary
-    )
-
-    var cursorY = topY - padding - titleHeight - 2f
-    lines.forEach { line ->
-      if (line.isNotBlank()) {
-        // Check if line starts with "Agent:" or "Location:" to make it bold
-        val isBold = line.startsWith("Agent:") || line.startsWith("Location:")
-        val fontSize = if (isBold) 10f else 11f
-        val font = if (isBold) theme.boldFont else theme.regularFont
-        val color = if (isBold) theme.textPrimary else theme.textSecondary
-        
-        writeText(
-          text = line,
-          x = topLeftX + padding,
-          y = cursorY,
-          font = font,
-          fontSize = fontSize,
-          color = color
-        )
-        cursorY -= lineHeight
-      } else {
-        cursorY -= lineHeight * 0.5f // Smaller gap for blank lines
-      }
-    }
-
-    // Border
-    setStrokingColor(theme.borderColor)
-    setLineWidth(1f)
-    addRect(topLeftX, bottomY, width, contentHeight)
-    stroke()
-
-    return bottomY
+  private fun PDPageContentStream.writeTextRightAligned(
+    text: String,
+    rightX: Float,
+    y: Float,
+    font: PDFont,
+    fontSize: Float,
+    color: Color
+  ) {
+    val textWidth = getTextWidth(text, font, fontSize)
+    writeText(text, rightX - textWidth, y, font, fontSize, color)
   }
 
-  private fun PDPageContentStream.drawInfoPanel(
-    theme: InvoiceTheme,
-    title: String,
-    lines: List<String>,
-    topLeftX: Float,
-    topY: Float,
-    width: Float
-  ): Float {
-    val padding = 18f
-    val lineHeight = 15f
-    val titleHeight = 18f
-    val contentHeight = padding * 2 + titleHeight + lines.size * lineHeight
-    val bottomY = topY - contentHeight
-
-    setNonStrokingColor(theme.panelBackground)
-    addRect(topLeftX, bottomY, width, contentHeight)
-    fill()
-
-    writeText(
-      text = title.uppercase(Locale.ENGLISH),
-      x = topLeftX + padding,
-      y = topY - padding,
-      font = theme.boldFont,
-      fontSize = 11f,
-      color = theme.textPrimary
-    )
-
-    var cursorY = topY - padding - titleHeight - 2f
-    lines.forEach { line ->
-      if (line.isNotBlank()) {
-        writeText(
-          text = line,
-          x = topLeftX + padding,
-          y = cursorY,
-          font = theme.regularFont,
-          fontSize = 11f,
-          color = theme.textSecondary
-        )
-        cursorY -= lineHeight
-      } else {
-        cursorY -= lineHeight * 0.5f
-      }
-    }
-
-    setStrokingColor(theme.borderColor)
-    setLineWidth(1f)
-    addRect(topLeftX, bottomY, width, contentHeight)
-    stroke()
-
-    return bottomY
+  private fun PDPageContentStream.writeTextCentered(
+    text: String,
+    leftX: Float,
+    width: Float,
+    y: Float,
+    font: PDFont,
+    fontSize: Float,
+    color: Color
+  ) {
+    val textWidth = getTextWidth(text, font, fontSize)
+    writeText(text, leftX + (width / 2f) - (textWidth / 2f), y, font, fontSize, color)
   }
 
-  private fun PDPageContentStream.drawItemsTable(
-    theme: InvoiceTheme,
-    topY: Float,
-    margin: Float,
-    columnWidths: FloatArray,
-    products: List<com.pt.ordersystem.ordersystem.domains.product.models.ProductDataForOrder>
+  private fun PDPageContentStream.writeWrappedTextRightAligned(
+    text: String,
+    rightX: Float,
+    y: Float,
+    maxWidth: Float,
+    font: PDFont,
+    fontSize: Float,
+    color: Color,
+    lineHeight: Float
   ): Float {
-    val headers = listOf("Qty", "Item", "Unit Price", "Line Total")
-    val headerHeight = 26f
-    val tableWidth = columnWidths.sum()
+    val actualMaxWidth = maxWidth.coerceAtLeast(50f).coerceAtMost(rightX - 50f)
+    val lines = wrapTextForPdf(text, actualMaxWidth, font, fontSize)
+    var currentY = y
 
-    setNonStrokingColor(theme.tableHeaderBackground)
-    addRect(margin, topY - headerHeight, tableWidth, headerHeight)
-    fill()
-
-    var textX = margin + 12f
-    headers.forEachIndexed { index, header ->
-      writeText(
-        text = header,
-        x = textX,
-        y = topY - headerHeight + 8f,
-        font = theme.boldFont,
-        fontSize = 11f,
-        color = theme.textPrimary
-      )
-      textX += columnWidths[index]
+    lines.forEach { line ->
+      writeTextRightAligned(line, rightX, currentY, font, fontSize, color)
+      currentY -= lineHeight
     }
-
-    setStrokingColor(theme.borderColor)
-    addRect(margin, topY - headerHeight, tableWidth, headerHeight)
-    stroke()
-
-    var currentY = topY - headerHeight
-    products.forEachIndexed { idx, product ->
-      val rowValues = listOf(
-        product.quantity.toString(),
-        product.productName.replace("\n", " "),
-        formatCurrency(product.pricePerUnit),
-        formatCurrency(product.pricePerUnit.multiply(BigDecimal(product.quantity)))
-      )
-
-      val wrappedColumns = rowValues.mapIndexed { columnIndex, value ->
-        val maxWidth = columnWidths[columnIndex] - 24f
-        wrapWithFont(theme.regularFont, value, maxWidth, 11f)
-      }
-
-      val maxLines = wrappedColumns.maxOf { it.size.coerceAtLeast(1) }
-      val dynamicRowHeight = maxLines * (11f + 3f) + 12f
-      val rowBottom = currentY - dynamicRowHeight
-
-      if (idx % 2 == 0) {
-        setNonStrokingColor(theme.tableStripeBackground)
-        addRect(margin, rowBottom, tableWidth, dynamicRowHeight)
-        fill()
-      }
-
-      var cellX = margin + 12f
-      wrappedColumns.forEachIndexed { columnIndex, lines ->
-        lines.forEachIndexed { lineIdx, line ->
-          val lineY = currentY - 10f - lineIdx * (11f + 3f)
-          writeText(
-            text = line,
-            x = cellX,
-            y = lineY,
-            font = theme.regularFont,
-            fontSize = 11f,
-            color = theme.textPrimary
-          )
-        }
-        cellX += columnWidths[columnIndex]
-      }
-
-      setStrokingColor(theme.borderColor)
-      moveTo(margin, rowBottom)
-      lineTo(margin + tableWidth, rowBottom)
-      stroke()
-
-      currentY = rowBottom
-    }
-
-    setStrokingColor(theme.borderColor)
-    addRect(margin, currentY, tableWidth, topY - currentY)
-    stroke()
 
     return currentY
   }
 
-  private fun PDPageContentStream.drawSummaryCard(
-    theme: InvoiceTheme,
-    topY: Float,
-    leftX: Float,
-    width: Float,
-    total: String
-  ): Float {
-    val padding = 18f
-    val height = 78f
-    val bottomY = topY - height
+  private fun PDPageContentStream.wrapTextForPdf(
+    text: String,
+    maxWidth: Float,
+    font: PDFont,
+    fontSize: Float
+  ): List<String> {
+    if (text.isEmpty()) return listOf("")
 
-    setNonStrokingColor(theme.panelBackground)
-    addRect(leftX, bottomY, width, height)
-    fill()
+    val words = text.split(" ")
+    val lines = mutableListOf<String>()
+    var currentLine = StringBuilder()
 
-    writeText(
-      text = "Total Due".uppercase(Locale.ENGLISH),
-      x = leftX + padding,
-      y = topY - padding,
-      font = theme.boldFont,
-      fontSize = 11f,
-      color = theme.textSecondary
-    )
-
-    writeText(
-      text = total,
-      x = leftX + padding,
-      y = topY - padding - 24f,
-      font = theme.boldFont,
-      fontSize = 18f,
-      color = theme.accentColor
-    )
-
-    writeText(
-      text = "Please settle on receipt.",
-      x = leftX + padding,
-      y = bottomY + padding,
-      font = theme.regularFont,
-      fontSize = 10f,
-      color = theme.textSecondary
-    )
-
-    setStrokingColor(theme.borderColor)
-    addRect(leftX, bottomY, width, height)
-    stroke()
-
-    return bottomY
-  }
-
-  private fun PDPageContentStream.drawNotes(
-    theme: InvoiceTheme,
-    topY: Float,
-    leftX: Float,
-    width: Float,
-    notes: List<String>
-  ): Float {
-    val padding = 16f
-    val lineHeight = 14f
-    val height = padding * 2 + (notes.size + 1) * lineHeight
-    val bottomY = topY - height
-
-    setNonStrokingColor(theme.panelBackground)
-    addRect(leftX, bottomY, width, height)
-    fill()
-
-    writeText(
-      text = "Notes".uppercase(Locale.ENGLISH),
-      x = leftX + padding,
-      y = topY - padding,
-      font = theme.boldFont,
-      fontSize = 11f,
-      color = theme.textPrimary
-    )
-
-    var cursorY = topY - padding - lineHeight
-    notes.forEach { note ->
-      writeText(
-        text = note,
-        x = leftX + padding,
-        y = cursorY,
-        font = theme.regularFont,
-        fontSize = 11f,
-        color = theme.textSecondary
-      )
-      cursorY -= lineHeight
+    words.forEach { word ->
+      val testLine = if (currentLine.isEmpty()) word else "${currentLine} $word"
+      if (getTextWidth(testLine, font, fontSize) <= maxWidth) {
+        if (currentLine.isNotEmpty()) currentLine.append(" ")
+        currentLine.append(word)
+      } else {
+        if (currentLine.isNotEmpty()) {
+          lines.add(currentLine.toString())
+          currentLine.clear()
+        }
+        if (getTextWidth(word, font, fontSize) <= maxWidth) {
+          currentLine.append(word)
+        } else {
+          lines.addAll(breakLongWord(word, maxWidth, font, fontSize))
+        }
+      }
     }
 
-    setStrokingColor(theme.borderColor)
-    addRect(leftX, bottomY, width, height)
-    stroke()
+    if (currentLine.isNotEmpty()) lines.add(currentLine.toString())
+    return lines.ifEmpty { listOf(text) }
+  }
 
-    return bottomY
+
+  private fun breakLongWord(word: String, maxWidth: Float, font: PDFont, fontSize: Float): List<String> {
+    val chunks = mutableListOf<String>()
+    var remaining = word
+
+    while (remaining.isNotEmpty()) {
+      var chunk = ""
+      for (i in 1..remaining.length) {
+        val test = remaining.substring(0, i)
+        if (getTextWidth(test, font, fontSize) > maxWidth) break
+        chunk = test
+      }
+      if (chunk.isEmpty()) chunk = remaining.take(1)
+      chunks.add(chunk)
+      remaining = remaining.substring(chunk.length)
+    }
+
+    return chunks
   }
 }
-
