@@ -22,8 +22,8 @@ class AdminOrderInvoiceController(
 ) {
 
   @GetMapping("/{orderId}/invoice")
-  fun downloadInvoice(@PathVariable orderId: String): ResponseEntity<ByteArray> {
-    val document = orderInvoiceService.generateInvoiceForAdmin(orderId)
+  fun generateInvoiceForOrder(@PathVariable orderId: String): ResponseEntity<ByteArray> {
+    val document = orderInvoiceService.generateInvoiceForOrder(orderId)
 
     return ResponseEntity.ok()
       .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"${document.fileName}\"")

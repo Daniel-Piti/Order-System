@@ -21,7 +21,6 @@ import java.io.ByteArrayOutputStream
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
@@ -69,7 +68,7 @@ class OrderInvoiceService(
     return InvoiceDocument("invoice-${order.id}.pdf", renderPdf(order))
   }
 
-  fun generateInvoiceForAdmin(orderId: String): InvoiceDocument {
+  fun generateInvoiceForOrder(orderId: String): InvoiceDocument {
     val order = getOrder(orderId)
     validateInvoiceEligibility(order)
     return InvoiceDocument("invoice-${order.id}.pdf", renderPdf(order))
@@ -139,6 +138,7 @@ class OrderInvoiceService(
         currentY = drawCustomerAndBusinessPanels(content, theme, pageWidth, currentY, order, manager)
         currentY = drawProductsTable(content, theme, PAGE_MARGIN, contentWidth, currentY, order)
         currentY = drawSummary(content, theme, PAGE_MARGIN, contentWidth, currentY, order)
+        currentY = drawPaymentDetails(content, theme, PAGE_MARGIN, contentWidth, currentY, order)
         drawFooter(content, theme, pageWidth, currentY)
       }
 
@@ -153,18 +153,21 @@ class OrderInvoiceService(
     theme: InvoiceTheme,
     pageWidth: Float,
     y: Float,
-    invoiceNumber: String,
+    invoiceId: String,
     date: String
   ): Float {
     var currentY = y
 
-    content.writeTextRightAligned("חשבונית מס", pageWidth - PAGE_MARGIN, currentY, theme.boldFont, FONT_SIZE_TITLE, theme.textColor)
+    content.writeTextRightAligned("חשבונית מס־קבלה", pageWidth - PAGE_MARGIN, currentY, theme.boldFont, FONT_SIZE_TITLE, theme.textColor)
     currentY -= 40f
 
-    content.writeTextRightAligned("מספר חשבונית: $invoiceNumber", pageWidth - PAGE_MARGIN, currentY, theme.boldFont, FONT_SIZE_REGULAR, theme.textColor)
+    content.writeTextRightAligned("תאריך: $date", pageWidth - PAGE_MARGIN, currentY, theme.regularFont, FONT_SIZE_REGULAR, theme.textColor)
     currentY -= 20f
 
-    content.writeTextRightAligned("תאריך: $date", pageWidth - PAGE_MARGIN, currentY, theme.regularFont, FONT_SIZE_REGULAR, theme.textColor)
+    content.writeTextRightAligned("מספר זיהוי: $invoiceId", pageWidth - PAGE_MARGIN, currentY, theme.regularFont, FONT_SIZE_REGULAR, theme.textColor)
+    currentY -= 20f
+
+    content.writeTextRightAligned("מספר חשבונית:", pageWidth - PAGE_MARGIN, currentY, theme.regularFont, FONT_SIZE_REGULAR, theme.textColor)
     currentY -= 50f
 
     return currentY
@@ -182,19 +185,30 @@ class OrderInvoiceService(
     val rightPanelX = pageWidth - PAGE_MARGIN
     val leftPanelX = rightPanelX - panelWidth - PANEL_GAP
 
-    val customerY = drawPanel(content, theme, rightPanelX, panelWidth, y, "לכבוד:", listOf(
-      "שם מלא: ${order.customerName ?: "לא צוין"}",
-      "תעודת זהות: ${order.customerId ?: "לא צוין"}",
-      "כתובת: ${order.customerStreetAddress ?: "לא צוין"}",
-      "עיר: ${order.customerCity ?: "לא צוין"}"
+    val customerAddress = if (order.customerStreetAddress != null && order.customerCity != null) {
+      "${order.customerStreetAddress}, ${order.customerCity}"
+    } else if (order.customerStreetAddress != null) {
+      order.customerStreetAddress
+    } else if (order.customerCity != null) {
+      order.customerCity
+    } else {
+      ""
+    }
+
+    val customerY = drawPanel(content, theme, rightPanelX, panelWidth, y, "פרטי הלקוח", listOf(
+      "שם הלקוח: ${order.customerName ?: ""}",
+      "כתובת: $customerAddress",
+      "ח.פ / ע.מ:"
     ))
 
-    val businessY = drawPanel(content, theme, leftPanelX, panelWidth, y, "מאת:", listOf(
-      "שם עסק: ${manager.businessName}",
-      "כתובת: ${manager.streetAddress}",
-      "עיר: ${manager.city}",
+    val businessAddress = "${manager.streetAddress}, ${manager.city}"
+
+    val businessY = drawPanel(content, theme, leftPanelX, panelWidth, y, "פרטי העסק", listOf(
+      "שם העסק / שם העוסק: ${manager.businessName}",
+      "כתובת מלאה: $businessAddress",
       "טלפון: ${manager.phoneNumber}",
-      "ח.פ./ע.מ: "
+      "ח.פ / ע.מ:",
+      "מספר הקצאה:"
     ))
 
     return minOf(customerY, businessY) - 30f
@@ -351,7 +365,7 @@ class OrderInvoiceService(
 
     drawSummaryLine(content, theme, priceX, labelRightX, currentY, formatCurrency(totalWithVat), "סה\"כ אחרי מע\"מ:", true)
 
-    return currentY - 50f
+    return currentY - 30f
   }
 
   private fun drawSummaryLine(
@@ -371,6 +385,37 @@ class OrderInvoiceService(
     content.writeTextRightAligned(label, labelRightX, y, font, fontSize, theme.textColor)
   }
 
+  private fun drawPaymentDetails(
+    content: PDPageContentStream,
+    theme: InvoiceTheme,
+    margin: Float,
+    contentWidth: Float,
+    y: Float,
+    order: OrderDbEntity
+  ): Float {
+    var currentY = y - 20f
+    val pageWidth = margin + contentWidth
+    
+    content.writeTextRightAligned("פרטי התשלום", pageWidth, currentY, theme.boldFont, 14f, theme.textColor)
+    currentY -= 25f
+
+    val columnWidths = floatArrayOf(60f, contentWidth - 260f, 100f, 100f)
+    val summaryX = margin + columnWidths[0] + columnWidths[1]
+    val summaryWidth = columnWidths[2] + columnWidths[3]
+    val priceX = summaryX + 5f
+    val labelRightX = summaryX + summaryWidth - 5f
+
+    drawSummaryLine(content, theme, priceX, labelRightX, currentY, formatCurrency(order.totalPrice), "סכום ששולם:", true)
+    currentY -= 20f
+
+    content.writeTextRightAligned("אמצעי תשלום:", labelRightX, currentY, theme.regularFont, FONT_SIZE_REGULAR, theme.textColor)
+    currentY -= 20f
+
+    content.writeTextRightAligned("אסמכתא:", labelRightX, currentY, theme.regularFont, FONT_SIZE_REGULAR, theme.textColor)
+
+    return currentY - 30f
+  }
+
   private fun drawFooter(
     content: PDPageContentStream,
     theme: InvoiceTheme,
@@ -379,9 +424,8 @@ class OrderInvoiceService(
   ) {
     var currentY = y
     val footerLines = listOf(
-      "מסמך זה הינו חשבונית מס ממוחשבת ומאומתת.",
-      "החשבונית נשמרת במערכת ואינה דורשת חתימה ידנית.",
-      "תודה על העסק שלך!"
+      "מסמך זה מהווה חשבונית מס־קבלה ממוחשבת.",
+      "המסמך הופק לאחר קבלת התשלום ואינו דורש חתימה."
     )
 
     footerLines.forEach { line ->
