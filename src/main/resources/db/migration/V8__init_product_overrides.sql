@@ -8,7 +8,7 @@ CREATE TABLE product_overrides (
     override_price DECIMAL(10, 2) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+) AUTO_INCREMENT = 1000;
 
 CREATE INDEX idx_product_overrides_product_id ON product_overrides (product_id);
 CREATE INDEX idx_product_overrides_manager_id ON product_overrides (manager_id);

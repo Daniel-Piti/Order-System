@@ -13,7 +13,7 @@ CREATE TABLE product_images (
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
     INDEX idx_product_images_product_id (product_id),
     INDEX idx_product_images_manager_id (manager_id)
-);
+) AUTO_INCREMENT = 1000;
 
 -- PRODUCT IMAGES HISTORY TABLE
 CREATE TABLE product_images_history (

@@ -8,7 +8,7 @@ CREATE TABLE locations (
     phone_number VARCHAR(20) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+) AUTO_INCREMENT = 1000;
 
 CREATE INDEX idx_locations_manager_id ON locations (manager_id);
 

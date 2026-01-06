@@ -5,7 +5,7 @@ CREATE TABLE categories (
     category VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+) AUTO_INCREMENT = 1000;
 
 CREATE INDEX idx_categories_manager_id ON categories(manager_id);
 
