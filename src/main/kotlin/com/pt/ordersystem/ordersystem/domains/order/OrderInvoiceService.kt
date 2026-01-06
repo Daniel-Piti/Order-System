@@ -204,7 +204,7 @@ class OrderInvoiceService(
     val businessAddress = "${manager.streetAddress}, ${manager.city}"
 
     val businessY = drawPanel(content, theme, leftPanelX, panelWidth, y, "פרטי העסק", listOf(
-      "שם העסק / שם העוסק: ${manager.businessName}",
+      "שם העסק / שם העוסק: ",
       "כתובת מלאה: $businessAddress",
       "טלפון: ${manager.phoneNumber}",
       "ח.פ / ע.מ:",

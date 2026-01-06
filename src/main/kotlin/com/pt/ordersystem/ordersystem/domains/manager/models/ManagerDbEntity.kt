@@ -24,9 +24,6 @@ data class ManagerDbEntity(
   @Column(nullable = false, unique = true)
   val email: String,
 
-  @Column(name = "business_name", nullable = false)
-  val businessName: String,
-
   @Column(nullable = false)
   var password: String,
 

@@ -45,7 +45,6 @@ class ManagerService(
       FieldValidators.validateNonEmpty(firstName, "'first name'")
       FieldValidators.validateNonEmpty(lastName, "'last name'")
       FieldValidators.validateEmail(email)
-      FieldValidators.validateNonEmpty(businessName, "'business name'")
       FieldValidators.validateStrongPassword(password)
       FieldValidators.validatePhoneNumber(phoneNumber)
       FieldValidators.validateDateNotFuture(dateOfBirth)
@@ -58,7 +57,6 @@ class ManagerService(
       firstName = newManagerRequest.firstName,
       lastName = newManagerRequest.lastName,
       email = newManagerRequest.email,
-      businessName = newManagerRequest.businessName,
       password = passwordEncoder.encode(newManagerRequest.password),
       phoneNumber = newManagerRequest.phoneNumber,
       dateOfBirth = newManagerRequest.dateOfBirth,
@@ -78,7 +76,6 @@ class ManagerService(
     with(updatedManagerDetails) {
       FieldValidators.validateNonEmpty(firstName, "'first name'")
       FieldValidators.validateNonEmpty(lastName, "'last name'")
-      FieldValidators.validateNonEmpty(businessName, "'business name'")
       FieldValidators.validatePhoneNumber(phoneNumber)
       FieldValidators.validateDateNotFuture(dateOfBirth)
       FieldValidators.validateNonEmpty(streetAddress, "'street address'")
@@ -95,7 +92,6 @@ class ManagerService(
     val managerToSave = manager.copy(
       firstName = updatedManagerDetails.firstName,
       lastName = updatedManagerDetails.lastName,
-      businessName = updatedManagerDetails.businessName,
       phoneNumber = updatedManagerDetails.phoneNumber,
       dateOfBirth = updatedManagerDetails.dateOfBirth,
       streetAddress = updatedManagerDetails.streetAddress,

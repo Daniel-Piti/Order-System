@@ -6,7 +6,6 @@ data class NewManagerRequest(
   val firstName: String,
   val lastName: String,
   val email: String,
-  val businessName: String,
   val password: String,
   val phoneNumber: String,
   val dateOfBirth: LocalDate,
@@ -17,10 +16,8 @@ data class NewManagerRequest(
 data class UpdateManagerDetailsRequest(
   val firstName: String,
   val lastName: String,
-  val businessName: String,
   val phoneNumber: String,
   val dateOfBirth: LocalDate,
   val streetAddress: String,
   val city: String,
 )
-
