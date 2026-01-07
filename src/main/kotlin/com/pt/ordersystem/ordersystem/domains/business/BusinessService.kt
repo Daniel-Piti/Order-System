@@ -10,6 +10,7 @@ import com.pt.ordersystem.ordersystem.domains.manager.ManagerRepository
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
+import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -40,7 +41,7 @@ class BusinessService(
   }
 
   @Transactional
-  fun createBusiness(request: CreateBusinessRequest): Long {
+  fun createBusiness(request: CreateBusinessRequest): String {
     with(request) {
       FieldValidators.validateNonEmpty(managerId, "'manager id'")
       FieldValidators.validateNonEmpty(name, "'name'")
@@ -73,6 +74,7 @@ class BusinessService(
 
     val now = LocalDateTime.now()
     val business = BusinessDbEntity(
+      id = GeneralUtils.genId(),
       managerId = request.managerId,
       name = request.name.trim(),
       stateIdNumber = request.stateIdNumber.trim(),

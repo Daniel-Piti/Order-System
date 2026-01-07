@@ -3,7 +3,7 @@ package com.pt.ordersystem.ordersystem.domains.business.models
 import java.time.LocalDateTime
 
 data class BusinessDto(
-  val id: Long,
+  val id: String,
   val managerId: String,
   val name: String,
   val stateIdNumber: String,

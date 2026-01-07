@@ -23,7 +23,7 @@ class BusinessAdminController(
 ) {
 
   @PostMapping
-  fun createBusiness(@RequestBody createBusinessRequest: CreateBusinessRequest): ResponseEntity<Long> {
+  fun createBusiness(@RequestBody createBusinessRequest: CreateBusinessRequest): ResponseEntity<String> {
     val businessId = businessService.createBusiness(createBusinessRequest)
     return ResponseEntity.status(HttpStatus.CREATED).body(businessId)
   }
