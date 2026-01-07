@@ -4,6 +4,7 @@ import com.pt.ordersystem.ordersystem.domains.business.models.BusinessDbEntity
 import com.pt.ordersystem.ordersystem.domains.business.models.BusinessDto
 import com.pt.ordersystem.ordersystem.domains.business.models.BusinessFailureReason
 import com.pt.ordersystem.ordersystem.domains.business.models.CreateBusinessRequest
+import com.pt.ordersystem.ordersystem.domains.business.models.UpdateBusinessRequest
 import com.pt.ordersystem.ordersystem.domains.business.models.toDto
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerRepository
 import com.pt.ordersystem.ordersystem.exception.ServiceException
@@ -85,5 +86,38 @@ class BusinessService(
 
     val savedBusiness = businessRepository.save(business)
     return savedBusiness.id
+  }
+
+  @Transactional
+  fun updateBusiness(managerId: String, request: UpdateBusinessRequest): BusinessDto {
+    with(request) {
+      FieldValidators.validateNonEmpty(name, "'name'")
+      FieldValidators.validateNonEmpty(stateIdNumber, "'state id number'")
+      FieldValidators.validateEmail(email)
+      FieldValidators.validatePhoneNumber(phoneNumber)
+      FieldValidators.validateNonEmpty(streetAddress, "'street address'")
+      FieldValidators.validateNonEmpty(city, "'city'")
+    }
+
+    val business = businessRepository.findByManagerId(managerId)
+      ?: throw ServiceException(
+        status = HttpStatus.NOT_FOUND,
+        userMessage = BusinessFailureReason.NOT_FOUND.userMessage,
+        technicalMessage = BusinessFailureReason.NOT_FOUND.technical + "managerId=$managerId",
+        severity = SeverityLevel.WARN
+      )
+
+    val updatedBusiness = business.copy(
+      name = request.name.trim(),
+      stateIdNumber = request.stateIdNumber.trim(),
+      email = request.email.trim(),
+      phoneNumber = request.phoneNumber,
+      streetAddress = request.streetAddress.trim(),
+      city = request.city.trim(),
+      updatedAt = LocalDateTime.now()
+    )
+
+    val savedBusiness = businessRepository.save(updatedBusiness)
+    return savedBusiness.toDto()
   }
 }

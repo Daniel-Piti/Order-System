@@ -9,3 +9,12 @@ data class CreateBusinessRequest(
   val streetAddress: String,
   val city: String,
 )
+
+data class UpdateBusinessRequest(
+  val name: String,
+  val stateIdNumber: String,
+  val email: String,
+  val phoneNumber: String,
+  val streetAddress: String,
+  val city: String,
+)
