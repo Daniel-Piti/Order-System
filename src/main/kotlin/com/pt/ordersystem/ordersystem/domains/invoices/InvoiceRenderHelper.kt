@@ -1,11 +1,9 @@
-package com.pt.ordersystem.ordersystem.domains.order
+package com.pt.ordersystem.ordersystem.domains.invoices
 
-import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
+import com.pt.ordersystem.ordersystem.domains.business.models.BusinessDto
+import com.pt.ordersystem.ordersystem.domains.invoices.models.PaymentMethod
+import com.pt.ordersystem.ordersystem.domains.manager.models.ManagerDbEntity
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDbEntity
-import com.pt.ordersystem.ordersystem.domains.order.models.OrderFailureReason
-import com.pt.ordersystem.ordersystem.domains.order.models.OrderStatus
-import com.pt.ordersystem.ordersystem.exception.ServiceException
-import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.pdmodel.PDPage
 import org.apache.pdfbox.pdmodel.PDPageContentStream
@@ -14,41 +12,35 @@ import org.apache.pdfbox.pdmodel.font.PDFont
 import org.apache.pdfbox.pdmodel.font.PDType0Font
 import org.apache.pdfbox.pdmodel.font.PDType1Font
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts
-import org.springframework.http.HttpStatus
-import org.springframework.stereotype.Service
 import java.awt.Color
 import java.io.ByteArrayOutputStream
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.text.Bidi
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.time.LocalDateTime
-import java.util.Locale
-import java.text.Bidi
+import java.util.*
 
-@Service
-class OrderInvoiceService(
-  private val orderRepository: OrderRepository,
-  private val managerService: ManagerService
-) {
+object InvoiceRenderHelper {
+  private val currencyFormatter = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale.US))
 
-  companion object {
-    const val VAT_PERCENTAGE = 18
-    val VAT_RATE = BigDecimal("1.18")
-    
-    // Layout constants
-    private const val PAGE_MARGIN = 50f
-    private const val PANEL_GAP = 30f
-    private const val LINE_SPACING = 14f
-    private const val ROW_HEIGHT = 25f
-    private const val VERTICAL_PADDING = 6f
-    private const val FONT_SIZE_REGULAR = 11f
-    private const val FONT_SIZE_SMALL = 10f
-    private const val FONT_SIZE_TITLE = 24f
-    private const val TEXT_BASELINE_OFFSET = 2.5f
-  }
+  private const val VAT_PERCENTAGE = 18
+  private val VAT_RATE = BigDecimal("1.18")
+
+  // Layout constants
+  private const val PAGE_MARGIN = 50f
+  private const val PANEL_GAP = 30f
+  private const val LINE_SPACING = 14f
+  private const val ROW_HEIGHT = 25f
+  private const val VERTICAL_PADDING = 6f
+  private const val FONT_SIZE_REGULAR = 11f
+  private const val FONT_SIZE_SMALL = 10f
+  private const val FONT_SIZE_TITLE = 24f
+  private const val TEXT_BASELINE_OFFSET = 2.5f
+
 
   private data class InvoiceTheme(
     val regularFont: PDFont,
@@ -57,70 +49,19 @@ class OrderInvoiceService(
     val borderColor: Color = Color(200, 200, 200)
   )
 
-  data class InvoiceDocument(val fileName: String, val content: ByteArray)
-
-  private val currencyFormatter = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale.US))
-
-  fun generateInvoiceForUser(orderId: String, requestingUserId: String): InvoiceDocument {
-    val order = getOrder(orderId)
-    validateOwnership(order, requestingUserId)
-    validateInvoiceEligibility(order)
-    return InvoiceDocument("invoice-${order.id}.pdf", renderPdf(order))
-  }
-
-  fun generateInvoiceForOrder(orderId: String): InvoiceDocument {
-    val order = getOrder(orderId)
-    validateInvoiceEligibility(order)
-    return InvoiceDocument("invoice-${order.id}.pdf", renderPdf(order))
-  }
-
-  private fun getOrder(orderId: String) = orderRepository.findById(orderId).orElseThrow {
-    ServiceException(
-      status = HttpStatus.NOT_FOUND,
-      userMessage = OrderFailureReason.NOT_FOUND.userMessage,
-      technicalMessage = OrderFailureReason.NOT_FOUND.technical + "orderId=$orderId",
-      severity = SeverityLevel.WARN
-    )
-  }
-
-  private fun validateOwnership(order: OrderDbEntity, requestingUserId: String) {
-    if (order.managerId != requestingUserId) {
-      throw ServiceException(
-        status = HttpStatus.FORBIDDEN,
-        userMessage = OrderFailureReason.UNAUTHORIZED.userMessage,
-        technicalMessage = OrderFailureReason.UNAUTHORIZED.technical +
-          "orderId=${order.id}, ownerId=${order.managerId}, requester=$requestingUserId",
-        severity = SeverityLevel.WARN
-      )
-    }
-  }
-
-  private fun validateInvoiceEligibility(order: OrderDbEntity) {
-    val status = OrderStatus.valueOf(order.status)
-    if (status != OrderStatus.DONE) {
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = "חשבונית זמינה רק להזמנות שהושלמו",
-        technicalMessage = "Invoice requested for order ${order.id} with status ${order.status}",
-        severity = SeverityLevel.INFO
-      )
-    }
-    if (order.products.isEmpty()) {
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = "לא ניתן ליצור חשבונית להזמנה ללא מוצרים",
-        technicalMessage = "Invoice requested for order ${order.id} with empty products list",
-        severity = SeverityLevel.INFO
-      )
-    }
-  }
-
-  private fun renderPdf(order: OrderDbEntity): ByteArray {
-    val manager = managerService.getManagerById(order.managerId)
+  fun renderPdf(
+    manager: ManagerDbEntity,
+    business: BusinessDto,
+    order: OrderDbEntity,
+    invoiceSequenceNumber: Int,
+    paymentMethod: PaymentMethod? = null,
+    paymentProof: String? = null,
+    allocationNumber: String? = null
+  ): ByteArray {
     val invoiceDate = formatCurrentDate()
 
     return PDDocument().use { document ->
-      document.documentInformation.title = "Invoice ${order.id}"
+      document.documentInformation.title = "Invoice invoice-$invoiceSequenceNumber"
       document.documentInformation.author = "Order System"
 
       val theme = createTheme(document)
@@ -133,12 +74,14 @@ class OrderInvoiceService(
 
       PDPageContentStream(document, page).use { content ->
         var currentY = pageHeight - PAGE_MARGIN
-        
-        currentY = drawHeader(content, theme, pageWidth, currentY, order.id, invoiceDate)
-        currentY = drawCustomerAndBusinessPanels(content, theme, pageWidth, currentY, order, manager)
+
+        currentY = drawHeader(content, theme, pageWidth, currentY, order.id, invoiceSequenceNumber, invoiceDate)
+        currentY =
+          drawCustomerAndBusinessPanels(content, theme, pageWidth, currentY, order, manager, business, allocationNumber)
         currentY = drawProductsTable(content, theme, PAGE_MARGIN, contentWidth, currentY, order)
         currentY = drawSummary(content, theme, PAGE_MARGIN, contentWidth, currentY, order)
-        currentY = drawPaymentDetails(content, theme, PAGE_MARGIN, contentWidth, currentY, order)
+        currentY =
+          drawPaymentDetails(content, theme, PAGE_MARGIN, contentWidth, currentY, order, paymentMethod, paymentProof)
         drawFooter(content, theme, pageWidth, currentY)
       }
 
@@ -153,21 +96,50 @@ class OrderInvoiceService(
     theme: InvoiceTheme,
     pageWidth: Float,
     y: Float,
-    invoiceId: String,
+    orderId: String,
+    invoiceSequenceNumber: Int,
     date: String
   ): Float {
     var currentY = y
 
-    content.writeTextRightAligned("חשבונית מס־קבלה", pageWidth - PAGE_MARGIN, currentY, theme.boldFont, FONT_SIZE_TITLE, theme.textColor)
+    content.writeTextRightAligned(
+      "חשבונית מס־קבלה",
+      pageWidth - PAGE_MARGIN,
+      currentY,
+      theme.boldFont,
+      FONT_SIZE_TITLE,
+      theme.textColor
+    )
     currentY -= 40f
 
-    content.writeTextRightAligned("תאריך: $date", pageWidth - PAGE_MARGIN, currentY, theme.regularFont, FONT_SIZE_REGULAR, theme.textColor)
+    content.writeTextRightAligned(
+      "תאריך: $date",
+      pageWidth - PAGE_MARGIN,
+      currentY,
+      theme.regularFont,
+      FONT_SIZE_REGULAR,
+      theme.textColor
+    )
     currentY -= 20f
 
-    content.writeTextRightAligned("מספר זיהוי: $invoiceId", pageWidth - PAGE_MARGIN, currentY, theme.regularFont, FONT_SIZE_REGULAR, theme.textColor)
+    content.writeTextRightAligned(
+      "מספר זיהוי: $orderId",
+      pageWidth - PAGE_MARGIN,
+      currentY,
+      theme.regularFont,
+      FONT_SIZE_REGULAR,
+      theme.textColor
+    )
     currentY -= 20f
 
-    content.writeTextRightAligned("מספר חשבונית:", pageWidth - PAGE_MARGIN, currentY, theme.regularFont, FONT_SIZE_REGULAR, theme.textColor)
+    content.writeTextRightAligned(
+      "מספר חשבונית: invoice-$invoiceSequenceNumber",
+      pageWidth - PAGE_MARGIN,
+      currentY,
+      theme.regularFont,
+      FONT_SIZE_REGULAR,
+      theme.textColor
+    )
     currentY -= 50f
 
     return currentY
@@ -179,7 +151,9 @@ class OrderInvoiceService(
     pageWidth: Float,
     y: Float,
     order: OrderDbEntity,
-    manager: com.pt.ordersystem.ordersystem.domains.manager.models.ManagerDbEntity
+    manager: ManagerDbEntity,
+    business: BusinessDto,
+    allocationNumber: String?
   ): Float {
     val panelWidth = (pageWidth - (PAGE_MARGIN * 2) - PANEL_GAP) / 2f
     val rightPanelX = pageWidth - PAGE_MARGIN
@@ -195,21 +169,26 @@ class OrderInvoiceService(
       ""
     }
 
-    val customerY = drawPanel(content, theme, rightPanelX, panelWidth, y, "פרטי הלקוח", listOf(
-      "שם הלקוח: ${order.customerName ?: ""}",
-      "כתובת: $customerAddress",
-      "ח.פ / ע.מ:"
-    ))
+    val customerY = drawPanel(
+      content, theme, rightPanelX, panelWidth, y, "פרטי הלקוח", listOf(
+        "שם הלקוח: ${order.customerName ?: ""}",
+        "כתובת: $customerAddress",
+        "ח.פ / ע.מ:"
+      )
+    )
 
-    val businessAddress = "${manager.streetAddress}, ${manager.city}"
+    val businessAddress = "${business.streetAddress}, ${business.city}"
 
-    val businessY = drawPanel(content, theme, leftPanelX, panelWidth, y, "פרטי העסק", listOf(
-      "שם העסק / שם העוסק: ",
+    val businessFields = mutableListOf(
+      "שם העסק / שם העוסק: ${business.name}",
       "כתובת מלאה: $businessAddress",
-      "טלפון: ${manager.phoneNumber}",
-      "ח.פ / ע.מ:",
-      "מספר הקצאה:"
-    ))
+      "טלפון: ${business.phoneNumber}",
+      "ח.פ / ע.מ: ${business.stateIdNumber}"
+    )
+
+    allocationNumber?.let { businessFields.add("מספר הקצאה: $it") }
+
+    val businessY = drawPanel(content, theme, leftPanelX, panelWidth, y, "פרטי העסק", businessFields)
 
     return minOf(customerY, businessY) - 30f
   }
@@ -263,16 +242,40 @@ class OrderInvoiceService(
     val headerY = currentY - 18f
     var tableX = margin
 
-    content.writeTextCentered("כמות", tableX, columnWidths[0], headerY, theme.boldFont, FONT_SIZE_REGULAR, theme.textColor)
+    content.writeTextCentered(
+      "כמות",
+      tableX,
+      columnWidths[0],
+      headerY,
+      theme.boldFont,
+      FONT_SIZE_REGULAR,
+      theme.textColor
+    )
     tableX += columnWidths[0]
 
     content.writeText("תיאור מוצר", tableX + 5f, headerY, theme.boldFont, FONT_SIZE_REGULAR, theme.textColor)
     tableX += columnWidths[1]
 
-    content.writeTextCentered("מחיר יחידה", tableX, columnWidths[2], headerY, theme.boldFont, FONT_SIZE_REGULAR, theme.textColor)
+    content.writeTextCentered(
+      "מחיר יחידה",
+      tableX,
+      columnWidths[2],
+      headerY,
+      theme.boldFont,
+      FONT_SIZE_REGULAR,
+      theme.textColor
+    )
     tableX += columnWidths[2]
 
-    content.writeTextCentered("סה\"כ", tableX, columnWidths[3], headerY, theme.boldFont, FONT_SIZE_REGULAR, theme.textColor)
+    content.writeTextCentered(
+      "סה\"כ",
+      tableX,
+      columnWidths[3],
+      headerY,
+      theme.boldFont,
+      FONT_SIZE_REGULAR,
+      theme.textColor
+    )
     currentY -= ROW_HEIGHT
 
     // Draw products
@@ -295,16 +298,48 @@ class OrderInvoiceService(
 
       tableX = margin
 
-      content.writeTextCentered(product.quantity.toString(), tableX, columnWidths[0], textBaselineY, theme.regularFont, FONT_SIZE_SMALL, theme.textColor)
+      content.writeTextCentered(
+        product.quantity.toString(),
+        tableX,
+        columnWidths[0],
+        textBaselineY,
+        theme.regularFont,
+        FONT_SIZE_SMALL,
+        theme.textColor
+      )
       tableX += columnWidths[0]
 
-      drawMultiLineText(content, tableX + 5f, productNameLines, rowCenterY, theme.regularFont, FONT_SIZE_SMALL, theme.textColor)
+      drawMultiLineText(
+        content,
+        tableX + 5f,
+        productNameLines,
+        rowCenterY,
+        theme.regularFont,
+        FONT_SIZE_SMALL,
+        theme.textColor
+      )
       tableX += columnWidths[1]
 
-      content.writeTextCentered(formatCurrency(product.pricePerUnit), tableX, columnWidths[2], textBaselineY, theme.regularFont, FONT_SIZE_SMALL, theme.textColor)
+      content.writeTextCentered(
+        formatCurrency(product.pricePerUnit),
+        tableX,
+        columnWidths[2],
+        textBaselineY,
+        theme.regularFont,
+        FONT_SIZE_SMALL,
+        theme.textColor
+      )
       tableX += columnWidths[2]
 
-      content.writeTextCentered(formatCurrency(productTotal), tableX, columnWidths[3], textBaselineY, theme.regularFont, FONT_SIZE_SMALL, theme.textColor)
+      content.writeTextCentered(
+        formatCurrency(productTotal),
+        tableX,
+        columnWidths[3],
+        textBaselineY,
+        theme.regularFont,
+        FONT_SIZE_SMALL,
+        theme.textColor
+      )
 
       currentY -= actualRowHeight
     }
@@ -350,10 +385,28 @@ class OrderInvoiceService(
     val labelRightX = summaryX + summaryWidth - 5f
     var currentY = y
 
-    drawSummaryLine(content, theme, priceX, labelRightX, currentY, formatCurrency(totalBeforeVat), "סה\"כ לפני מע\"מ:", false)
+    drawSummaryLine(
+      content,
+      theme,
+      priceX,
+      labelRightX,
+      currentY,
+      formatCurrency(totalBeforeVat),
+      "סה\"כ לפני מע\"מ:",
+      false
+    )
     currentY -= 20f
 
-    drawSummaryLine(content, theme, priceX, labelRightX, currentY, formatCurrency(vatAmount), "מע\"מ $VAT_PERCENTAGE%:", false)
+    drawSummaryLine(
+      content,
+      theme,
+      priceX,
+      labelRightX,
+      currentY,
+      formatCurrency(vatAmount),
+      "מע\"מ $VAT_PERCENTAGE%:",
+      false
+    )
     currentY -= 25f
 
     content.setStrokingColor(theme.borderColor)
@@ -363,7 +416,16 @@ class OrderInvoiceService(
     content.stroke()
     currentY -= 10f
 
-    drawSummaryLine(content, theme, priceX, labelRightX, currentY, formatCurrency(totalWithVat), "סה\"כ אחרי מע\"מ:", true)
+    drawSummaryLine(
+      content,
+      theme,
+      priceX,
+      labelRightX,
+      currentY,
+      formatCurrency(totalWithVat),
+      "סה\"כ אחרי מע\"מ:",
+      true
+    )
 
     return currentY - 30f
   }
@@ -391,11 +453,13 @@ class OrderInvoiceService(
     margin: Float,
     contentWidth: Float,
     y: Float,
-    order: OrderDbEntity
+    order: OrderDbEntity,
+    paymentMethod: PaymentMethod? = null,
+    paymentProof: String? = null
   ): Float {
     var currentY = y - 20f
     val pageWidth = margin + contentWidth
-    
+
     content.writeTextRightAligned("פרטי התשלום", pageWidth, currentY, theme.boldFont, 14f, theme.textColor)
     currentY -= 25f
 
@@ -405,13 +469,52 @@ class OrderInvoiceService(
     val priceX = summaryX + 5f
     val labelRightX = summaryX + summaryWidth - 5f
 
-    drawSummaryLine(content, theme, priceX, labelRightX, currentY, formatCurrency(order.totalPrice), "סכום ששולם:", true)
+    drawSummaryLine(
+      content,
+      theme,
+      priceX,
+      labelRightX,
+      currentY,
+      formatCurrency(order.totalPrice),
+      "סכום ששולם:",
+      true
+    )
     currentY -= 20f
 
-    content.writeTextRightAligned("אמצעי תשלום:", labelRightX, currentY, theme.regularFont, FONT_SIZE_REGULAR, theme.textColor)
-    currentY -= 20f
+    val paymentMethodText = when (paymentMethod) {
+      PaymentMethod.CREDIT_CARD -> "כרטיס אשראי"
+      PaymentMethod.CASH -> "מזומן"
+      null -> ""
+    }
 
-    content.writeTextRightAligned("אסמכתא:", labelRightX, currentY, theme.regularFont, FONT_SIZE_REGULAR, theme.textColor)
+    if (paymentMethodText.isNotEmpty()) {
+      drawSummaryLine(content, theme, priceX, labelRightX, currentY, paymentMethodText, "אמצעי תשלום:", false)
+      currentY -= 20f
+    } else {
+      content.writeTextRightAligned(
+        "אמצעי תשלום:",
+        labelRightX,
+        currentY,
+        theme.regularFont,
+        FONT_SIZE_REGULAR,
+        theme.textColor
+      )
+      currentY -= 20f
+    }
+
+    if (paymentProof != null) {
+      drawSummaryLine(content, theme, priceX, labelRightX, currentY, paymentProof, "אסמכתא:", false)
+      currentY -= 20f
+    } else {
+      content.writeTextRightAligned(
+        "אסמכתא:",
+        labelRightX,
+        currentY,
+        theme.regularFont,
+        FONT_SIZE_REGULAR,
+        theme.textColor
+      )
+    }
 
     return currentY - 30f
   }
@@ -429,7 +532,14 @@ class OrderInvoiceService(
     )
 
     footerLines.forEach { line ->
-      content.writeTextRightAligned(line, pageWidth - PAGE_MARGIN, currentY, theme.regularFont, FONT_SIZE_SMALL, Color(100, 100, 100))
+      content.writeTextRightAligned(
+        line,
+        pageWidth - PAGE_MARGIN,
+        currentY,
+        theme.regularFont,
+        FONT_SIZE_SMALL,
+        Color(100, 100, 100)
+      )
       currentY -= 15f
     }
   }

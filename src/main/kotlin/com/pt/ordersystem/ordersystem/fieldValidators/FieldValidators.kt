@@ -51,6 +51,17 @@ object FieldValidators {
     }
   }
 
+  fun validateNumericString(value: String, length: Int, fieldName: String) {
+    if (!value.matches("^\\d{$length}$".toRegex())) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "$fieldName must be exactly $length digits",
+        technicalMessage = "$fieldName `$value` must be exactly $length digits, got ${value.length}",
+        severity = SeverityLevel.WARN
+      )
+    }
+  }
+
   fun validateNonEmpty(value: String, fieldName: String) {
     if (value.isBlank()) {
       throw ServiceException(

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.presigner.S3Presigner
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest
@@ -79,7 +80,7 @@ class S3StorageService(
     }
   }
 
-  fun generateKey(basePath: String, fileName: String): String {
+  fun generateS3Key(basePath: String, fileName: String): String {
     val sanitizedFileName = fileName.replace(" ", "_").replace("[^a-zA-Z0-9._-]".toRegex(), "")
     val uuid = UUID.randomUUID().toString()
     return "$basePath/${uuid}_$sanitizedFileName"
@@ -147,7 +148,7 @@ class S3StorageService(
       validateImageMetadata(imageMetadata)
 
       // Build S3 key
-      val s3Key = generateKey(basePath, imageMetadata.fileName)
+      val s3Key = generateS3Key(basePath, imageMetadata.fileName)
 
       // Build PutObjectRequest
       val putObjectRequest = PutObjectRequest.builder()
@@ -177,6 +178,31 @@ class S3StorageService(
         status = HttpStatus.INTERNAL_SERVER_ERROR,
         userMessage = "Failed to generate upload URL",
         technicalMessage = "Error generating presigned URL: ${e.message}",
+        severity = SeverityLevel.ERROR
+      )
+    }
+  }
+
+  fun uploadFile(
+    s3Key: String,
+    content: ByteArray,
+    contentType: String
+  ): String {
+    try {
+      val putObjectRequest = PutObjectRequest.builder()
+        .bucket(s3.bucketName)
+        .key(s3Key)
+        .contentType(contentType)
+        .build()
+
+      s3Client.putObject(putObjectRequest, RequestBody.fromBytes(content))
+      
+      return s3Key
+    } catch (e: Exception) {
+      throw ServiceException(
+        status = HttpStatus.INTERNAL_SERVER_ERROR,
+        userMessage = "Failed to upload file",
+        technicalMessage = "Error uploading file to S3: ${e.message}",
         severity = SeverityLevel.ERROR
       )
     }
