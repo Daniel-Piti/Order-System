@@ -186,6 +186,7 @@ class OrderService(
       customerEmail = customer?.email,
       customerStreetAddress = customer?.streetAddress,
       customerCity = customer?.city,
+      customerStateId = customer?.stateId,
       // Order details (empty, customer fills)
       status = OrderStatus.EMPTY.name,
       products = emptyList(),
@@ -261,6 +262,7 @@ class OrderService(
       customerEmail = customer?.email ?: request.customerEmail,
       customerStreetAddress = customer?.streetAddress ?: request.customerStreetAddress,
       customerCity = customer?.city ?: request.customerCity,
+      customerStateId = customer?.stateId ?: request.customerStateId,
       // Order details
       status = OrderStatus.PLACED.name,
       products = request.products,
@@ -321,6 +323,7 @@ class OrderService(
       customerEmail = request.customerEmail,
       customerStreetAddress = request.customerStreetAddress,
       customerCity = request.customerCity,
+      customerStateId = request.customerStateId,
       // Order details (placed immediately)
       status = OrderStatus.PLACED.name,
       products = request.products,

@@ -17,6 +17,7 @@ CREATE TABLE orders (
     customer_email VARCHAR(255) NULL,
     customer_street_address VARCHAR(255) NULL,
     customer_city VARCHAR(100) NULL,
+    customer_state_id VARCHAR(20) NULL,
     
     -- Order details
     status VARCHAR(50) NOT NULL,
@@ -64,6 +65,7 @@ CREATE TABLE orders_history (
     customer_email VARCHAR(255) NULL,
     customer_street_address VARCHAR(255) NULL,
     customer_city VARCHAR(100) NULL,
+    customer_state_id VARCHAR(20) NULL,
     
     -- Order details
     status VARCHAR(50) NOT NULL,
@@ -86,7 +88,7 @@ INSERT INTO orders_history(
     id, order_source, manager_id, agent_id, customer_id,
     store_street_address, store_city, store_phone_number,
     customer_name, customer_phone, customer_email, 
-    customer_street_address, customer_city,
+    customer_street_address, customer_city, customer_state_id,
     status, products, products_version, total_price, link_expires_at, notes, placed_at, done_at,
     created_at, updated_at
 )
@@ -94,7 +96,7 @@ VALUES (
     NEW.id, NEW.order_source, NEW.manager_id, NEW.agent_id, NEW.customer_id,
     NEW.store_street_address, NEW.store_city, NEW.store_phone_number,
     NEW.customer_name, NEW.customer_phone, NEW.customer_email,
-    NEW.customer_street_address, NEW.customer_city,
+    NEW.customer_street_address, NEW.customer_city, NEW.customer_state_id,
     NEW.status, NEW.products, NEW.products_version, NEW.total_price, NEW.link_expires_at, NEW.notes, NEW.placed_at, NEW.done_at,
     NEW.created_at, NEW.updated_at
 );
@@ -106,7 +108,7 @@ INSERT INTO orders_history(
     id, order_source, manager_id, agent_id, customer_id,
     store_street_address, store_city, store_phone_number,
     customer_name, customer_phone, customer_email,
-    customer_street_address, customer_city,
+    customer_street_address, customer_city, customer_state_id,
     status, products, products_version, total_price, link_expires_at, notes, placed_at, done_at,
     created_at, updated_at
 )
@@ -114,7 +116,7 @@ VALUES (
     NEW.id, NEW.order_source, NEW.manager_id, NEW.agent_id, NEW.customer_id,
     NEW.store_street_address, NEW.store_city, NEW.store_phone_number,
     NEW.customer_name, NEW.customer_phone, NEW.customer_email,
-    NEW.customer_street_address, NEW.customer_city,
+    NEW.customer_street_address, NEW.customer_city, NEW.customer_state_id,
     NEW.status, NEW.products, NEW.products_version, NEW.total_price, NEW.link_expires_at, NEW.notes, NEW.placed_at, NEW.done_at,
     NEW.created_at, NEW.updated_at
 );

@@ -10,4 +10,5 @@ data class CustomerDto(
   val email: String,
   val streetAddress: String,
   val city: String,
+  val stateId: String,
 )

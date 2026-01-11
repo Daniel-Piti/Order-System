@@ -7,7 +7,7 @@ import jakarta.persistence.Table
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "businesses")
+@Table(name = "business_details")
 data class BusinessDbEntity(
   @Id
   @Column(nullable = false, length = 255)

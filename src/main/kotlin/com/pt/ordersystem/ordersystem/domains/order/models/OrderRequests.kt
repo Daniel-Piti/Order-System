@@ -13,6 +13,7 @@ data class PlaceOrderRequest(
   val customerEmail: String?,
   val customerStreetAddress: String,
   val customerCity: String,
+  val customerStateId: String?,
   
   // Pickup location
   val pickupLocationId: Long,

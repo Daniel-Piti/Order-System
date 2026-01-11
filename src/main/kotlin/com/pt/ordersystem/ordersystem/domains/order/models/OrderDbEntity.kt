@@ -56,6 +56,9 @@ data class OrderDbEntity(
   @Column(name = "customer_city")
   val customerCity: String?,
 
+  @Column(name = "customer_state_id")
+  val customerStateId: String?,
+
   // Order details
   @Column(nullable = false)
   val status: String,

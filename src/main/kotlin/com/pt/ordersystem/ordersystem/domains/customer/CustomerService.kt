@@ -58,6 +58,7 @@ class CustomerService(
       email = normalizedPayload.email,
       streetAddress = normalizedPayload.streetAddress,
       city = normalizedPayload.city,
+      stateId = normalizedPayload.stateId,
       createdAt = now,
       updatedAt = now,
     )
@@ -86,6 +87,7 @@ class CustomerService(
       email = normalizedPayload.email,
       streetAddress = normalizedPayload.streetAddress,
       city = normalizedPayload.city,
+      stateId = normalizedPayload.stateId,
       discountPercentage = normalizedPayload.discountPercentage,
       updatedAt = LocalDateTime.now(),
     )
@@ -135,6 +137,7 @@ class CustomerService(
       email = customerPayload.email.trim(),
       streetAddress = customerPayload.streetAddress.trim(),
       city = customerPayload.city.trim(),
+      stateId = customerPayload.stateId.trim(),
     )
 
   private fun validatePayload(customerPayload: CustomerPayload) {
@@ -143,6 +146,7 @@ class CustomerService(
     FieldValidators.validateEmail(customerPayload.email)
     FieldValidators.validateNonEmpty(customerPayload.streetAddress, "'street address'")
     FieldValidators.validateNonEmpty(customerPayload.city, "'city'")
+    FieldValidators.validateNumericString(customerPayload.stateId, 9, "Customer state ID")
   }
 
   private fun getCustomer(managerId: String, agentId: Long?, customerId: String): CustomerDbEntity {

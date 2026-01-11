@@ -6,5 +6,6 @@ data class CustomerPayload(
   val email: String,
   val streetAddress: String,
   val city: String,
+  val stateId: String,
   val discountPercentage: Int = 0,
 )

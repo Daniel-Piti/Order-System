@@ -50,7 +50,6 @@ object InvoiceRenderHelper {
   )
 
   fun renderPdf(
-    manager: ManagerDbEntity,
     business: BusinessDto,
     order: OrderDbEntity,
     invoiceSequenceNumber: Int,
@@ -77,7 +76,7 @@ object InvoiceRenderHelper {
 
         currentY = drawHeader(content, theme, pageWidth, currentY, order.id, invoiceSequenceNumber, invoiceDate)
         currentY =
-          drawCustomerAndBusinessPanels(content, theme, pageWidth, currentY, order, manager, business, allocationNumber)
+          drawCustomerAndBusinessPanels(content, theme, pageWidth, currentY, order, business, allocationNumber)
         currentY = drawProductsTable(content, theme, PAGE_MARGIN, contentWidth, currentY, order)
         currentY = drawSummary(content, theme, PAGE_MARGIN, contentWidth, currentY, order)
         currentY =
@@ -151,7 +150,6 @@ object InvoiceRenderHelper {
     pageWidth: Float,
     y: Float,
     order: OrderDbEntity,
-    manager: ManagerDbEntity,
     business: BusinessDto,
     allocationNumber: String?
   ): Float {
@@ -173,7 +171,7 @@ object InvoiceRenderHelper {
       content, theme, rightPanelX, panelWidth, y, "פרטי הלקוח", listOf(
         "שם הלקוח: ${order.customerName ?: ""}",
         "כתובת: $customerAddress",
-        "ח.פ / ע.מ:"
+        "ח.פ / ע.מ: ${order.customerStateId ?: ""}"
       )
     )
 

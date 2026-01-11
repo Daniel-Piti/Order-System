@@ -22,6 +22,7 @@ data class OrderDto(
   val customerEmail: String?,
   val customerStreetAddress: String?,
   val customerCity: String?,
+  val customerStateId: String?,
   
   // Order details
   val status: OrderStatus,
@@ -55,6 +56,7 @@ fun OrderDbEntity.toDto(): OrderDto {
     customerEmail = this.customerEmail,
     customerStreetAddress = this.customerStreetAddress,
     customerCity = this.customerCity,
+    customerStateId = this.customerStateId,
     status = orderStatus,
     products = this.products, // Already a List<ProductDataForOrder> - JPA converter handles it!
     productsVersion = this.productsVersion,

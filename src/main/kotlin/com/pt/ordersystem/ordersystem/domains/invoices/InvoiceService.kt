@@ -54,7 +54,6 @@ class InvoiceService(
 
     // Generate PDF (invoiceNumber is formatted inside renderPdf)
     val pdfBytes = InvoiceRenderHelper.renderPdf(
-      manager = manager,
       business = business,
       order = order,
       invoiceSequenceNumber = invoiceSequenceNumber,

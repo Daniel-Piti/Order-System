@@ -9,6 +9,7 @@ CREATE TABLE customers (
     email VARCHAR(255) NOT NULL,
     street_address VARCHAR(255) NOT NULL,
     city VARCHAR(100) NOT NULL,
+    state_id VARCHAR(20) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
@@ -29,6 +30,7 @@ CREATE TABLE customers_history (
     email VARCHAR(255) NOT NULL,
     street_address VARCHAR(255) NOT NULL,
     city VARCHAR(100) NOT NULL,
+    state_id VARCHAR(20) NOT NULL,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL
 );
@@ -36,11 +38,11 @@ CREATE TABLE customers_history (
 -- Trigger for INSERT
 CREATE TRIGGER trg_customers_after_insert
 AFTER INSERT ON customers FOR EACH ROW
-INSERT INTO customers_history (id, agent_id, manager_id, discount_percentage, name, phone_number, email, street_address, city, created_at, updated_at)
-VALUES (NEW.id, NEW.agent_id, NEW.manager_id, NEW.discount_percentage, NEW.name, NEW.phone_number, NEW.email, NEW.street_address, NEW.city, NEW.created_at, NEW.updated_at);
+INSERT INTO customers_history (id, agent_id, manager_id, discount_percentage, name, phone_number, email, street_address, city, state_id, created_at, updated_at)
+VALUES (NEW.id, NEW.agent_id, NEW.manager_id, NEW.discount_percentage, NEW.name, NEW.phone_number, NEW.email, NEW.street_address, NEW.city, NEW.state_id, NEW.created_at, NEW.updated_at);
 
 -- Trigger for UPDATE
 CREATE TRIGGER trg_customers_after_update
 AFTER UPDATE ON customers FOR EACH ROW
-INSERT INTO customers_history (id, agent_id, manager_id, discount_percentage, name, phone_number, email, street_address, city, created_at, updated_at)
-VALUES (NEW.id, NEW.agent_id, NEW.manager_id, NEW.discount_percentage, NEW.name, NEW.phone_number, NEW.email, NEW.street_address, NEW.city, NEW.created_at, NEW.updated_at);
+INSERT INTO customers_history (id, agent_id, manager_id, discount_percentage, name, phone_number, email, street_address, city, state_id, created_at, updated_at)
+VALUES (NEW.id, NEW.agent_id, NEW.manager_id, NEW.discount_percentage, NEW.name, NEW.phone_number, NEW.email, NEW.street_address, NEW.city, NEW.state_id, NEW.created_at, NEW.updated_at);
