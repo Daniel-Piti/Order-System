@@ -64,11 +64,19 @@ object InvoiceHelper {
   }
 
   fun validatePaymentMethodAndProof(paymentMethod: PaymentMethod, paymentProof: String) {
+    if (paymentProof.isBlank()) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Payment proof cannot be empty",
+        technicalMessage = "Payment proof cannot be blank for payment method ${paymentMethod.name}",
+        severity = SeverityLevel.WARN
+      )
+    }
 
     when (paymentMethod) {
-      PaymentMethod.CREDIT_CARD -> FieldValidators.validateNumericString(paymentProof, 4, "Allocation number")
+      PaymentMethod.CREDIT_CARD -> FieldValidators.validateNumericString(paymentProof, 4, "Credit card last 4 digits")
       PaymentMethod.CASH -> {
-        // Cash proof is just a string - no specific validation needed
+        // Cash proof is just a string - no specific validation needed, just must not be empty
       }
     }
   }

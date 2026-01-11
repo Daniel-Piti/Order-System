@@ -24,6 +24,10 @@ class InvoiceService(
   private val businessService: BusinessService,
 ) {
 
+  companion object {
+    private const val MAX_BATCH_SIZE = 100
+  }
+
   @Transactional
   fun createInvoice(createInvoiceRequest: CreateInvoiceRequest): CreateInvoiceResponse {
     // Validate order exists and belongs to manager
@@ -140,24 +144,26 @@ class InvoiceService(
   }
 
   @Transactional(readOnly = true)
-  fun getInvoiceByOrderId(orderId: String): String {
-    val invoice = invoiceRepository.findByOrderId(orderId)
-      ?: throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = "Invoice not found",
-        technicalMessage = "Invoice not found for order $orderId",
+  fun getInvoicesByOrderIds(managerId: String, orderIds: List<String>): Map<String, String> {
+    if (orderIds.isEmpty()) return emptyMap()
+
+    // Limit batch size to prevent performance issues
+    if (orderIds.size > MAX_BATCH_SIZE) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Maximum of $MAX_BATCH_SIZE order IDs allowed per request",
+        technicalMessage = "Request contains ${orderIds.size} order IDs, maximum allowed is $MAX_BATCH_SIZE",
         severity = SeverityLevel.WARN
       )
+    }
 
-    val s3Url = s3StorageService.getPublicUrl(invoice.s3Key)
-      ?: throw ServiceException(
-        status = HttpStatus.INTERNAL_SERVER_ERROR,
-        userMessage = "Unable to load invoice link",
-        technicalMessage = "S3 URL is null for invoice ${invoice.id} with s3Key: ${invoice.s3Key}",
-        severity = SeverityLevel.ERROR
-      )
-
-    return s3Url
+    // Find all invoices for the given order IDs that belong to the manager
+    val invoices = invoiceRepository.findByOrderIdInAndManagerId(orderIds, managerId)
+    
+    // Build the map from invoices to S3 URLs, filtering out nulls in a single pass
+    return invoices.mapNotNull { invoice ->
+        s3StorageService.getPublicUrl(invoice.s3Key)?.let { invoice.orderId to it }
+      }.toMap()
   }
 
 }

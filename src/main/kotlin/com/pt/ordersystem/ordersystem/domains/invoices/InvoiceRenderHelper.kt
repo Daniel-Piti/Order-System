@@ -61,7 +61,7 @@ object InvoiceRenderHelper {
     val invoiceDate = formatCurrentDate()
 
     return PDDocument().use { document ->
-      document.documentInformation.title = "Invoice invoice-$invoiceSequenceNumber"
+      document.documentInformation.title = "Invoice-$invoiceSequenceNumber"
       document.documentInformation.author = "Order System"
 
       val theme = createTheme(document)
