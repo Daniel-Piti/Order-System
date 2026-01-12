@@ -16,8 +16,7 @@ import java.awt.Color
 import java.io.ByteArrayOutputStream
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.nio.file.Files
-import java.nio.file.Paths
+import java.io.InputStream
 import java.text.Bidi
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
@@ -543,21 +542,25 @@ object InvoiceRenderHelper {
   }
 
   private fun createTheme(document: PDDocument): InvoiceTheme {
-    val regular = loadFont(document, "arial.ttf") ?: PDType1Font(Standard14Fonts.FontName.HELVETICA)
-    val bold = loadFont(document, "arialbd.ttf") ?: PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD)
+    // Load bundled fonts from classpath (same font everywhere)
+    // This ensures consistent rendering across all environments
+    val regular = loadFontFromClasspath(document, "fonts/DejaVuSans.ttf")
+      ?: throw IllegalStateException("Font file not found: fonts/DejaVuSans.ttf. Make sure fonts are bundled in the JAR.")
+    
+    val bold = loadFontFromClasspath(document, "fonts/DejaVuSans-Bold.ttf")
+      ?: throw IllegalStateException("Font file not found: fonts/DejaVuSans-Bold.ttf. Make sure fonts are bundled in the JAR.")
+    
     return InvoiceTheme(regularFont = regular, boldFont = bold)
   }
 
-  private fun loadFont(document: PDDocument, fileName: String): PDFont? {
-    val candidates = listOfNotNull(
-      System.getenv("WINDIR")?.let { Paths.get(it, "Fonts", fileName) },
-      Paths.get("/usr/share/fonts/truetype/msttcorefonts", fileName),
-      Paths.get("/usr/share/fonts/truetype/microsoft", fileName),
-      Paths.get("/usr/share/fonts/truetype/freefont", fileName)
-    )
-
-    return candidates.firstOrNull { Files.exists(it) && Files.isReadable(it) }?.let { path ->
-      Files.newInputStream(path).use { PDType0Font.load(document, it, true) }
+  private fun loadFontFromClasspath(document: PDDocument, resourcePath: String): PDFont? {
+    return try {
+      val inputStream: InputStream? = javaClass.classLoader.getResourceAsStream(resourcePath)
+      inputStream?.use { stream ->
+        PDType0Font.load(document, stream, true)
+      }
+    } catch (e: Exception) {
+      null
     }
   }
 
