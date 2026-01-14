@@ -1,4 +1,4 @@
-package com.pt.ordersystem.ordersystem.domains.invoices
+package com.pt.ordersystem.ordersystem.domains.invoices.helpers
 
 import com.pt.ordersystem.ordersystem.domains.invoices.models.PaymentMethod
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDbEntity
