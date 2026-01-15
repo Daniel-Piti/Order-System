@@ -1,6 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.order.models
 
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductDataForOrder
+import java.math.BigDecimal
 
 data class CreateOrderRequest(
   val customerId: String? = null
@@ -31,4 +32,8 @@ data class UpdateOrderRequest(
   val products: List<ProductDataForOrder>,
   val notes: String = ""
   // Note: Customer info is NOT editable (order already placed)
+)
+
+data class UpdateDiscountRequest(
+  val discount: BigDecimal
 )

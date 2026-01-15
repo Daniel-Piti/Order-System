@@ -73,6 +73,9 @@ data class OrderDbEntity(
   @Column(name = "total_price", nullable = false)
   val totalPrice: BigDecimal,
 
+  @Column(name = "discount", nullable = false)
+  val discount: BigDecimal = BigDecimal.ZERO,
+
   @Column(name = "link_expires_at", nullable = false)
   val linkExpiresAt: LocalDateTime,
 

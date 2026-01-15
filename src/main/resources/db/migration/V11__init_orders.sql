@@ -24,6 +24,7 @@ CREATE TABLE orders (
     products JSON NOT NULL,
     products_version INT NOT NULL,
     total_price DECIMAL(10, 2) NOT NULL CHECK (total_price >= 0),
+    discount DECIMAL(10, 2) NOT NULL CHECK (discount >= 0),
     link_expires_at TIMESTAMP NOT NULL,
     notes VARCHAR(2048) NOT NULL DEFAULT '',
     placed_at TIMESTAMP NULL,
@@ -72,6 +73,7 @@ CREATE TABLE orders_history (
     products JSON NOT NULL,
     products_version INT NOT NULL,
     total_price DECIMAL(10, 2) NOT NULL CHECK (total_price >= 0),
+    discount DECIMAL(10, 2) NOT NULL CHECK (discount >= 0),
     link_expires_at TIMESTAMP NOT NULL,
     notes VARCHAR(2048) NOT NULL DEFAULT '',
     placed_at TIMESTAMP NULL,
@@ -89,7 +91,7 @@ INSERT INTO orders_history(
     store_street_address, store_city, store_phone_number,
     customer_name, customer_phone, customer_email, 
     customer_street_address, customer_city, customer_state_id,
-    status, products, products_version, total_price, link_expires_at, notes, placed_at, done_at,
+    status, products, products_version, total_price, discount, link_expires_at, notes, placed_at, done_at,
     created_at, updated_at
 )
 VALUES (
@@ -97,7 +99,7 @@ VALUES (
     NEW.store_street_address, NEW.store_city, NEW.store_phone_number,
     NEW.customer_name, NEW.customer_phone, NEW.customer_email,
     NEW.customer_street_address, NEW.customer_city, NEW.customer_state_id,
-    NEW.status, NEW.products, NEW.products_version, NEW.total_price, NEW.link_expires_at, NEW.notes, NEW.placed_at, NEW.done_at,
+    NEW.status, NEW.products, NEW.products_version, NEW.total_price, NEW.discount, NEW.link_expires_at, NEW.notes, NEW.placed_at, NEW.done_at,
     NEW.created_at, NEW.updated_at
 );
 
@@ -109,7 +111,7 @@ INSERT INTO orders_history(
     store_street_address, store_city, store_phone_number,
     customer_name, customer_phone, customer_email,
     customer_street_address, customer_city, customer_state_id,
-    status, products, products_version, total_price, link_expires_at, notes, placed_at, done_at,
+    status, products, products_version, total_price, discount, link_expires_at, notes, placed_at, done_at,
     created_at, updated_at
 )
 VALUES (
@@ -117,6 +119,6 @@ VALUES (
     NEW.store_street_address, NEW.store_city, NEW.store_phone_number,
     NEW.customer_name, NEW.customer_phone, NEW.customer_email,
     NEW.customer_street_address, NEW.customer_city, NEW.customer_state_id,
-    NEW.status, NEW.products, NEW.products_version, NEW.total_price, NEW.link_expires_at, NEW.notes, NEW.placed_at, NEW.done_at,
+    NEW.status, NEW.products, NEW.products_version, NEW.total_price, NEW.discount, NEW.link_expires_at, NEW.notes, NEW.placed_at, NEW.done_at,
     NEW.created_at, NEW.updated_at
 );

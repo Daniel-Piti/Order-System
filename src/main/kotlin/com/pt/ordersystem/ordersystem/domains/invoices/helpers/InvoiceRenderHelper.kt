@@ -103,11 +103,29 @@ object InvoiceRenderHelper {
         )
         currentY = productsResult.first
         content = productsResult.third // Use the content stream returned from pagination function
+        var currentPageIndex = productsResult.second
         
-        currentY = drawSummary(content, theme, PAGE_MARGIN, contentWidth, currentY, order)
-        currentY =
-          drawPaymentDetails(content, theme, PAGE_MARGIN, contentWidth, currentY, order, paymentMethod, paymentProof)
-        drawFooter(content, theme, pageWidth, currentY)
+        // Draw summary with pagination check
+        val summaryResult = drawSummaryWithPagination(
+          document, content, theme, PAGE_MARGIN, contentWidth, currentY, order, pageHeight, pages, currentPageIndex
+        )
+        currentY = summaryResult.first
+        content = summaryResult.third
+        currentPageIndex = summaryResult.second
+        
+        // Draw payment details with pagination check
+        val paymentResult = drawPaymentDetailsWithPagination(
+          document, content, theme, PAGE_MARGIN, contentWidth, currentY, order, paymentMethod, paymentProof, pageHeight, pages, currentPageIndex
+        )
+        currentY = paymentResult.first
+        content = paymentResult.third
+        currentPageIndex = paymentResult.second
+        
+        // Draw footer with pagination check
+        val footerResult = drawFooterWithPagination(
+          document, content, theme, pageWidth, currentY, pageHeight, pages, currentPageIndex
+        )
+        content = footerResult.third
       } finally {
         content.close()
       }
@@ -254,6 +272,45 @@ object InvoiceRenderHelper {
   }
 
   private fun getColumnWidths(contentWidth: Float) = floatArrayOf(60f, contentWidth - 260f, 100f, 100f)
+
+  /**
+   * Checks if there's enough space on the current page and creates a new page if needed.
+   * Returns a Triple of (newY, newPageIndex, newContentStream)
+   */
+  private fun ensureSpaceForComponent(
+    document: PDDocument,
+    content: PDPageContentStream,
+    currentY: Float,
+    requiredHeight: Float,
+    pageHeight: Float,
+    pages: MutableList<PDPage>,
+    currentPageIndex: Int,
+    minSpaceThreshold: Float = pageHeight * 0.1f // 10% of page height as minimum space
+  ): Triple<Float, Int, PDPageContentStream> {
+    var newY = currentY
+    var newPageIndex = currentPageIndex
+    var newContent = content
+    
+    // Check if we need a new page (if currentY - requiredHeight would be less than threshold)
+    if (currentY - requiredHeight < minSpaceThreshold) {
+      // Close current content stream
+      try {
+        content.close()
+      } catch (e: Exception) {
+        // Stream might already be closed, continue anyway
+      }
+      
+      // Create new page
+      val newPage = PDPage(PDRectangle.A4)
+      document.addPage(newPage)
+      pages.add(newPage)
+      newPageIndex++
+      newContent = PDPageContentStream(document, newPage)
+      newY = pageHeight - PAGE_MARGIN
+    }
+    
+    return Triple(newY, newPageIndex, newContent)
+  }
 
   private fun drawProductsTableWithPagination(
     document: PDDocument,
@@ -465,6 +522,31 @@ object InvoiceRenderHelper {
     }
   }
 
+  private fun drawSummaryWithPagination(
+    document: PDDocument,
+    content: PDPageContentStream,
+    theme: InvoiceTheme,
+    margin: Float,
+    contentWidth: Float,
+    y: Float,
+    order: OrderDbEntity,
+    pageHeight: Float,
+    pages: MutableList<PDPage>,
+    currentPageIndex: Int
+  ): Triple<Float, Int, PDPageContentStream> {
+    // Adjust summary height based on whether discount is applied
+    val hasDiscount = order.discount > BigDecimal.ZERO
+    val summaryHeight = if (hasDiscount) 140f else 100f
+    
+    // Check if we need a new page
+    val spaceResult = ensureSpaceForComponent(document, content, y, summaryHeight, pageHeight, pages, currentPageIndex)
+    var currentY = spaceResult.first
+    var pageIndex = spaceResult.second
+    var currentContent = spaceResult.third
+    
+    return Triple(drawSummary(currentContent, theme, margin, contentWidth, currentY, order), pageIndex, currentContent)
+  }
+
   private fun drawSummary(
     content: PDPageContentStream,
     theme: InvoiceTheme,
@@ -473,15 +555,21 @@ object InvoiceRenderHelper {
     y: Float,
     order: OrderDbEntity
   ): Float {
+    // Calculate products total (sum of all products - this is WITH VAT)
+    val productsTotalWithVat = order.products.fold(BigDecimal.ZERO) { sum, product ->
+      sum + (product.pricePerUnit.multiply(BigDecimal.valueOf(product.quantity.toLong())))
+    }
+    
     val totalWithVat = order.totalPrice
-    val totalBeforeVat = totalWithVat.divide(VAT_RATE, 2, RoundingMode.HALF_UP)
-    val vatAmount = totalWithVat.subtract(totalBeforeVat)
     val columnWidths = getColumnWidths(contentWidth)
     val summaryX = margin + columnWidths[0] + columnWidths[1]
     val summaryWidth = columnWidths[2] + columnWidths[3]
     val priceX = summaryX + 5f
     val labelRightX = summaryX + summaryWidth - 5f
-    val summaryHeight = 100f
+    
+    // Adjust summary height based on whether discount is applied
+    val hasDiscount = order.discount > BigDecimal.ZERO
+    val summaryHeight = if (hasDiscount) 140f else 100f
     val summaryY = y - summaryHeight
 
     // Draw summary box
@@ -493,13 +581,52 @@ object InvoiceRenderHelper {
 
     // Summary lines
     var currentY = y - 15f
-    listOf(
-      formatCurrency(totalBeforeVat) to "סה\"כ לפני מע\"מ:",
-      formatCurrency(vatAmount) to "מע\"מ $VAT_PERCENTAGE%:"
-    ).forEach { (price, label) ->
-      content.writeText(price, priceX, currentY, theme.regularFont, FONT_SIZE_REGULAR, theme.textColor)
-      content.writeTextRightAligned(label, labelRightX, currentY, theme.regularFont, FONT_SIZE_REGULAR, theme.textColor)
-      currentY -= if (label.contains("מע\"מ")) 25f else 20f
+    
+    if (hasDiscount) {
+      // Discount breakdown: use totalPrice and discount as source of truth (both WITH VAT)
+      // 1. Calculate products total WITHOUT VAT: (totalPrice + discount) / VAT_RATE
+      //    This gives us the original products total before discount, without VAT
+      val productsTotalWithVatBeforeDiscount = totalWithVat.add(order.discount)
+      val productsTotalWithoutVat = productsTotalWithVatBeforeDiscount.divide(VAT_RATE, 4, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP)
+      
+      // 2. Calculate discount WITHOUT VAT: discount / VAT_RATE
+      val discountWithoutVat = order.discount.divide(VAT_RATE, 4, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP)
+      
+      // 3. Calculate total after discount WITHOUT VAT: productsTotalWithoutVat - discountWithoutVat
+      val totalAfterDiscountBeforeVat = productsTotalWithoutVat.subtract(discountWithoutVat).setScale(2, RoundingMode.HALF_UP)
+      
+      // 4. Calculate VAT as the difference to ensure exact match with stored totalPrice
+      //    This avoids rounding errors: VAT = totalPrice - totalAfterDiscountBeforeVat
+      val finalTotalWithVat = totalWithVat.setScale(2, RoundingMode.HALF_UP)
+      val vatAmount = finalTotalWithVat.subtract(totalAfterDiscountBeforeVat).setScale(2, RoundingMode.HALF_UP)
+      
+      val summaryLines = listOf(
+        formatCurrency(productsTotalWithoutVat) to "סה\"כ ללא מע\"מ:",
+        formatCurrency(discountWithoutVat) to "הנחה:",
+        formatCurrency(totalAfterDiscountBeforeVat) to "סה\"כ אחרי הנחה:",
+        formatCurrency(vatAmount) to "מע\"מ $VAT_PERCENTAGE%:"
+      )
+      
+      summaryLines.forEach { (price, label) ->
+        content.writeText(price, priceX, currentY, theme.regularFont, FONT_SIZE_REGULAR, theme.textColor)
+        content.writeTextRightAligned(label, labelRightX, currentY, theme.regularFont, FONT_SIZE_REGULAR, theme.textColor)
+        currentY -= if (label.contains("מע\"מ")) 25f else 20f
+      }
+    } else {
+      // Simple breakdown: show total before VAT and VAT
+      val totalBeforeVat = totalWithVat.divide(VAT_RATE, 2, RoundingMode.HALF_UP)
+      val vatAmount = totalWithVat.subtract(totalBeforeVat)
+      
+      val summaryLines = listOf(
+        formatCurrency(totalBeforeVat) to "סה\"כ לפני מע\"מ:",
+        formatCurrency(vatAmount) to "מע\"מ $VAT_PERCENTAGE%:"
+      )
+      
+      summaryLines.forEach { (price, label) ->
+        content.writeText(price, priceX, currentY, theme.regularFont, FONT_SIZE_REGULAR, theme.textColor)
+        content.writeTextRightAligned(label, labelRightX, currentY, theme.regularFont, FONT_SIZE_REGULAR, theme.textColor)
+        currentY -= if (label.contains("מע\"מ")) 25f else 20f
+      }
     }
 
     // Divider
@@ -515,10 +642,45 @@ object InvoiceRenderHelper {
     content.setNonStrokingColor(Color(255, 255, 255))
     content.drawRoundedRect(summaryX - 5f, totalBoxY, summaryWidth + 10f, totalBoxHeight, CORNER_RADIUS / 2f, fill = true, stroke = false)
     val totalTextY = totalBoxY + (totalBoxHeight / 2f) - TEXT_BASELINE_OFFSET
-    content.writeText(formatCurrency(totalWithVat), priceX, totalTextY, theme.boldFont, 12f, theme.textColor)
+    // Use order.totalPrice as the source of truth for final total (avoids rounding errors)
+    val finalTotal = totalWithVat.setScale(2, RoundingMode.HALF_UP)
+    content.writeText(formatCurrency(finalTotal), priceX, totalTextY, theme.boldFont, 12f, theme.textColor)
     content.writeTextRightAligned("סה\"כ לתשלום:", labelRightX, totalTextY, theme.boldFont, 12f, theme.textColor)
 
     return totalBoxY - 5f
+  }
+
+  private fun drawPaymentDetailsWithPagination(
+    document: PDDocument,
+    content: PDPageContentStream,
+    theme: InvoiceTheme,
+    margin: Float,
+    contentWidth: Float,
+    y: Float,
+    order: OrderDbEntity,
+    paymentMethod: PaymentMethod?,
+    paymentProof: String?,
+    pageHeight: Float,
+    pages: MutableList<PDPage>,
+    currentPageIndex: Int
+  ): Triple<Float, Int, PDPageContentStream> {
+    val paymentFields = mutableListOf("סכום ששולם: ${formatCurrency(order.totalPrice)}")
+    paymentMethod?.let { paymentMethodTextMap[it] }?.let { paymentFields.add("אמצעי תשלום: $it") }
+    paymentProof?.takeIf { it.isNotEmpty() }?.let { paymentFields.add("אסמכתא: $it") }
+    
+    // Estimate height: title + fields * lineHeight + padding
+    val estimatedHeight = 40f + (paymentFields.size * 22f) + 40f
+    
+    // Check if we need a new page
+    val spaceResult = ensureSpaceForComponent(document, content, y, estimatedHeight, pageHeight, pages, currentPageIndex)
+    val currentY = spaceResult.first
+    val pageIndex = spaceResult.second
+    val currentContent = spaceResult.third
+    
+    val finalY = drawStyledPanel(currentContent, theme, margin + contentWidth, contentWidth, currentY, "פרטי התשלום", paymentFields,
+      useBoldFont = false, lineHeight = 22f, yOffset = -20f, bottomOffset = 20f)
+    
+    return Triple(finalY, pageIndex, currentContent)
   }
 
   private fun drawPaymentDetails(
@@ -539,6 +701,37 @@ object InvoiceRenderHelper {
       useBoldFont = false, lineHeight = 22f, yOffset = -20f, bottomOffset = 20f)
   }
 
+  private fun drawFooterWithPagination(
+    document: PDDocument,
+    content: PDPageContentStream,
+    theme: InvoiceTheme,
+    pageWidth: Float,
+    y: Float,
+    pageHeight: Float,
+    pages: MutableList<PDPage>,
+    currentPageIndex: Int
+  ): Triple<Float, Int, PDPageContentStream> {
+    val footerLines = listOf(
+      "תודה על העסקה שלך!",
+      "מסמך זה מהווה חשבונית מס־קבלה ממוחשבת.",
+      "המסמך הופק לאחר קבלת התשלום ואינו דורש חתימה.",
+      "חשבונית זו נוצרה אוטומטית על ידי מערכת Order-it."
+    )
+    
+    // Estimate footer height: lines * line spacing + padding
+    val estimatedHeight = 10f + (footerLines.size * 16f) + 20f
+    
+    // Check if we need a new page
+    val spaceResult = ensureSpaceForComponent(document, content, y, estimatedHeight, pageHeight, pages, currentPageIndex)
+    val currentY = spaceResult.first
+    val pageIndex = spaceResult.second
+    val currentContent = spaceResult.third
+    
+    drawFooter(currentContent, theme, pageWidth, currentY)
+    
+    return Triple(currentY - estimatedHeight, pageIndex, currentContent)
+  }
+
   private fun drawFooter(
     content: PDPageContentStream,
     theme: InvoiceTheme,
@@ -550,7 +743,7 @@ object InvoiceRenderHelper {
       "תודה על העסקה שלך!",
       "מסמך זה מהווה חשבונית מס־קבלה ממוחשבת.",
       "המסמך הופק לאחר קבלת התשלום ואינו דורש חתימה.",
-      "חשבונית זו נוצרה אוטומטית על ידי מערכת ההזמנות."
+      "חשבונית זו נוצרה אוטומטית על ידי מערכת Order-it."
     )
 
     // Draw footer background with rounded corners

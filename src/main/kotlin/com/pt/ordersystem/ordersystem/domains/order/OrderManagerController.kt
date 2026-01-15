@@ -4,6 +4,7 @@ import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.order.models.CreateOrderRequest
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDto
+import com.pt.ordersystem.ordersystem.domains.order.models.UpdateDiscountRequest
 import com.pt.ordersystem.ordersystem.domains.order.models.UpdateOrderRequest
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -90,6 +91,16 @@ class OrderManagerController(
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<Void> {
     orderService.updateOrder(orderId = orderId, managerId = manager.id, agentId = null, request = request)
+    return ResponseEntity.noContent().build()
+  }
+
+  @PutMapping("/{orderId}/discount")
+  fun updateOrderDiscount(
+    @PathVariable orderId: String,
+    @RequestBody request: UpdateDiscountRequest,
+    @AuthenticationPrincipal manager: AuthUser
+  ): ResponseEntity<Void> {
+    orderService.updateOrderDiscount(orderId = orderId, managerId = manager.id, agentId = null, request = request)
     return ResponseEntity.noContent().build()
   }
 

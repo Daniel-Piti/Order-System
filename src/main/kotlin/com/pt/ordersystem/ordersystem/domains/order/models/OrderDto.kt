@@ -29,6 +29,7 @@ data class OrderDto(
   val products: List<ProductDataForOrder>,
   val productsVersion: Int,
   val totalPrice: BigDecimal,
+  val discount: BigDecimal,
   val linkExpiresAt: LocalDateTime,
   val notes: String,
   val placedAt: LocalDateTime?,
@@ -61,6 +62,7 @@ fun OrderDbEntity.toDto(): OrderDto {
     products = this.products, // Already a List<ProductDataForOrder> - JPA converter handles it!
     productsVersion = this.productsVersion,
     totalPrice = this.totalPrice,
+    discount = this.discount,
     linkExpiresAt = this.linkExpiresAt,
     notes = this.notes,
     placedAt = this.placedAt,

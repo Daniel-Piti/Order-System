@@ -73,17 +73,6 @@ object FieldValidators {
     }
   }
 
-  fun validateNotPastDate(date: LocalDate, fieldName: String = "Date") {
-    if (date.isBefore(LocalDate.now())) {
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = "$fieldName cannot be in the past",
-        technicalMessage = "$fieldName `$date` is before today",
-        severity = SeverityLevel.WARN
-      )
-    }
-  }
-
   fun validateDateNotFuture(date: LocalDate, fieldName: String = "Date") {
     if (date.isAfter(LocalDate.now())) {
       throw ServiceException(
@@ -95,15 +84,30 @@ object FieldValidators {
     }
   }
 
-  fun validatePrice(price: BigDecimal) {
-    if (price < BigDecimal.ZERO) {
+  fun validateNonNegative(value: BigDecimal, fieldName: String = "Value") {
+    if (value < BigDecimal.ZERO) {
       throw ServiceException(
         status = HttpStatus.BAD_REQUEST,
-        userMessage = "Price must be greater than or equal to 0",
-        technicalMessage = "Price `$price` is negative",
+        userMessage = "$fieldName must be greater than or equal to 0",
+        technicalMessage = "$fieldName `$value` is negative",
         severity = SeverityLevel.WARN
       )
     }
+  }
+
+  fun validatePriceDecimalPlaces(value: BigDecimal, fieldName: String = "Value") {
+    if (value.scale() > 2) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "$fieldName can have at most 2 decimal places",
+        technicalMessage = "$fieldName `$value` has ${value.scale()} decimal places, maximum allowed is 2",
+        severity = SeverityLevel.WARN
+      )
+    }
+  }
+
+  fun validatePrice(price: BigDecimal) {
+    validateNonNegative(price, "Price")
 
     if (price > MAX_PRICE) {
       throw ServiceException(
@@ -114,15 +118,7 @@ object FieldValidators {
       )
     }
 
-    // Validate that price has at most 2 decimal places
-    if (price.scale() > 2) {
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = "Price can have at most 2 decimal places",
-        technicalMessage = "Price `$price` has ${price.scale()} decimal places, maximum allowed is 2",
-        severity = SeverityLevel.WARN
-      )
-    }
+    validatePriceDecimalPlaces(price, "Price")
   }
 
 }

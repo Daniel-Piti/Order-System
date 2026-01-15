@@ -9,6 +9,7 @@ import com.pt.ordersystem.ordersystem.domains.product.ProductRepository
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductDataForOrder
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.exception.ServiceException
+import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -192,6 +193,7 @@ class OrderService(
       products = emptyList(),
       productsVersion = 1,
       totalPrice = BigDecimal.ZERO,
+      discount = BigDecimal.ZERO,
       linkExpiresAt = linkExpiresAt,
       notes = "",
       placedAt = null,
@@ -329,6 +331,7 @@ class OrderService(
       products = request.products,
       productsVersion = 1,
       totalPrice = totalPrice,
+      discount = BigDecimal.ZERO,
       linkExpiresAt = linkExpiresAt,
       notes = request.notes,
       placedAt = now,
@@ -414,10 +417,10 @@ class OrderService(
     // Validate and fetch pickup location (will throw exception if location doesn't exist or doesn't belong to manager)
     val selectedLocation = locationService.getLocationById(managerId, request.pickupLocationId)
 
-    // Calculate total price
-    val totalPrice = request.products.fold(BigDecimal.ZERO) { sum, product ->
+    val productsTotal = request.products.fold(BigDecimal.ZERO) { sum, product ->
       sum + (product.pricePerUnit.multiply(BigDecimal.valueOf(product.quantity.toLong())))
     }
+    val totalPrice = productsTotal.subtract(order.discount).max(BigDecimal.ZERO)
 
     // Update order (keep customer info unchanged, keep productsVersion unchanged)
     val now = LocalDateTime.now()
@@ -471,6 +474,69 @@ class OrderService(
     val updatedOrder = order.copy(
       status = OrderStatus.CANCELLED.name,
       updatedAt = LocalDateTime.now()
+    )
+
+    orderRepository.save(updatedOrder)
+  }
+
+  @Transactional
+  fun updateOrderDiscount(orderId: String, managerId: String, agentId: Long?, request: UpdateDiscountRequest) {
+    // Fetch order with permission validation
+    val order = when (agentId) {
+      null -> {
+        // Manager can edit any order (check managerId matches)
+        orderRepository.findByIdAndManagerId(id = orderId, managerId = managerId)
+      }
+      else -> {
+        // Agent can edit only their orders (check managerId AND agentId match)
+        orderRepository.findByIdAndManagerIdAndAgentId(id = orderId, managerId = managerId, agentId = agentId)
+      }
+    } ?: throw ServiceException(
+      status = HttpStatus.NOT_FOUND,
+      userMessage = OrderFailureReason.NOT_FOUND.userMessage,
+      technicalMessage = OrderFailureReason.NOT_FOUND.technical + 
+        "orderId=$orderId, managerId=$managerId${if (agentId != null) ", agentId=$agentId" else ""}",
+      severity = SeverityLevel.WARN
+    )
+
+    // Validate order is in PLACED status
+    if (order.status != OrderStatus.PLACED.name) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Only placed orders can have discount updated",
+        technicalMessage = "Order $orderId has status ${order.status}, expected PLACED",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    // Validate discount >= 0 and max 2 decimal places
+    FieldValidators.validateNonNegative(request.discount, "Discount")
+    FieldValidators.validatePriceDecimalPlaces(request.discount, "Discount")
+
+    // Calculate products total
+    val productsTotal = order.products.fold(BigDecimal.ZERO) { sum, product ->
+      sum + (product.pricePerUnit.multiply(BigDecimal.valueOf(product.quantity.toLong())))
+    }
+
+    // Validate discount doesn't exceed products total
+    if (request.discount > productsTotal) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Discount cannot exceed the total price of products",
+        technicalMessage = "Order $orderId attempted to set discount ${request.discount} which exceeds products total $productsTotal",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    // Calculate new total price (products total - discount)
+    val newTotalPrice = productsTotal.subtract(request.discount).max(BigDecimal.ZERO)
+
+    // Update order with new discount and recalculated total price
+    val now = LocalDateTime.now()
+    val updatedOrder = order.copy(
+      discount = request.discount,
+      totalPrice = newTotalPrice,
+      updatedAt = now
     )
 
     orderRepository.save(updatedOrder)
