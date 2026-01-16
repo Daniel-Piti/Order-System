@@ -600,9 +600,21 @@ object InvoiceRenderHelper {
       val finalTotalWithVat = totalWithVat.setScale(2, RoundingMode.HALF_UP)
       val vatAmount = finalTotalWithVat.subtract(totalAfterDiscountBeforeVat).setScale(2, RoundingMode.HALF_UP)
       
+      // Calculate discount percentage
+      val discountPercentage = if (productsTotalWithoutVat > BigDecimal.ZERO) {
+        discountWithoutVat.divide(productsTotalWithoutVat, 4, RoundingMode.HALF_UP)
+          .multiply(BigDecimal("100"))
+          .setScale(1, RoundingMode.HALF_UP)
+      } else {
+        BigDecimal.ZERO
+      }
+      
+      // Format discount with percentage
+      val discountText = "${formatCurrency(discountWithoutVat)} (${currencyFormatter.format(discountPercentage)}%)"
+      
       val summaryLines = listOf(
         formatCurrency(productsTotalWithoutVat) to "סה\"כ ללא מע\"מ:",
-        formatCurrency(discountWithoutVat) to "הנחה:",
+        discountText to "הנחה:",
         formatCurrency(totalAfterDiscountBeforeVat) to "סה\"כ אחרי הנחה:",
         formatCurrency(vatAmount) to "מע\"מ $VAT_PERCENTAGE%:"
       )
