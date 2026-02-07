@@ -4,6 +4,7 @@ import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.order.models.CreateOrderRequest
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDto
+import com.pt.ordersystem.ordersystem.domains.order.models.OrderSource
 import com.pt.ordersystem.ordersystem.domains.order.models.UpdateDiscountRequest
 import com.pt.ordersystem.ordersystem.domains.order.models.UpdateOrderRequest
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
@@ -62,7 +63,12 @@ class OrderManagerController(
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<String> {
     // Manager creates order - agentId is null (comes from auth, not request body)
-    val newOrderId = orderService.createOrder(managerId = manager.id, agentId = null, request = request)
+    val newOrderId = orderService.createOrder(
+      managerId = manager.id,
+      agentId = null,
+      orderSource = OrderSource.MANAGER,
+      request = request
+    )
     return ResponseEntity.status(HttpStatus.CREATED).body(newOrderId)
   }
 

@@ -142,7 +142,7 @@ class OrderService(
   }
 
   @Transactional
-  fun createOrder(managerId: String, agentId: Long?, request: CreateOrderRequest): String {
+  fun createOrder(managerId: String, agentId: Long?, orderSource: OrderSource, request: CreateOrderRequest): String {
     
     // Validate manager has at least one location
     val locationCount = locationRepository.countByManagerId(managerId)
@@ -153,12 +153,6 @@ class OrderService(
         technicalMessage = OrderFailureReason.NO_LOCATIONS.technical + "managerId=$managerId",
         severity = SeverityLevel.INFO
       )
-    }
-
-    // Determine order source
-    val orderSource = when (agentId) {
-      null -> OrderSource.MANAGER
-      else -> OrderSource.AGENT
     }
 
     // If customerId is provided, fetch customer data to pre-fill
