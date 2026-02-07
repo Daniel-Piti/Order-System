@@ -2,7 +2,7 @@
 CREATE TABLE invoices (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     manager_id VARCHAR(255) NOT NULL,
-    order_id VARCHAR(255) NOT NULL UNIQUE,
+    order_id BIGINT NOT NULL UNIQUE,
     invoice_sequence_number INT NOT NULL,
     payment_method VARCHAR(50) NOT NULL,
     payment_proof VARCHAR(512) NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE invoices_history (
     history_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     id BIGINT NOT NULL,
     manager_id VARCHAR(255) NOT NULL,
-    order_id VARCHAR(255) NOT NULL,
+    order_id BIGINT NOT NULL,
     invoice_sequence_number INT NOT NULL,
     payment_method VARCHAR(50) NOT NULL,
     payment_proof VARCHAR(512) NOT NULL,

@@ -60,7 +60,7 @@ object EmailPreviewGenerator {
     val updatedAt = now.minusMinutes(15)
 
     return OrderDto(
-      id = "ORD-2024-001234",
+      id = 10001L,
       orderSource = OrderSource.PUBLIC,
       managerId = "manager-123",
       agentId = 456L,
@@ -96,6 +96,7 @@ object EmailPreviewGenerator {
       ),
       productsVersion = 1,
       totalPrice = BigDecimal("336.70"), // (89.90 * 2) + 45.50 + (32.00 * 3)
+      discount = BigDecimal.ZERO,
       linkExpiresAt = now.plusDays(7),
       notes = "Please deliver to the front door. Ring the bell twice.",
       placedAt = placedAt,

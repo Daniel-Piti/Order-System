@@ -141,7 +141,7 @@ object InvoiceRenderHelper {
     theme: InvoiceTheme,
     pageWidth: Float,
     y: Float,
-    orderId: String,
+    orderId: Long,
     invoiceSequenceNumber: Int,
     date: String,
     orderStatus: String

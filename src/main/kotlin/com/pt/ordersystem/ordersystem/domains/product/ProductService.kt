@@ -138,7 +138,7 @@ class ProductService(
     return PageImpl(enrichedContent, pageable, productPage.totalElements)
   }
 
-  fun getAllProductsForOrder(orderId: String): List<ProductDto> {
+  fun getAllProductsForOrder(orderId: Long): List<ProductDto> {
     val order = orderService.getOrderByIdInternal(orderId)
 
     // Fetch all products for the manager

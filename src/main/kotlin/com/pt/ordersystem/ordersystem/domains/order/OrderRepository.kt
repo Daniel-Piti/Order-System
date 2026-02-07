@@ -10,15 +10,15 @@ import org.springframework.data.repository.query.Param
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
-interface OrderRepository : JpaRepository<OrderDbEntity, String> {
+interface OrderRepository : JpaRepository<OrderDbEntity, Long> {
   fun findAllByManagerId(managerId: String, pageable: Pageable): Page<OrderDbEntity>
   fun findAllByManagerIdAndStatus(managerId: String, status: String, pageable: Pageable): Page<OrderDbEntity>
   fun findAllByManagerIdAndAgentId(managerId: String, agentId: Long, pageable: Pageable): Page<OrderDbEntity>
   fun findAllByManagerIdAndAgentIdAndStatus(managerId: String, agentId: Long, status: String, pageable: Pageable): Page<OrderDbEntity>
   fun findAllByManagerIdAndAgentIdIsNull(managerId: String, pageable: Pageable): Page<OrderDbEntity>
   fun findAllByManagerIdAndAgentIdIsNullAndStatus(managerId: String, status: String, pageable: Pageable): Page<OrderDbEntity>
-  fun findByIdAndManagerId(id: String, managerId: String): OrderDbEntity?
-  fun findByIdAndManagerIdAndAgentId(id: String, managerId: String, agentId: Long): OrderDbEntity?
+  fun findByIdAndManagerId(id: Long, managerId: String): OrderDbEntity?
+  fun findByIdAndManagerIdAndAgentId(id: Long, managerId: String, agentId: Long): OrderDbEntity?
 
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query(

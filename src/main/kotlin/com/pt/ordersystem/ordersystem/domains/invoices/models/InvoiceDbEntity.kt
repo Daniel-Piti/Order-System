@@ -13,8 +13,8 @@ data class InvoiceDbEntity(
   @Column(name = "manager_id", nullable = false, length = 255)
   val managerId: String,
 
-  @Column(name = "order_id", nullable = false, length = 255)
-  val orderId: String,
+  @Column(name = "order_id", nullable = false)
+  val orderId: Long,
 
   @Column(name = "invoice_sequence_number", nullable = false)
   val invoiceSequenceNumber: Int,

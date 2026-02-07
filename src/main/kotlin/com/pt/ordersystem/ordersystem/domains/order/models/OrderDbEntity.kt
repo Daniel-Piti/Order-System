@@ -5,6 +5,8 @@ import com.pt.ordersystem.ordersystem.domains.product.models.ProductsJsonConvert
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import java.math.BigDecimal
@@ -15,7 +17,8 @@ import java.time.LocalDateTime
 data class OrderDbEntity(
 
   @Id
-  val id: String,
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  val id: Long = 0,
 
   @Column(name = "order_source", nullable = false)
   val orderSource: String,

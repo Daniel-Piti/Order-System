@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 data class InvoiceDto(
   val id: Long,
   val managerId: String,
-  val orderId: String,
+  val orderId: Long,
   val invoiceSequenceNumber: Int,
   val paymentMethod: PaymentMethod,
   val paymentProof: String,

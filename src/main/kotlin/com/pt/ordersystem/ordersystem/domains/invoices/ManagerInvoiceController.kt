@@ -43,7 +43,7 @@ class ManagerInvoiceController(
   @PostMapping("/by-order-ids")
   fun getInvoicesByOrderIds(
     @AuthenticationPrincipal manager: AuthUser,
-    @RequestBody orderIds: List<String>
+    @RequestBody orderIds: List<Long>
   ): ResponseEntity<Map<String, String>> {
     val invoiceMap = invoiceService.getInvoicesByOrderIds(manager.id, orderIds)
     return ResponseEntity.ok(invoiceMap)

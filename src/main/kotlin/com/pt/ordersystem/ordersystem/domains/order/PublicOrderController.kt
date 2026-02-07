@@ -15,12 +15,12 @@ class PublicOrderController(
 ) {
 
   @GetMapping("/{orderId}")
-  fun getOrderById(@PathVariable orderId: String): ResponseEntity<OrderPublicDto> =
+  fun getOrderById(@PathVariable orderId: Long): ResponseEntity<OrderPublicDto> =
     ResponseEntity.ok(orderService.getOrderByIdPublic(orderId))
 
   @PutMapping("/{orderId}/place")
   fun placeOrder(
-    @PathVariable orderId: String,
+    @PathVariable orderId: Long,
     @RequestBody request: PlaceOrderRequest
   ): ResponseEntity<String> {
     orderService.placeOrder(orderId, request)
@@ -31,7 +31,7 @@ class PublicOrderController(
   fun createAndPlacePublicOrder(
     @PathVariable managerId: String,
     @RequestBody request: PlaceOrderRequest
-  ): ResponseEntity<String> {
+  ): ResponseEntity<Long> {
     val orderId = orderService.createAndPlacePublicOrder(managerId, request)
     return ResponseEntity.status(HttpStatus.CREATED).body(orderId)
   }

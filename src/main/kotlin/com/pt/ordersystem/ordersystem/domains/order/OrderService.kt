@@ -10,7 +10,6 @@ import com.pt.ordersystem.ordersystem.domains.product.models.ProductDataForOrder
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
-import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -95,7 +94,7 @@ class OrderService(
     return selectedOrders.map { it.toDto() }
   }
 
-  fun getOrderByIdPublic(orderId: String): OrderPublicDto {
+  fun getOrderByIdPublic(orderId: Long): OrderPublicDto {
     val order = orderRepository.findById(orderId).orElseThrow {
       throw ServiceException(
         status = HttpStatus.NOT_FOUND,
@@ -108,7 +107,7 @@ class OrderService(
     return order.toPublicDto()
   }
 
-  fun getOrderById(orderId: String, managerId: String, agentId: Long? = null): OrderDto {
+  fun getOrderById(orderId: Long, managerId: String, agentId: Long? = null): OrderDto {
     val order = when (agentId) {
       null -> {
         // Manager query: find order by managerId (regardless of agentId)
@@ -129,7 +128,7 @@ class OrderService(
     return order.toDto()
   }
 
-  fun getOrderByIdInternal(orderId: String): OrderDto {
+  fun getOrderByIdInternal(orderId: Long): OrderDto {
     val order = orderRepository.findById(orderId).orElseThrow {
       throw ServiceException(
         status = HttpStatus.NOT_FOUND,
@@ -142,7 +141,7 @@ class OrderService(
   }
 
   @Transactional
-  fun createOrder(managerId: String, agentId: Long?, orderSource: OrderSource, request: CreateOrderRequest): String {
+  fun createOrder(managerId: String, agentId: Long?, orderSource: OrderSource, request: CreateOrderRequest): Long {
     
     // Validate manager has at least one location
     val locationCount = locationRepository.countByManagerId(managerId)
@@ -166,7 +165,6 @@ class OrderService(
     val linkExpiresAt = now.plusDays(7)
 
     val order = OrderDbEntity(
-      id = GeneralUtils.genId(),
       managerId = managerId,
       agentId = agentId,
       orderSource = orderSource.name,
@@ -200,7 +198,7 @@ class OrderService(
   }
 
   @Transactional
-  fun placeOrder(orderId: String, request: PlaceOrderRequest) {
+  fun placeOrder(orderId: Long, request: PlaceOrderRequest) {
     val order = orderRepository.findById(orderId).orElseThrow {
       throw ServiceException(
         status = HttpStatus.NOT_FOUND,
@@ -274,7 +272,7 @@ class OrderService(
   }
 
   @Transactional
-  fun createAndPlacePublicOrder(managerId: String, request: PlaceOrderRequest): String {
+  fun createAndPlacePublicOrder(managerId: String, request: PlaceOrderRequest): Long {
     // Validate manager exists
     managerService.getManagerById(managerId)
 
@@ -304,7 +302,6 @@ class OrderService(
 
     // Create order with PUBLIC source, no agentId, no customerId
     val order = OrderDbEntity(
-      id = GeneralUtils.genId(),
       managerId = managerId,
       agentId = null, // No agent for public orders
       orderSource = OrderSource.PUBLIC.name,
@@ -338,7 +335,7 @@ class OrderService(
   }
 
   @Transactional
-  fun markOrderDone(orderId: String, managerId: String) {
+  fun markOrderDone(orderId: Long, managerId: String) {
     val order = orderRepository.findByIdAndManagerId(orderId, managerId) ?: throw ServiceException(
       status = HttpStatus.NOT_FOUND,
       userMessage = OrderFailureReason.NOT_FOUND.userMessage,
@@ -366,7 +363,7 @@ class OrderService(
   }
 
   @Transactional
-  fun updateOrder(orderId: String, managerId: String, agentId: Long?, request: UpdateOrderRequest) {
+  fun updateOrder(orderId: Long, managerId: String, agentId: Long?, request: UpdateOrderRequest) {
     // Fetch order with permission validation
     val order = when (agentId) {
       null -> {
@@ -436,7 +433,7 @@ class OrderService(
   }
 
   @Transactional
-  fun cancelOrder(orderId: String, managerId: String, agentId: Long? = null) {
+  fun cancelOrder(orderId: Long, managerId: String, agentId: Long? = null) {
     val order = when (agentId) {
       null -> {
         // Manager query: find order by managerId (regardless of agentId)
@@ -474,7 +471,7 @@ class OrderService(
   }
 
   @Transactional
-  fun updateOrderDiscount(orderId: String, managerId: String, agentId: Long?, request: UpdateDiscountRequest) {
+  fun updateOrderDiscount(orderId: Long, managerId: String, agentId: Long?, request: UpdateDiscountRequest) {
     // Fetch order with permission validation
     val order = when (agentId) {
       null -> {
