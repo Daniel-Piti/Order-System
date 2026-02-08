@@ -27,7 +27,7 @@ object OrderPlacedEmail {
     val template = EmailTemplateHelper.loadTemplate(TEMPLATE_NAME)
     val data = mapOf(
       "customerName" to EmailTemplateHelper.escapeHtml(EmailTemplateHelper.getCustomerName(order)),
-      "orderId" to order.id.toString(),
+      "orderId" to order.id,
       "placedAt" to EmailTemplateHelper.formatDateTime(order.placedAt!!),
       "formattedTotal" to EmailTemplateHelper.formatCurrency(order.totalPrice),
       "productList" to EmailTemplateHelper.buildProductList(order, "#4338ca", "#c7d2fe")

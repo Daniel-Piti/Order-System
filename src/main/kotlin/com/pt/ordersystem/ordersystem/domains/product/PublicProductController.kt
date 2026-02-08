@@ -55,7 +55,7 @@ class PublicProductController(
 
   @GetMapping("/order/{orderId}")
   fun getAllProductsForOrder(
-    @PathVariable orderId: Long
+    @PathVariable orderId: String
   ): ResponseEntity<List<ProductDto>> {
     val products = productService.getAllProductsForOrder(orderId)
     return ResponseEntity.ok(products)

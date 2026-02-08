@@ -79,7 +79,7 @@ class InvoiceService(
 
   private fun uploadInvoice(
     managerId: String,
-    orderId: Long,
+    orderId: String,
     invoiceSequenceNumber: Int,
     paymentMethod: String,
     paymentProof: String,
@@ -145,7 +145,7 @@ class InvoiceService(
   }
 
   @Transactional(readOnly = true)
-  fun getInvoicesByOrderIds(managerId: String, orderIds: List<Long>): Map<String, String> {
+  fun getInvoicesByOrderIds(managerId: String, orderIds: List<String>): Map<String, String> {
     if (orderIds.isEmpty()) return emptyMap()
 
     // Limit batch size to prevent performance issues
@@ -163,7 +163,7 @@ class InvoiceService(
     
     // Build the map from invoices to S3 URLs, filtering out nulls in a single pass
     return invoices.mapNotNull { invoice ->
-        s3StorageService.getPublicUrl(invoice.s3Key)?.let { invoice.orderId.toString() to it }
+        s3StorageService.getPublicUrl(invoice.s3Key)?.let { invoice.orderId to it }
       }.toMap()
   }
 

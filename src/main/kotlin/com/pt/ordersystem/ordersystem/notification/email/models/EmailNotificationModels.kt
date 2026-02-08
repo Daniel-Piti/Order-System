@@ -2,11 +2,10 @@ package com.pt.ordersystem.ordersystem.notification.email.models
 
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotNull
 
 data class EmailOrderPlacedNotificationRequest(
-  @field:NotNull
-  val orderId: Long,
+  @field:NotBlank
+  val orderId: String,
   
   @field:NotBlank
   @field:Email
@@ -14,8 +13,8 @@ data class EmailOrderPlacedNotificationRequest(
 )
 
 data class EmailOrderDoneNotificationRequest(
-  @field:NotNull
-  val orderId: Long,
+  @field:NotBlank
+  val orderId: String,
   
   @field:NotBlank
   @field:Email
@@ -23,8 +22,8 @@ data class EmailOrderDoneNotificationRequest(
 )
 
 data class EmailOrderCancelledNotificationRequest(
-  @field:NotNull
-  val orderId: Long,
+  @field:NotBlank
+  val orderId: String,
   
   @field:NotBlank
   @field:Email
@@ -32,8 +31,8 @@ data class EmailOrderCancelledNotificationRequest(
 )
 
 data class EmailOrderUpdatedNotificationRequest(
-  @field:NotNull
-  val orderId: Long,
+  @field:NotBlank
+  val orderId: String,
   
   @field:NotBlank
   @field:Email

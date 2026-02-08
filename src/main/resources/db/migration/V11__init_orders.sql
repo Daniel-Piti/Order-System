@@ -1,6 +1,6 @@
 -- ORDERS TABLE
 CREATE TABLE orders (
-    id BIGINT NOT NULL AUTO_INCREMENT,
+    id VARCHAR(255) NOT NULL,
     order_source VARCHAR(20) NOT NULL,
     manager_id VARCHAR(255) NOT NULL,
     agent_id BIGINT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE orders (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
-) AUTO_INCREMENT = 10000;
+);
 
 CREATE INDEX idx_orders_manager_id ON orders (manager_id);
 CREATE INDEX idx_orders_agent_id ON orders (agent_id);
@@ -49,7 +49,7 @@ CREATE INDEX idx_orders_manager_agent ON orders (manager_id, agent_id);
 -- ORDERS HISTORY TABLE
 CREATE TABLE orders_history (
     history_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    id BIGINT NOT NULL,
+    id VARCHAR(255) NOT NULL,
     order_source VARCHAR(20) NOT NULL,
     manager_id VARCHAR(255) NOT NULL,
     agent_id BIGINT NULL,

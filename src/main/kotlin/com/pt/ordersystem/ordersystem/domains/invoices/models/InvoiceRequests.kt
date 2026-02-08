@@ -2,7 +2,7 @@ package com.pt.ordersystem.ordersystem.domains.invoices.models
 
 data class CreateInvoiceRequest(
   val managerId: String,
-  val orderId: Long,
+  val orderId: String,
   val paymentMethod: PaymentMethod,
   val paymentProof: String,
   val allocationNumber: String? = null

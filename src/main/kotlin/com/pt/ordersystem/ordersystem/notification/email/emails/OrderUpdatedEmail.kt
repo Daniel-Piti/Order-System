@@ -33,7 +33,7 @@ object OrderUpdatedEmail {
 
     val data = mapOf(
       "customerName" to EmailTemplateHelper.escapeHtml(EmailTemplateHelper.getCustomerName(order)),
-      "orderId" to order.id.toString(),
+      "orderId" to order.id,
       "updatedAt" to EmailTemplateHelper.formatDateTime(order.updatedAt),
       "placedAtRow" to placedAtRow,
       "formattedTotal" to EmailTemplateHelper.formatCurrency(order.totalPrice),

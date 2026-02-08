@@ -52,7 +52,7 @@ class OrderManagerController(
 
   @GetMapping("/{orderId}")
   fun getOrderById(
-    @PathVariable orderId: Long,
+    @PathVariable orderId: String,
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<OrderDto> =
     ResponseEntity.ok(orderService.getOrderById(orderId = orderId, managerId = manager.id, agentId = null))
@@ -61,7 +61,7 @@ class OrderManagerController(
   fun createOrder(
     @RequestBody request: CreateOrderRequest,
     @AuthenticationPrincipal manager: AuthUser
-  ): ResponseEntity<Long> {
+  ): ResponseEntity<String> {
     // Manager creates order - agentId is null (comes from auth, not request body)
     val newOrderId = orderService.createOrder(
       managerId = manager.id,
@@ -74,7 +74,7 @@ class OrderManagerController(
 
   @PutMapping("/{orderId}/status/done")
   fun markOrderDone(
-    @PathVariable orderId: Long,
+    @PathVariable orderId: String,
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<Void> {
     orderService.markOrderDone(orderId, manager.id)
@@ -83,7 +83,7 @@ class OrderManagerController(
 
   @PutMapping("/{orderId}/status/cancelled")
   fun cancelOrder(
-    @PathVariable orderId: Long,
+    @PathVariable orderId: String,
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<Void> {
     orderService.cancelOrder(orderId, manager.id)
@@ -92,7 +92,7 @@ class OrderManagerController(
 
   @PutMapping("/{orderId}")
   fun updateOrder(
-    @PathVariable orderId: Long,
+    @PathVariable orderId: String,
     @RequestBody request: UpdateOrderRequest,
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<Void> {
@@ -102,7 +102,7 @@ class OrderManagerController(
 
   @PutMapping("/{orderId}/discount")
   fun updateOrderDiscount(
-    @PathVariable orderId: Long,
+    @PathVariable orderId: String,
     @RequestBody request: UpdateDiscountRequest,
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<Void> {

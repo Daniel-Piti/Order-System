@@ -5,7 +5,7 @@ import java.math.BigDecimal
 import java.time.LocalDateTime
 
 data class OrderDto(
-  val id: Long,
+  val id: String,
   val orderSource: OrderSource,
   val managerId: String,
   val agentId: Long?,
