@@ -1,6 +1,7 @@
 -- ORDERS TABLE
 CREATE TABLE orders (
     id VARCHAR(255) NOT NULL,
+    reference_id BIGINT NOT NULL AUTO_INCREMENT,
     order_source VARCHAR(20) NOT NULL,
     manager_id VARCHAR(255) NOT NULL,
     agent_id BIGINT NULL,
@@ -32,8 +33,9 @@ CREATE TABLE orders (
     
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id)
-);
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_orders_reference_id (reference_id)
+) AUTO_INCREMENT = 10000;
 
 CREATE INDEX idx_orders_manager_id ON orders (manager_id);
 CREATE INDEX idx_orders_agent_id ON orders (agent_id);
@@ -50,6 +52,7 @@ CREATE INDEX idx_orders_manager_agent ON orders (manager_id, agent_id);
 CREATE TABLE orders_history (
     history_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     id VARCHAR(255) NOT NULL,
+    reference_id BIGINT NULL,
     order_source VARCHAR(20) NOT NULL,
     manager_id VARCHAR(255) NOT NULL,
     agent_id BIGINT NULL,
@@ -83,15 +86,15 @@ CREATE TABLE orders_history (
     updated_at TIMESTAMP NOT NULL
 );
 
--- INSERT TRIGGER
 CREATE TRIGGER trg_orders_after_insert
 AFTER INSERT ON orders FOR EACH ROW
 INSERT INTO orders_history(
     id, order_source, manager_id, agent_id, customer_id,
     store_street_address, store_city, store_phone_number,
-    customer_name, customer_phone, customer_email, 
+    customer_name, customer_phone, customer_email,
     customer_street_address, customer_city, customer_state_id,
     status, products, products_version, total_price, discount, link_expires_at, notes, placed_at, done_at,
+    reference_id,
     created_at, updated_at
 )
 VALUES (
@@ -100,10 +103,10 @@ VALUES (
     NEW.customer_name, NEW.customer_phone, NEW.customer_email,
     NEW.customer_street_address, NEW.customer_city, NEW.customer_state_id,
     NEW.status, NEW.products, NEW.products_version, NEW.total_price, NEW.discount, NEW.link_expires_at, NEW.notes, NEW.placed_at, NEW.done_at,
+    NEW.reference_id,
     NEW.created_at, NEW.updated_at
 );
 
--- UPDATE TRIGGER
 CREATE TRIGGER trg_orders_after_update
 AFTER UPDATE ON orders FOR EACH ROW
 INSERT INTO orders_history(
@@ -112,6 +115,7 @@ INSERT INTO orders_history(
     customer_name, customer_phone, customer_email,
     customer_street_address, customer_city, customer_state_id,
     status, products, products_version, total_price, discount, link_expires_at, notes, placed_at, done_at,
+    reference_id,
     created_at, updated_at
 )
 VALUES (
@@ -120,5 +124,6 @@ VALUES (
     NEW.customer_name, NEW.customer_phone, NEW.customer_email,
     NEW.customer_street_address, NEW.customer_city, NEW.customer_state_id,
     NEW.status, NEW.products, NEW.products_version, NEW.total_price, NEW.discount, NEW.link_expires_at, NEW.notes, NEW.placed_at, NEW.done_at,
+    NEW.reference_id,
     NEW.created_at, NEW.updated_at
 );

@@ -17,6 +17,9 @@ data class OrderDbEntity(
   @Id
   val id: String,
 
+  @Column(name = "reference_id", nullable = false, insertable = false, updatable = false)
+  val referenceId: Long = 0,
+
   @Column(name = "order_source", nullable = false)
   val orderSource: String,
 

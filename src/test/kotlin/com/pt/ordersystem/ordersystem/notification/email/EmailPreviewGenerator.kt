@@ -61,6 +61,7 @@ object EmailPreviewGenerator {
 
     return OrderDto(
       id = "ORD-2024-001234",
+      referenceId = 10001L,
       orderSource = OrderSource.PUBLIC,
       managerId = "manager-123",
       agentId = 456L,
@@ -73,6 +74,7 @@ object EmailPreviewGenerator {
       customerEmail = "john.doe@example.com",
       customerStreetAddress = "456 Oak Avenue",
       customerCity = "Jerusalem",
+      customerStateId = null,
       status = OrderStatus.PLACED,
       products = listOf(
         ProductDataForOrder(
@@ -96,6 +98,7 @@ object EmailPreviewGenerator {
       ),
       productsVersion = 1,
       totalPrice = BigDecimal("336.70"), // (89.90 * 2) + 45.50 + (32.00 * 3)
+      discount = BigDecimal.ZERO,
       linkExpiresAt = now.plusDays(7),
       notes = "Please deliver to the front door. Ring the bell twice.",
       placedAt = placedAt,

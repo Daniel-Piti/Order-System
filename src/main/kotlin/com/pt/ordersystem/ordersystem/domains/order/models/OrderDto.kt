@@ -6,6 +6,7 @@ import java.time.LocalDateTime
 
 data class OrderDto(
   val id: String,
+  val referenceId: Long,
   val orderSource: OrderSource,
   val managerId: String,
   val agentId: Long?,
@@ -45,6 +46,7 @@ fun OrderDbEntity.toDto(): OrderDto {
 
   return OrderDto(
     id = this.id,
+    referenceId = this.referenceId,
     orderSource = orderSourceEnum,
     managerId = this.managerId,
     agentId = this.agentId,
