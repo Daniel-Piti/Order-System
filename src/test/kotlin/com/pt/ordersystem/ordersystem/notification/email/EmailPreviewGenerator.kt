@@ -1,5 +1,6 @@
 package com.pt.ordersystem.ordersystem.notification.email
 
+import com.pt.ordersystem.ordersystem.constants.TaxConstants
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDto
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderSource
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderStatus
@@ -99,6 +100,7 @@ object EmailPreviewGenerator {
       productsVersion = 1,
       totalPrice = BigDecimal("336.70"), // (89.90 * 2) + 45.50 + (32.00 * 3)
       discount = BigDecimal.ZERO,
+      vat = TaxConstants.VAT_PERCENTAGE,
       linkExpiresAt = now.plusDays(7),
       notes = "Please deliver to the front door. Ring the bell twice.",
       placedAt = placedAt,

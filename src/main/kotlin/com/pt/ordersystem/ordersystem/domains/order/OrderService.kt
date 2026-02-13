@@ -1,5 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.order
 
+import com.pt.ordersystem.ordersystem.constants.TaxConstants
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerService
 import com.pt.ordersystem.ordersystem.domains.location.LocationRepository
 import com.pt.ordersystem.ordersystem.domains.location.LocationService
@@ -188,6 +189,7 @@ class OrderService(
       productsVersion = 1,
       totalPrice = BigDecimal.ZERO,
       discount = BigDecimal.ZERO,
+      vat = TaxConstants.VAT_PERCENTAGE,
       linkExpiresAt = linkExpiresAt,
       notes = "",
       placedAt = null,
@@ -264,6 +266,7 @@ class OrderService(
       products = request.products,
       productsVersion = order.productsVersion,
       totalPrice = totalPrice,
+      vat = TaxConstants.VAT_PERCENTAGE,
       notes = request.notes,
       placedAt = now,
       doneAt = null,
@@ -326,6 +329,7 @@ class OrderService(
       productsVersion = 1,
       totalPrice = totalPrice,
       discount = BigDecimal.ZERO,
+      vat = TaxConstants.VAT_PERCENTAGE,
       linkExpiresAt = linkExpiresAt,
       notes = request.notes,
       placedAt = now,

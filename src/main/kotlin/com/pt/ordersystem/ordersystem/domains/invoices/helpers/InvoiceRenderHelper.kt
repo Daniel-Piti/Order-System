@@ -24,9 +24,6 @@ object InvoiceRenderHelper {
   private val currencyFormatter = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale.US))
   private val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.forLanguageTag("he-IL"))
 
-  private const val VAT_PERCENTAGE = 18
-  private val VAT_RATE = BigDecimal("1.18")
-
   // Layout constants - more formal spacing
   private const val PAGE_MARGIN = 40f
   private const val SECTION_SPACING = 25f
@@ -621,6 +618,11 @@ object InvoiceRenderHelper {
     val priceX = summaryX + 10f
     val labelRightX = summaryX + summaryWidth - 10f
 
+    // Calculate VAT rate from order's VAT
+    val vat = order.vat
+    val vatRate = BigDecimal("100").add(vat).divide(BigDecimal("100"), 4, RoundingMode.HALF_UP)
+    val vatInt = vat.toInt()
+
     val hasDiscount = order.discount > BigDecimal.ZERO
 
     // Summary lines
@@ -628,8 +630,8 @@ object InvoiceRenderHelper {
 
     if (hasDiscount) {
       val productsTotalWithVatBeforeDiscount = totalWithVat.add(order.discount)
-      val productsTotalWithoutVat = productsTotalWithVatBeforeDiscount.divide(VAT_RATE, 4, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP)
-      val discountWithoutVat = order.discount.divide(VAT_RATE, 4, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP)
+      val productsTotalWithoutVat = productsTotalWithVatBeforeDiscount.divide(vatRate, 4, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP)
+      val discountWithoutVat = order.discount.divide(vatRate, 4, RoundingMode.HALF_UP).setScale(2, RoundingMode.HALF_UP)
       val totalAfterDiscountBeforeVat = productsTotalWithoutVat.subtract(discountWithoutVat).setScale(2, RoundingMode.HALF_UP)
       val finalTotalWithVat = totalWithVat.setScale(2, RoundingMode.HALF_UP)
       val vatAmount = finalTotalWithVat.subtract(totalAfterDiscountBeforeVat).setScale(2, RoundingMode.HALF_UP)
@@ -648,7 +650,7 @@ object InvoiceRenderHelper {
         formatCurrency(productsTotalWithoutVat) to "סה\"כ ללא מע\"מ:",
         discountText to "הנחה:",
         formatCurrency(totalAfterDiscountBeforeVat) to "סה\"כ אחרי הנחה:",
-        formatCurrency(vatAmount) to "מע\"מ $VAT_PERCENTAGE%:"
+        formatCurrency(vatAmount) to "מע\"מ $vatInt%:"
       )
 
       summaryLines.forEach { (price, label) ->
@@ -657,12 +659,12 @@ object InvoiceRenderHelper {
         currentY -= if (label.contains("מע\"מ")) 25f else 20f
       }
     } else {
-      val totalBeforeVat = totalWithVat.divide(VAT_RATE, 2, RoundingMode.HALF_UP)
+      val totalBeforeVat = totalWithVat.divide(vatRate, 2, RoundingMode.HALF_UP)
       val vatAmount = totalWithVat.subtract(totalBeforeVat)
 
       val summaryLines = listOf(
         formatCurrency(totalBeforeVat) to "סה\"כ לפני מע\"מ:",
-        formatCurrency(vatAmount) to "מע\"מ $VAT_PERCENTAGE%:"
+        formatCurrency(vatAmount) to "מע\"מ $vatInt%:"
       )
 
       summaryLines.forEach { (price, label) ->
@@ -734,7 +736,7 @@ object InvoiceRenderHelper {
     }
 
     // Add extra spacing after payment details before footer
-    val spacingAfterPayment = 30f
+    val spacingAfterPayment = 15f
     return minOf(totalTextY - 5f, paymentY - spacingAfterPayment)
   }
 

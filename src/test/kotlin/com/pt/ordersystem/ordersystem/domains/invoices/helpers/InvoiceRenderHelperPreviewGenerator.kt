@@ -1,5 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.invoices.helpers
 
+import com.pt.ordersystem.ordersystem.constants.TaxConstants
 import com.pt.ordersystem.ordersystem.domains.business.models.BusinessDto
 import com.pt.ordersystem.ordersystem.domains.invoices.models.PaymentMethod
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDbEntity
@@ -135,6 +136,7 @@ object InvoiceRenderHelperPreviewGenerator {
       productsVersion = 1,
       totalPrice = totalWithVat,
       discount = discount,
+      vat = TaxConstants.VAT_PERCENTAGE,
       linkExpiresAt = now.plusDays(7),
       notes = "אנא למסור בדלת הקדמית. לצלצל פעמיים בפעמון.",
       placedAt = placedAt,

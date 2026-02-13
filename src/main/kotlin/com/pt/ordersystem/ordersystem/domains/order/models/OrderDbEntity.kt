@@ -1,5 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.order.models
 
+import com.pt.ordersystem.ordersystem.constants.TaxConstants
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductDataForOrder
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductsJsonConverter
 import jakarta.persistence.Column
@@ -78,6 +79,9 @@ data class OrderDbEntity(
 
   @Column(name = "discount", nullable = false)
   val discount: BigDecimal = BigDecimal.ZERO,
+
+  @Column(name = "vat", nullable = false)
+  val vat: BigDecimal = TaxConstants.VAT_PERCENTAGE,
 
   @Column(name = "link_expires_at", nullable = false)
   val linkExpiresAt: LocalDateTime,
