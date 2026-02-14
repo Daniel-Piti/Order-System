@@ -3,6 +3,7 @@ package com.pt.ordersystem.ordersystem.domains.business
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.business.models.BusinessDto
+import com.pt.ordersystem.ordersystem.domains.business.models.BusinessUpdateResponse
 import com.pt.ordersystem.ordersystem.domains.business.models.UpdateBusinessRequest
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -36,8 +37,8 @@ class BusinessManagerController(
   fun updateMyBusiness(
     @RequestBody updateRequest: UpdateBusinessRequest,
     @AuthenticationPrincipal manager: AuthUser
-  ): ResponseEntity<BusinessDto> {
-    val updatedBusiness = businessService.updateBusiness(manager.id, updateRequest)
-    return ResponseEntity.ok(updatedBusiness)
+  ): ResponseEntity<BusinessUpdateResponse> {
+    val response = businessService.updateBusiness(manager.id, updateRequest)
+    return ResponseEntity.ok(response)
   }
 }

@@ -21,7 +21,7 @@ import java.util.*
 
 @Service
 class S3StorageService(
-  private val config: ApplicationConfig
+  config: ApplicationConfig
 ) {
   companion object {
     // Maximum file upload size in MB
@@ -88,18 +88,14 @@ class S3StorageService(
 
   fun getPublicUrl(s3Key: String?): String? {
     if (s3Key == null) return null
-    
-    // CloudFront domain is required (best practice: private bucket + CloudFront)
-    require(s3.publicDomain.isNotBlank()) {
-      "S3 public domain (CloudFront) must be configured. " +
-      "Set config.s3.publicDomain in your configuration."
-    }
-    
+    // When public domain is not configured (e.g. local dev), return null so callers
+    // can still load entities without image URL instead of throwing 500
+    if (s3.publicDomain.isBlank()) return null
+
     // Ensure domain ends with "/" for proper URL construction
     val publicDomain = s3.publicDomain.let {
       if (it.endsWith("/")) it else "$it/"
     }
-    
     return "${publicDomain}${s3Key}"
   }
 

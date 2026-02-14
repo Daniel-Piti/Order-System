@@ -11,11 +11,14 @@ data class BusinessDto(
   val phoneNumber: String,
   val streetAddress: String,
   val city: String,
+  val imageUrl: String?,
+  val fileName: String?,
+  val mimeType: String?,
   val createdAt: LocalDateTime,
   val updatedAt: LocalDateTime,
 )
 
-fun BusinessDbEntity.toDto(): BusinessDto = BusinessDto(
+fun BusinessDbEntity.toDto(imageUrl: String? = null) = BusinessDto(
   id = this.id,
   managerId = this.managerId,
   name = this.name,
@@ -24,6 +27,9 @@ fun BusinessDbEntity.toDto(): BusinessDto = BusinessDto(
   phoneNumber = this.phoneNumber,
   streetAddress = this.streetAddress,
   city = this.city,
+  imageUrl = imageUrl,
+  fileName = this.fileName,
+  mimeType = this.mimeType,
   createdAt = this.createdAt,
   updatedAt = this.updatedAt,
 )

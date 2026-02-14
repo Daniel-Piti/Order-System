@@ -34,6 +34,18 @@ data class BusinessDbEntity(
   @Column(nullable = false)
   val city: String,
 
+  @Column(name = "s3_key", length = 512)
+  val s3Key: String?,
+
+  @Column(name = "file_name")
+  val fileName: String?,
+
+  @Column(name = "file_size_bytes")
+  val fileSizeBytes: Long?,
+
+  @Column(name = "mime_type", length = 100)
+  val mimeType: String?,
+
   @Column(name = "created_at", nullable = false)
   val createdAt: LocalDateTime = LocalDateTime.now(),
 
