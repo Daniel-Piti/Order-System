@@ -35,18 +35,32 @@ class OrderManagerController(
     @RequestParam(defaultValue = "DESC") sortDirection: String,
     @RequestParam(required = false) status: String?,
     @RequestParam(defaultValue = "false") filterAgent: Boolean,
-    @RequestParam(required = false) agentId: Long?
+    @RequestParam(required = false) agentId: Long?,
+    @RequestParam(required = false) customerId: String?,
   ): ResponseEntity<Page<OrderDto>> {
-    val orders = orderService.getOrders(
-      managerId = manager.id,
-      page = page,
-      size = size,
-      sortBy = sortBy,
-      sortDirection = sortDirection,
-      status = status,
-      filterAgent = filterAgent,
-      agentId = agentId
-    )
+    val orders = if (customerId != null) {
+      orderService.getOrdersByCustomerId(
+        managerId = manager.id,
+        customerId = customerId,
+        page = page,
+        size = size,
+        sortBy = sortBy,
+        sortDirection = sortDirection,
+        status = status,
+        agentId = null
+      )
+    } else {
+      orderService.getOrders(
+        managerId = manager.id,
+        page = page,
+        size = size,
+        sortBy = sortBy,
+        sortDirection = sortDirection,
+        status = status,
+        filterAgent = filterAgent,
+        agentId = agentId
+      )
+    }
     return ResponseEntity.ok(orders)
   }
 

@@ -33,7 +33,12 @@ class OrderService(
 
   companion object {
     private const val MAX_PAGE_SIZE = 100
+    private val ALLOWED_SORT_FIELDS = setOf("createdAt", "updatedAt", "placedAt", "doneAt", "totalPrice", "status")
+    private const val DEFAULT_SORT_FIELD = "createdAt"
   }
+
+  private fun resolveSortBy(sortBy: String): String =
+    if (sortBy in ALLOWED_SORT_FIELDS) sortBy else DEFAULT_SORT_FIELD
 
   fun getOrders(
     managerId: String,
@@ -48,11 +53,12 @@ class OrderService(
     // Enforce max page size
     val validatedSize = size.coerceAtMost(MAX_PAGE_SIZE)
 
-    // Create sort based on direction
+    // Create sort based on direction (whitelist sort field for security)
+    val safeSortBy = resolveSortBy(sortBy)
     val sort = if (sortDirection.uppercase() == "DESC") {
-      Sort.by(sortBy).descending()
+      Sort.by(safeSortBy).descending()
     } else {
-      Sort.by(sortBy).ascending()
+      Sort.by(safeSortBy).ascending()
     }
 
     // Create pageable with sort
@@ -93,6 +99,42 @@ class OrderService(
       }
     }
 
+    return selectedOrders.map { it.toDto() }
+  }
+
+  fun getOrdersByCustomerId(
+    managerId: String,
+    customerId: String,
+    page: Int,
+    size: Int,
+    sortBy: String,
+    sortDirection: String,
+    status: String?,
+    agentId: Long?
+  ): Page<OrderDto> {
+    // When agent scoped, ensure customer belongs to this agent (throws if not)
+    if (agentId != null) {
+      customerService.getCustomerDto(managerId, customerId, agentId)
+    }
+    val validatedSize = size.coerceAtMost(MAX_PAGE_SIZE)
+    val safeSortBy = resolveSortBy(sortBy)
+    val sort = if (sortDirection.uppercase() == "DESC") {
+      Sort.by(safeSortBy).descending()
+    } else {
+      Sort.by(safeSortBy).ascending()
+    }
+    val pageable = PageRequest.of(page, validatedSize, sort)
+
+    val selectedOrders = when {
+      agentId != null && !status.isNullOrBlank() ->
+        orderRepository.findAllByManagerIdAndAgentIdAndCustomerIdAndStatus(managerId, agentId, customerId, status, pageable)
+      agentId != null ->
+        orderRepository.findAllByManagerIdAndAgentIdAndCustomerId(managerId, agentId, customerId, pageable)
+      !status.isNullOrBlank() ->
+        orderRepository.findAllByManagerIdAndCustomerIdAndStatus(managerId, customerId, status, pageable)
+      else ->
+        orderRepository.findAllByManagerIdAndCustomerId(managerId, customerId, pageable)
+    }
     return selectedOrders.map { it.toDto() }
   }
 

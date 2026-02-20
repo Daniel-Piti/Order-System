@@ -34,19 +34,33 @@ class OrderAgentController(
     @RequestParam(defaultValue = "20") size: Int,
     @RequestParam(defaultValue = "createdAt") sortBy: String,
     @RequestParam(defaultValue = "DESC") sortDirection: String,
-    @RequestParam(required = false) status: String?
+    @RequestParam(required = false) status: String?,
+    @RequestParam(required = false) customerId: String?
   ): ResponseEntity<Page<OrderDto>> {
     val agentEntity = agentService.getAgentEntity(agent.id)
-    val orders = orderService.getOrders(
-      managerId = agentEntity.managerId,
-      page = page,
-      size = size,
-      sortBy = sortBy,
-      sortDirection = sortDirection,
-      status = status,
-      filterAgent = true,
-      agentId = agentEntity.id
-    )
+    val orders = if (customerId != null) {
+      orderService.getOrdersByCustomerId(
+        managerId = agentEntity.managerId,
+        customerId = customerId,
+        page = page,
+        size = size,
+        sortBy = sortBy,
+        sortDirection = sortDirection,
+        status = status,
+        agentId = agentEntity.id
+      )
+    } else {
+      orderService.getOrders(
+        managerId = agentEntity.managerId,
+        page = page,
+        size = size,
+        sortBy = sortBy,
+        sortDirection = sortDirection,
+        status = status,
+        filterAgent = true,
+        agentId = agentEntity.id
+      )
+    }
     return ResponseEntity.ok(orders)
   }
 

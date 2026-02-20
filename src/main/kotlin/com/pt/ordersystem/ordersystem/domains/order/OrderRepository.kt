@@ -20,6 +20,11 @@ interface OrderRepository : JpaRepository<OrderDbEntity, String> {
   fun findByIdAndManagerId(id: String, managerId: String): OrderDbEntity?
   fun findByIdAndManagerIdAndAgentId(id: String, managerId: String, agentId: Long): OrderDbEntity?
 
+  fun findAllByManagerIdAndCustomerId(managerId: String, customerId: String, pageable: Pageable): Page<OrderDbEntity>
+  fun findAllByManagerIdAndCustomerIdAndStatus(managerId: String, customerId: String, status: String, pageable: Pageable): Page<OrderDbEntity>
+  fun findAllByManagerIdAndAgentIdAndCustomerId(managerId: String, agentId: Long, customerId: String, pageable: Pageable): Page<OrderDbEntity>
+  fun findAllByManagerIdAndAgentIdAndCustomerIdAndStatus(managerId: String, agentId: Long, customerId: String, status: String, pageable: Pageable): Page<OrderDbEntity>
+
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query(
     value = """
