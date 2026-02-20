@@ -1,5 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.brand.models
 
+/** API response type. Controllers map [Brand] to this for HTTP responses. */
 data class BrandDto(
     val id: Long,
     val managerId: String,
@@ -7,13 +8,4 @@ data class BrandDto(
     val imageUrl: String?,
     val fileName: String?,
     val mimeType: String?,
-)
-
-fun BrandDbEntity.toDto(imageUrl: String? = null) = BrandDto(
-    id = this.id,
-    managerId = this.managerId,
-    name = this.name,
-    imageUrl = imageUrl,
-    fileName = this.fileName,
-    mimeType = this.mimeType
 )

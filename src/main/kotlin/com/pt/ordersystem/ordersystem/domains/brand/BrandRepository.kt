@@ -6,9 +6,11 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface BrandRepository : JpaRepository<BrandDbEntity, Long> {
-    
+
+    fun countByManagerId(managerId: String): Long
+
     fun findByManagerId(managerId: String): List<BrandDbEntity>
-    
+
     fun findByManagerIdAndId(managerId: String, id: Long): BrandDbEntity?
     
     fun findByManagerIdAndName(managerId: String, name: String): BrandDbEntity?

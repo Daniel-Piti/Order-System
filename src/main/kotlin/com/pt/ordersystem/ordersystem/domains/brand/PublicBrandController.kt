@@ -1,6 +1,8 @@
 package com.pt.ordersystem.ordersystem.domains.brand
 
+import com.pt.ordersystem.ordersystem.domains.brand.models.Brand
 import com.pt.ordersystem.ordersystem.domains.brand.models.BrandDto
+import com.pt.ordersystem.ordersystem.domains.brand.models.toDto
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
@@ -16,10 +18,9 @@ class PublicBrandController(
 
     @GetMapping("/manager/{managerId}")
     fun getAllBrands(@PathVariable managerId: String): ResponseEntity<List<BrandDto>> {
-        // Validate manager exists first - will throw 404 if not found
-        managerService.getManagerById(managerId)
-        
-        return ResponseEntity.ok(brandService.getManagerBrands(managerId))
+        managerService.validateManagerExists(managerId)
+        val brands = brandService.getManagerBrands(managerId)
+        return ResponseEntity.ok(brands.map { it.toDto() })
     }
 
     @GetMapping("/manager/{managerId}/brand/{brandId}")
@@ -27,10 +28,9 @@ class PublicBrandController(
         @PathVariable managerId: String,
         @PathVariable brandId: Long
     ): ResponseEntity<BrandDto> {
-        // Validate manager exists
-        managerService.getManagerById(managerId)
-        
-        return ResponseEntity.ok(brandService.getBrandById(managerId, brandId))
+        managerService.validateManagerExists(managerId)
+        val brand = brandService.getBrandById(managerId, brandId)
+        return ResponseEntity.ok(brand.toDto())
     }
 }
 

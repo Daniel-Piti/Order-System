@@ -39,6 +39,17 @@ class ManagerService(
       )
     }
 
+  fun validateManagerExists(managerId: String) {
+    if (!managerRepository.existsById(managerId)) {
+      throw ServiceException(
+        status = HttpStatus.NOT_FOUND,
+        userMessage = ManagerFailureReason.NOT_FOUND.userMessage,
+        technicalMessage = ManagerFailureReason.NOT_FOUND.technical + "managerId=$managerId",
+        severity = SeverityLevel.WARN
+      )
+    }
+  }
+
   fun createManager(newManagerRequest: NewManagerRequest): String {
 
     with(newManagerRequest) {
