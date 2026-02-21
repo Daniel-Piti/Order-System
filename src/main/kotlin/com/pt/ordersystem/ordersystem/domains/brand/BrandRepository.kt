@@ -29,7 +29,7 @@ class BrandRepository(
     fun existsByManagerIdAndName(managerId: String, name: String): Boolean =
         brandDao.existsByManagerIdAndName(managerId, name)
 
-    fun existsByManagerIdAndNameAndIdNot(managerId: String, name: String, id: Long): Boolean =
+    fun hasDuplicateName(managerId: String, name: String, id: Long): Boolean =
         brandDao.existsByManagerIdAndNameAndIdNot(managerId, name, id)
 
     fun save(brandDbEntity: BrandDbEntity): BrandDbEntity =

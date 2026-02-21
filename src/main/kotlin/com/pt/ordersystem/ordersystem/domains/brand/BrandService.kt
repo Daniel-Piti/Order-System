@@ -72,7 +72,7 @@ class BrandService(
         val brandDbEntity = brandRepository.findByManagerIdAndId(managerId, brandId)
 
         val trimmedBrandName = request.name.trim()
-        val brandAlreadyExists = brandRepository.existsByManagerIdAndNameAndIdNot(managerId, trimmedBrandName, brandId)
+        val brandAlreadyExists = brandRepository.hasDuplicateName(managerId, trimmedBrandName, brandId)
 
         BrandValidators.validateUpdateBrand(
             brandName = trimmedBrandName,
