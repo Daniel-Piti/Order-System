@@ -19,11 +19,11 @@ data class LinksCreatedStats(
   val managerLinks: Int,
   val agentLinks: Int,
   val total: Int,
-  val linksPerAgent: Map<Long, AgentLinkInfo>
+  val linksPerAgent: Map<String, AgentLinkInfo>
 )
 
 data class AgentLinkInfo(
-  val agentId: Long,
+  val agentId: String,
   val agentName: String,
   val linkCount: Int
 )

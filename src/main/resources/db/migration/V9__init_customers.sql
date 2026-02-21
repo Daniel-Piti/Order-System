@@ -1,7 +1,7 @@
 -- CUSTOMERS TABLE
 CREATE TABLE customers (
     id VARCHAR(255) NOT NULL,
-    agent_id BIGINT,
+    agent_id VARCHAR(36) NULL,
     manager_id VARCHAR(255) NOT NULL,
     discount_percentage INT NOT NULL DEFAULT 0,
     name VARCHAR(255) NOT NULL,
@@ -22,7 +22,7 @@ CREATE INDEX idx_customers_manager_id ON customers (manager_id);
 CREATE TABLE customers_history (
     history_id BIGINT AUTO_INCREMENT PRIMARY KEY,
     id VARCHAR(255) NOT NULL,
-    agent_id BIGINT,
+    agent_id VARCHAR(36) NULL,
     manager_id VARCHAR(255) NOT NULL,
     discount_percentage INT NOT NULL DEFAULT 0,
     name VARCHAR(255) NOT NULL,

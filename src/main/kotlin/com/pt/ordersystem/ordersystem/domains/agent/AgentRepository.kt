@@ -5,9 +5,10 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 
 @Repository
-interface AgentRepository : JpaRepository<AgentDbEntity, Long> {
+interface AgentRepository : JpaRepository<AgentDbEntity, String> {
   fun findByManagerId(managerId: String): List<AgentDbEntity>
-  fun findByManagerIdAndId(managerId: String, id: Long): AgentDbEntity?
+  fun findByManagerIdAndId(managerId: String, id: String): AgentDbEntity?
   fun findByEmail(email: String): AgentDbEntity?
   fun existsByEmail(email: String): Boolean
+  fun countByManagerId(managerId: String): Long
 }

@@ -65,7 +65,7 @@ object EmailPreviewGenerator {
       referenceId = 10001L,
       orderSource = OrderSource.PUBLIC,
       managerId = "manager-123",
-      agentId = 456L,
+      agentId = "agent-456",
       customerId = "customer-789",
       storeStreetAddress = "123 Main Street",
       storeCity = "Tel Aviv",

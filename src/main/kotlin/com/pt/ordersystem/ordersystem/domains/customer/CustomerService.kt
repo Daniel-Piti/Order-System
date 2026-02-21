@@ -23,7 +23,7 @@ class CustomerService(
     private const val MAX_CUSTOMER_CAP = 100
   }
 
-  fun getCustomers(managerId: String, agentId: Long?): List<CustomerDto> {
+  fun getCustomers(managerId: String, agentId: String?): List<CustomerDto> {
     val customers = if (agentId == null) {
       customerRepository.findByManagerId(managerId)
     } else {
@@ -33,11 +33,11 @@ class CustomerService(
     return customers.map { it.toDto() }
   }
 
-  fun getCustomerDto(managerId: String, customerId: String, agentId: Long? = null) =
+  fun getCustomerDto(managerId: String, customerId: String, agentId: String? = null) =
     getCustomer(managerId, agentId, customerId).toDto()
 
   @Transactional
-  fun createCustomer(managerId: String, agentId: Long?, customerPayload: CustomerPayload): CustomerDto {
+  fun createCustomer(managerId: String, agentId: String?, customerPayload: CustomerPayload): CustomerDto {
     val normalizedPayload = normalizePayload(customerPayload)
 
     // Validations
@@ -69,7 +69,7 @@ class CustomerService(
   @Transactional
   fun updateCustomer(
     managerId: String,
-    agentId: Long?,
+    agentId: String?,
     customerId: String,
     customerPayload: CustomerPayload
   ): CustomerDto {
@@ -96,7 +96,7 @@ class CustomerService(
   }
 
   @Transactional
-  fun deleteCustomer(managerId: String, agentId: Long?, customerId: String) {
+  fun deleteCustomer(managerId: String, agentId: String?, customerId: String) {
     val currentCustomer = getCustomer(managerId, agentId, customerId)
 
     val overrides = productOverrideRepository.findByManagerIdAndCustomerId(managerId, customerId)
@@ -106,7 +106,7 @@ class CustomerService(
   }
 
   @Transactional
-  fun unassignCustomersFromAgent(managerId: String, agentId: Long) {
+  fun unassignCustomersFromAgent(managerId: String, agentId: String) {
     val customers = customerRepository.findByManagerIdAndAgentId(managerId, agentId)
     customers.forEach { customer ->
       val updated = customer.copy(
@@ -149,7 +149,7 @@ class CustomerService(
     FieldValidators.validateNumericString(customerPayload.stateId, 9, "Customer state ID")
   }
 
-  private fun getCustomer(managerId: String, agentId: Long?, customerId: String): CustomerDbEntity {
+  private fun getCustomer(managerId: String, agentId: String?, customerId: String): CustomerDbEntity {
     if (agentId == null) {
       return customerRepository.findByManagerIdAndId(managerId, customerId)
         ?: throw ServiceException(
@@ -171,7 +171,7 @@ class CustomerService(
       )
   }
 
-  private fun validateCustomerCap(managerId: String, agentId: Long?) {
+  private fun validateCustomerCap(managerId: String, agentId: String?) {
     if (agentId != null) {
       val agentCustomerCount = customerRepository.countByAgentId(agentId)
       if (agentCustomerCount >= MAX_CUSTOMER_CAP) {
@@ -195,7 +195,7 @@ class CustomerService(
     }
   }
 
-  private fun validateAgentExists(managerId: String, agentId: Long) {
+  private fun validateAgentExists(managerId: String, agentId: String) {
     agentRepository.findByManagerIdAndId(managerId, agentId)
       ?: throw ServiceException(
         status = HttpStatus.NOT_FOUND,

@@ -39,7 +39,7 @@ class AgentManagerController(
   fun createAgent(
     @AuthenticationPrincipal manager: AuthUser,
     @RequestBody request: NewAgentRequest,
-  ): ResponseEntity<Long> {
+  ): ResponseEntity<String> {
     val agentId = agentService.createAgent(manager.id, request)
     return ResponseEntity.status(HttpStatus.CREATED).body(agentId)
   }
@@ -47,7 +47,7 @@ class AgentManagerController(
   @PutMapping("/{agentId}")
   fun updateAgentForManager(
     @AuthenticationPrincipal manager: AuthUser,
-    @PathVariable agentId: Long,
+    @PathVariable agentId: String,
     @RequestBody request: UpdateAgentRequest,
   ): ResponseEntity<AgentDto> =
     ResponseEntity.ok(agentService.updateAgentForManager(manager.id, agentId, request))
@@ -55,7 +55,7 @@ class AgentManagerController(
   @DeleteMapping("/{agentId}")
   fun deleteAgent(
     @AuthenticationPrincipal manager: AuthUser,
-    @PathVariable agentId: Long,
+    @PathVariable agentId: String,
   ): ResponseEntity<String> {
     agentService.deleteAgent(manager.id, agentId)
     return ResponseEntity.ok("Agent deleted successfully")

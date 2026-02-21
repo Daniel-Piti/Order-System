@@ -13,7 +13,7 @@ data class CustomerDbEntity(
   val id: String,
 
   @Column(name = "agent_id")
-  val agentId: Long?,
+  val agentId: String?,
 
   @Column(name = "manager_id", nullable = false)
   val managerId: String,

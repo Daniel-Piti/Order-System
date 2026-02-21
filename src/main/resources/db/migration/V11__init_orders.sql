@@ -4,7 +4,7 @@ CREATE TABLE orders (
     reference_id BIGINT NOT NULL AUTO_INCREMENT,
     order_source VARCHAR(20) NOT NULL,
     manager_id VARCHAR(255) NOT NULL,
-    agent_id BIGINT NULL,
+    agent_id VARCHAR(36) NULL,
     customer_id VARCHAR(255) NULL,
     
     -- Store (pickup location) - selected by customer
@@ -56,7 +56,7 @@ CREATE TABLE orders_history (
     reference_id BIGINT NULL,
     order_source VARCHAR(20) NOT NULL,
     manager_id VARCHAR(255) NOT NULL,
-    agent_id BIGINT NULL,
+    agent_id VARCHAR(36) NULL,
     customer_id VARCHAR(255) NULL,
     
     -- Store location snapshot

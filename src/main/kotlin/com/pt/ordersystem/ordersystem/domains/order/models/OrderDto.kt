@@ -9,7 +9,7 @@ data class OrderDto(
   val referenceId: Long,
   val orderSource: OrderSource,
   val managerId: String,
-  val agentId: Long?,
+  val agentId: String?,
   val customerId: String?,
   
   // Store location (selected by customer)

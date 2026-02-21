@@ -2,7 +2,7 @@ package com.pt.ordersystem.ordersystem.domains.customer.models
 
 data class CustomerDto(
   val id: String,
-  val agentId: Long?,
+  val agentId: String?,
   val managerId: String,
   val discountPercentage: Int,
   val name: String,

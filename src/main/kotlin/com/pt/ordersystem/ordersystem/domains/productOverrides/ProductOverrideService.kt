@@ -28,8 +28,8 @@ class ProductOverrideService(
 
   fun getAllOverrides(
     managerId: String,
-    actorAgentId: Long? = null,
-    filterAgentId: Long? = null,
+    actorAgentId: String? = null,
+    filterAgentId: String? = null,
     includeManagerOverrides: Boolean = true,
     includeAgentOverrides: Boolean = true,
     page: Int,
@@ -76,12 +76,12 @@ class ProductOverrideService(
     return overridesPage.map { it.toProductOverrideWithPriceDto() }
   }
 
-  fun getProductOverrideById(managerId: String, overrideId: Long, agentId: Long? = null): ProductOverrideDto {
+  fun getProductOverrideById(managerId: String, overrideId: Long, agentId: String? = null): ProductOverrideDto {
     val override = getValidOverride(managerId, overrideId, agentId)
     return override.toDto()
   }
 
-  fun getProductOverridesForProductId(managerId: String, productId: String, agentId: Long? = null): List<ProductOverrideDto> {
+  fun getProductOverridesForProductId(managerId: String, productId: String, agentId: String? = null): List<ProductOverrideDto> {
     val overrides = if (agentId == null) {
       productOverrideRepository.findByManagerIdAndProductId(managerId, productId)
     } else {
@@ -90,7 +90,7 @@ class ProductOverrideService(
     return overrides.map { it.toDto() }
   }
 
-  fun getProductOverridesByCustomerId(managerId: String, customerId: String, agentId: Long? = null): List<ProductOverrideDto> {
+  fun getProductOverridesByCustomerId(managerId: String, customerId: String, agentId: String? = null): List<ProductOverrideDto> {
     val overrides = if (agentId == null) {
       productOverrideRepository.findByManagerIdAndCustomerId(managerId, customerId)
     } else {
@@ -100,7 +100,7 @@ class ProductOverrideService(
   }
 
   @Transactional
-  fun createProductOverride(managerId: String, request: CreateProductOverrideRequest, agentId: Long? = null): ProductOverrideDto {
+  fun createProductOverride(managerId: String, request: CreateProductOverrideRequest, agentId: String? = null): ProductOverrideDto {
     FieldValidators.validatePrice(request.overridePrice)
 
     val product = productRepository.findByManagerIdAndId(managerId, request.productId)
@@ -152,7 +152,7 @@ class ProductOverrideService(
   }
 
   @Transactional
-  fun updateProductOverride(managerId: String, overrideId: Long, request: UpdateProductOverrideRequest, agentId: Long? = null): ProductOverrideDto {
+  fun updateProductOverride(managerId: String, overrideId: Long, request: UpdateProductOverrideRequest, agentId: String? = null): ProductOverrideDto {
     FieldValidators.validatePrice(request.overridePrice)
     
     val override = getValidOverride(managerId, overrideId, agentId)
@@ -183,7 +183,7 @@ class ProductOverrideService(
     return savedOverride.toDto()
   }
 
-  fun deleteProductOverride(managerId: String, overrideId: Long, agentId: Long? = null) {
+  fun deleteProductOverride(managerId: String, overrideId: Long, agentId: String? = null) {
     val override = getValidOverride(managerId, overrideId, agentId)
     productOverrideRepository.delete(override)
   }
@@ -195,7 +195,7 @@ class ProductOverrideService(
   }
 
   @Transactional
-  fun deleteAllOverridesForAgent(managerId: String, agentId: Long) {
+  fun deleteAllOverridesForAgent(managerId: String, agentId: String) {
     val overrides = productOverrideRepository.findByManagerIdAndAgentId(managerId, agentId)
     productOverrideRepository.deleteAll(overrides)
   }
@@ -219,7 +219,7 @@ class ProductOverrideService(
     overridePrice = overridePrice,
   )
 
-  private fun getValidOverride(managerId: String, overrideId: Long, agentId: Long?): ProductOverrideDbEntity {
+  private fun getValidOverride(managerId: String, overrideId: Long, agentId: String?): ProductOverrideDbEntity {
     val override = productOverrideRepository.findByManagerIdAndId(managerId, overrideId)
       ?: throw ServiceException(
         status = HttpStatus.NOT_FOUND,
@@ -239,7 +239,7 @@ class ProductOverrideService(
     return override
   }
 
-  private fun validateCustomerAccess(managerId: String, agentId: Long?, customerId: String) {
+  private fun validateCustomerAccess(managerId: String, agentId: String?, customerId: String) {
     try {
       customerService.getCustomerDto(managerId, customerId, agentId)
     } catch (e: ServiceException) {

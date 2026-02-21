@@ -28,7 +28,7 @@ data class OrderDbEntity(
   val managerId: String,
 
   @Column(name = "agent_id")
-  val agentId: Long? = null,
+  val agentId: String? = null,
 
   @Column(name = "customer_id")
   val customerId: String?,

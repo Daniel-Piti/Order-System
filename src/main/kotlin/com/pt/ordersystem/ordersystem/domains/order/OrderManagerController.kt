@@ -35,7 +35,7 @@ class OrderManagerController(
     @RequestParam(defaultValue = "DESC") sortDirection: String,
     @RequestParam(required = false) status: String?,
     @RequestParam(defaultValue = "false") filterAgent: Boolean,
-    @RequestParam(required = false) agentId: Long?,
+    @RequestParam(required = false) agentId: String?,
     @RequestParam(required = false) customerId: String?,
   ): ResponseEntity<Page<OrderDto>> {
     val orders = if (customerId != null) {

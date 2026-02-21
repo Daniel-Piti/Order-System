@@ -3,7 +3,7 @@ package com.pt.ordersystem.ordersystem.domains.agent.models
 import java.time.LocalDateTime
 
 data class AgentDto(
-  val id: Long,
+  val id: String,
   val managerId: String,
   val firstName: String,
   val lastName: String,

@@ -38,11 +38,7 @@ class ProductOverrideManagerController(
     val (filterAgentId, includeManagerOverrides, includeAgentOverrides) = when {
       agentId.isNullOrBlank() -> Triple(null, true, true)
       agentId.equals("manager", ignoreCase = true) -> Triple(null, true, false)
-      else -> {
-        val parsed = agentId.toLongOrNull()
-          ?: throw IllegalArgumentException("Invalid agentId parameter")
-        Triple(parsed, false, true)
-      }
+      else -> Triple(agentId, false, true)
     }
 
     val overrides = productOverrideService.getAllOverrides(

@@ -13,17 +13,17 @@ import java.time.LocalDateTime
 interface OrderRepository : JpaRepository<OrderDbEntity, String> {
   fun findAllByManagerId(managerId: String, pageable: Pageable): Page<OrderDbEntity>
   fun findAllByManagerIdAndStatus(managerId: String, status: String, pageable: Pageable): Page<OrderDbEntity>
-  fun findAllByManagerIdAndAgentId(managerId: String, agentId: Long, pageable: Pageable): Page<OrderDbEntity>
-  fun findAllByManagerIdAndAgentIdAndStatus(managerId: String, agentId: Long, status: String, pageable: Pageable): Page<OrderDbEntity>
+  fun findAllByManagerIdAndAgentId(managerId: String, agentId: String, pageable: Pageable): Page<OrderDbEntity>
+  fun findAllByManagerIdAndAgentIdAndStatus(managerId: String, agentId: String, status: String, pageable: Pageable): Page<OrderDbEntity>
   fun findAllByManagerIdAndAgentIdIsNull(managerId: String, pageable: Pageable): Page<OrderDbEntity>
   fun findAllByManagerIdAndAgentIdIsNullAndStatus(managerId: String, status: String, pageable: Pageable): Page<OrderDbEntity>
   fun findByIdAndManagerId(id: String, managerId: String): OrderDbEntity?
-  fun findByIdAndManagerIdAndAgentId(id: String, managerId: String, agentId: Long): OrderDbEntity?
+  fun findByIdAndManagerIdAndAgentId(id: String, managerId: String, agentId: String): OrderDbEntity?
 
   fun findAllByManagerIdAndCustomerId(managerId: String, customerId: String, pageable: Pageable): Page<OrderDbEntity>
   fun findAllByManagerIdAndCustomerIdAndStatus(managerId: String, customerId: String, status: String, pageable: Pageable): Page<OrderDbEntity>
-  fun findAllByManagerIdAndAgentIdAndCustomerId(managerId: String, agentId: Long, customerId: String, pageable: Pageable): Page<OrderDbEntity>
-  fun findAllByManagerIdAndAgentIdAndCustomerIdAndStatus(managerId: String, agentId: Long, customerId: String, status: String, pageable: Pageable): Page<OrderDbEntity>
+  fun findAllByManagerIdAndAgentIdAndCustomerId(managerId: String, agentId: String, customerId: String, pageable: Pageable): Page<OrderDbEntity>
+  fun findAllByManagerIdAndAgentIdAndCustomerIdAndStatus(managerId: String, agentId: String, customerId: String, status: String, pageable: Pageable): Page<OrderDbEntity>
 
   @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query(

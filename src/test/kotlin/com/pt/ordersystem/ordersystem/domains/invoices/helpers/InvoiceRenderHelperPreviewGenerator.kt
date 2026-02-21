@@ -54,16 +54,19 @@ object InvoiceRenderHelperPreviewGenerator {
 
   private fun createSampleBusiness(): BusinessDto {
     return BusinessDto(
-      id = "business-123",
-      managerId = "manager-123",
-      name = "דניאל פיטימסון בע\"מ",
-      stateIdNumber = "515123456",
-      email = "info@pitimson.co.il",
-      phoneNumber = "050-1234567",
-      streetAddress = "רחוב הרצל 15",
-      city = "תל אביב",
-      createdAt = LocalDateTime.now(),
-      updatedAt = LocalDateTime.now()
+        id = "business-123",
+        managerId = "manager-123",
+        name = "דניאל פיטימסון בע\"מ",
+        stateIdNumber = "515123456",
+        email = "info@pitimson.co.il",
+        phoneNumber = "050-1234567",
+        streetAddress = "רחוב הרצל 15",
+        city = "תל אביב",
+        createdAt = LocalDateTime.now(),
+        updatedAt = LocalDateTime.now(),
+        imageUrl = "",
+        fileName = "",
+        mimeType = "",
     )
   }
 
@@ -89,7 +92,7 @@ object InvoiceRenderHelperPreviewGenerator {
       referenceId = 10001L,
       orderSource = "PUBLIC",
       managerId = "manager-123",
-      agentId = 456L,
+      agentId = "agent-456",
       customerId = "customer-789",
       storeStreetAddress = "רחוב דיזנגוף 50",
       storeCity = "תל אביב",

@@ -48,7 +48,7 @@ class OrderService(
     sortDirection: String,
     status: String?,
     filterAgent: Boolean,
-    agentId: Long?
+    agentId: String?
   ): Page<OrderDto> {
     // Enforce max page size
     val validatedSize = size.coerceAtMost(MAX_PAGE_SIZE)
@@ -110,7 +110,7 @@ class OrderService(
     sortBy: String,
     sortDirection: String,
     status: String?,
-    agentId: Long?
+    agentId: String?
   ): Page<OrderDto> {
     // When agent scoped, ensure customer belongs to this agent (throws if not)
     if (agentId != null) {
@@ -151,7 +151,7 @@ class OrderService(
     return order.toPublicDto()
   }
 
-  fun getOrderById(orderId: String, managerId: String, agentId: Long? = null): OrderDto {
+  fun getOrderById(orderId: String, managerId: String, agentId: String? = null): OrderDto {
     val order = when (agentId) {
       null -> {
         // Manager query: find order by managerId (regardless of agentId)
@@ -185,7 +185,7 @@ class OrderService(
   }
 
   @Transactional
-  fun createOrder(managerId: String, agentId: Long?, orderSource: OrderSource, request: CreateOrderRequest): String {
+  fun createOrder(managerId: String, agentId: String?, orderSource: OrderSource, request: CreateOrderRequest): String {
     
     // Validate manager has at least one location
     val locationCount = locationRepository.countByManagerId(managerId)
@@ -412,7 +412,7 @@ class OrderService(
   }
 
   @Transactional
-  fun updateOrder(orderId: String, managerId: String, agentId: Long?, request: UpdateOrderRequest) {
+  fun updateOrder(orderId: String, managerId: String, agentId: String?, request: UpdateOrderRequest) {
     // Fetch order with permission validation
     val order = when (agentId) {
       null -> {
@@ -482,7 +482,7 @@ class OrderService(
   }
 
   @Transactional
-  fun cancelOrder(orderId: String, managerId: String, agentId: Long? = null) {
+  fun cancelOrder(orderId: String, managerId: String, agentId: String? = null) {
     val order = when (agentId) {
       null -> {
         // Manager query: find order by managerId (regardless of agentId)
@@ -520,7 +520,7 @@ class OrderService(
   }
 
   @Transactional
-  fun updateOrderDiscount(orderId: String, managerId: String, agentId: Long?, request: UpdateDiscountRequest) {
+  fun updateOrderDiscount(orderId: String, managerId: String, agentId: String?, request: UpdateDiscountRequest) {
     // Fetch order with permission validation
     val order = when (agentId) {
       null -> {

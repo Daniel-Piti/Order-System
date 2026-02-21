@@ -45,7 +45,7 @@ class BusinessStatsService(
     val allAgents = agentService.getAgentsForManager(managerId)
     
     val linkCountsMap = linksPerAgentData.associate { row ->
-      val agentId = (row["agentId"] as? Number)?.toLong() ?: 0L
+      val agentId = row["agentId"] as? String ?: ""
       val linkCount = (row["count"] as? Number)?.toInt() ?: 0
       agentId to linkCount
     }

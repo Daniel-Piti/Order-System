@@ -2,8 +2,6 @@ package com.pt.ordersystem.ordersystem.domains.agent.models
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import java.time.LocalDateTime
@@ -13,8 +11,8 @@ import java.time.LocalDateTime
 data class AgentDbEntity(
 
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  val id: Long = 0,
+  @Column(nullable = false, length = 36)
+  val id: String,
 
   @Column(name = "manager_id", nullable = false, length = 255)
   val managerId: String,

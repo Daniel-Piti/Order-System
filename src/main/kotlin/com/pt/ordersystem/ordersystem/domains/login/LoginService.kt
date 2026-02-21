@@ -70,7 +70,7 @@ class LoginService(
         )
       }
 
-      val token = jwtUtil.generateToken(agent.email, agent.id.toString(), listOf(Roles.AGENT))
+      val token = jwtUtil.generateToken(agent.email, agent.id, listOf(Roles.AGENT))
       return LoginResponse(token)
     } catch (e: ServiceException) {
       if (e.status == HttpStatus.NOT_FOUND) {

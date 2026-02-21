@@ -18,10 +18,10 @@ interface ProductOverrideRepository : JpaRepository<ProductOverrideDbEntity, Lon
   fun findByManagerIdAndProductId(managerId: String, productId: String): List<ProductOverrideDbEntity>
   fun findByManagerIdAndCustomerId(managerId: String, customerId: String): List<ProductOverrideDbEntity>
   fun findByManagerIdAndAgentIdIsNullAndProductIdAndCustomerId(managerId: String, productId: String, customerId: String): ProductOverrideDbEntity?
-  fun findByManagerIdAndAgentIdAndProductIdAndCustomerId(managerId: String, agentId: Long, productId: String, customerId: String): ProductOverrideDbEntity?
-  fun findByManagerIdAndAgentId(managerId: String, agentId: Long): List<ProductOverrideDbEntity>
-  fun findByManagerIdAndAgentIdAndProductId(managerId: String, agentId: Long, productId: String): List<ProductOverrideDbEntity>
-  fun findByManagerIdAndAgentIdAndCustomerId(managerId: String, agentId: Long, customerId: String): List<ProductOverrideDbEntity>
+  fun findByManagerIdAndAgentIdAndProductIdAndCustomerId(managerId: String, agentId: String, productId: String, customerId: String): ProductOverrideDbEntity?
+  fun findByManagerIdAndAgentId(managerId: String, agentId: String): List<ProductOverrideDbEntity>
+  fun findByManagerIdAndAgentIdAndProductId(managerId: String, agentId: String, productId: String): List<ProductOverrideDbEntity>
+  fun findByManagerIdAndAgentIdAndCustomerId(managerId: String, agentId: String, customerId: String): List<ProductOverrideDbEntity>
 
   @Modifying
   @Query("""
@@ -64,7 +64,7 @@ interface ProductOverrideRepository : JpaRepository<ProductOverrideDbEntity, Lon
     nativeQuery = true)
   fun findOverridesWithPrice(
     @Param("managerId") managerId: String,
-    @Param("agentId") agentId: Long?,
+    @Param("agentId") agentId: String?,
     @Param("includeManagerOverrides") includeManagerOverrides: Boolean,
     @Param("includeAgentOverrides") includeAgentOverrides: Boolean,
     @Param("productId") productId: String?,
