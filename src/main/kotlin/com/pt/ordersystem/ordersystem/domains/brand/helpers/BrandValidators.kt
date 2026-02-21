@@ -44,4 +44,14 @@ object BrandValidators {
 
         validateNameNotDuplicate(brandAlreadyExists, managerId, brandName)
     }
+
+    fun validateUpdateBrand(
+        brandName: String,
+        managerId: String,
+        brandAlreadyExists: Boolean,
+    ) {
+        FieldValidators.validateNonEmpty(brandName, "'name'")
+
+        validateNameNotDuplicate(brandAlreadyExists, managerId, brandName)
+    }
 }

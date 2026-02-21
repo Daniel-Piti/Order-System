@@ -16,4 +16,6 @@ interface BrandRepository : JpaRepository<BrandDbEntity, Long> {
     fun findByManagerIdAndName(managerId: String, name: String): BrandDbEntity?
     
     fun existsByManagerIdAndName(managerId: String, name: String): Boolean
+
+    fun existsByManagerIdAndNameAndIdNot(managerId: String, name: String, id: Long): Boolean
 }
