@@ -15,16 +15,11 @@ class BrandService(
     private val s3StorageService: S3StorageService
 ) {
 
-    fun getBrandById(managerId: String, brandId: Long): Brand {
-        val brandDbEntity = brandRepository.findByManagerIdAndId(managerId, brandId)
-        val imageUrl = s3StorageService.getPublicUrl(brandDbEntity.s3Key)
-        return brandDbEntity.toBrand(imageUrl)
-    }
+    fun getBrandById(managerId: String, brandId: Long): Brand =
+        brandRepository.findByManagerIdAndId(managerId, brandId)
 
-    fun getManagerBrands(managerId: String): List<Brand> {
-        val brandsDbEntity = brandRepository.findByManagerId(managerId)
-        return brandsDbEntity.map { entity -> entity.toBrand(s3StorageService.getPublicUrl(entity.s3Key)) }
-    }
+    fun getManagerBrands(managerId: String): List<Brand> =
+        brandRepository.findByManagerId(managerId)
 
     @Transactional
     fun createBrand(managerId: String, request: CreateBrandRequest): BrandCreateResponse {
@@ -59,7 +54,7 @@ class BrandService(
             updatedAt = now
         )
 
-        val brandId = brandRepository.save(brand).id
+        val brandId = brandRepository.save(brand)
 
         return BrandCreateResponse(
             brandId = brandId,
@@ -69,7 +64,7 @@ class BrandService(
 
     @Transactional
     fun updateBrand(managerId: String, brandId: Long, request: UpdateBrandRequest): BrandUpdateResponse {
-        val brandDbEntity = brandRepository.findByManagerIdAndId(managerId, brandId)
+        val entity = brandRepository.findEntityByManagerIdAndId(managerId, brandId)
 
         val trimmedBrandName = request.name.trim()
         val brandAlreadyExists = brandRepository.hasDuplicateName(managerId, trimmedBrandName, brandId)
@@ -83,7 +78,7 @@ class BrandService(
         // Handle image: generate preSigned URL if image metadata provided
         val preSignedUrlResult = request.imageMetadata?.let { imageMetadata ->
             // Delete old image if exists
-            brandDbEntity.s3Key?.let { oldS3Key ->
+            entity.s3Key?.let { oldS3Key ->
                 try {
                     s3StorageService.deleteFile(oldS3Key)
                 } catch (e: Exception) {
@@ -98,18 +93,16 @@ class BrandService(
             )
         }
 
-        val updatedBrand = with(brandDbEntity) {
-            brandDbEntity.copy(
-                name = trimmedBrandName,
-                s3Key = preSignedUrlResult?.s3Key ?: s3Key,
-                fileName = request.imageMetadata?.fileName ?: fileName,
-                fileSizeBytes = request.imageMetadata?.fileSizeBytes ?: fileSizeBytes,
-                mimeType = request.imageMetadata?.contentType ?: mimeType,
-                updatedAt = LocalDateTime.now()
-            )
-        }
+        val updatedEntity = entity.copy(
+            name = trimmedBrandName,
+            s3Key = preSignedUrlResult?.s3Key ?: entity.s3Key,
+            fileName = request.imageMetadata?.fileName ?: entity.fileName,
+            fileSizeBytes = request.imageMetadata?.fileSizeBytes ?: entity.fileSizeBytes,
+            mimeType = request.imageMetadata?.contentType ?: entity.mimeType,
+            updatedAt = LocalDateTime.now()
+        )
 
-        val updatedBrandId = brandRepository.save(updatedBrand).id
+        val updatedBrandId = brandRepository.save(updatedEntity)
 
         return BrandUpdateResponse(
             brandId = updatedBrandId,
@@ -119,10 +112,10 @@ class BrandService(
 
     @Transactional
     fun deleteBrand(managerId: String, brandId: Long) {
-        val brandDbEntity = brandRepository.findByManagerIdAndId(managerId, brandId)
+        val entity = brandRepository.findEntityByManagerIdAndId(managerId, brandId)
 
         // Delete image from S3 if exists
-        brandDbEntity.s3Key?.let { s3Key ->
+        entity.s3Key?.let { s3Key ->
             try {
                 s3StorageService.deleteFile(s3Key)
             } catch (e: Exception) {
