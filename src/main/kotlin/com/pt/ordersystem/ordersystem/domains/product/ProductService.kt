@@ -1,8 +1,8 @@
 package com.pt.ordersystem.ordersystem.domains.product
 
+import com.pt.ordersystem.ordersystem.domains.brand.BrandRepository
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.domains.product.models.*
-import com.pt.ordersystem.ordersystem.domains.brand.BrandService
 import com.pt.ordersystem.ordersystem.domains.category.CategoryService
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerRepository
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
@@ -38,7 +38,7 @@ class ProductService(
   private val orderService: OrderService,
   private val productOverrideRepository: ProductOverrideRepository,
   private val s3StorageService: S3StorageService,
-  @Lazy private val brandService: BrandService,
+  private val brandRepository: BrandRepository,
   @Lazy private val categoryService: CategoryService,
   private val customerRepository: CustomerRepository,
 ) {
@@ -115,7 +115,7 @@ class ProductService(
     }
 
     // Enrich with brand names and category names
-    val brands = brandService.getManagerBrands(managerId)
+    val brands = brandRepository.findByManagerId(managerId)
     val brandMap = brands.associate { it.id to it.name }
     
     val categories = categoryService.getManagerCategories(managerId)
@@ -145,7 +145,7 @@ class ProductService(
     val products = productRepository.findAllByManagerId(order.managerId)
 
     // Fetch brands and categories for enrichment
-    val brands = brandService.getManagerBrands(order.managerId)
+    val brands = brandRepository.findByManagerId(order.managerId)
     val brandMap = brands.associate { it.id to it.name }
     
     val categories = categoryService.getManagerCategories(order.managerId)
@@ -202,7 +202,7 @@ class ProductService(
 
     val brandName = product.brandId?.let {
       try {
-        brandService.getBrandById(managerId, it).name
+        brandRepository.findByManagerIdAndId(managerId, it).name
       } catch (e: Exception) {
         logger.warn("Brand with ID=${product.brandId} not found")
         null
@@ -238,7 +238,7 @@ class ProductService(
       }
 
       // Validate brandId belongs to manager (if provided)
-      brandId?.let { brandService.getBrandById(managerId, it) }
+      brandId?.let { brandRepository.findByManagerIdAndId(managerId, it) }
 
       // Validate categoryId belongs to manager (if provided)
       categoryId?.let { categoryService.getCategoryById(managerId, it) }
