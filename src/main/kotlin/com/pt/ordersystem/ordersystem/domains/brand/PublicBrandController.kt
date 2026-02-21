@@ -1,6 +1,5 @@
 package com.pt.ordersystem.ordersystem.domains.brand
 
-import com.pt.ordersystem.ordersystem.domains.brand.models.Brand
 import com.pt.ordersystem.ordersystem.domains.brand.models.BrandDto
 import com.pt.ordersystem.ordersystem.domains.brand.models.toDto
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerService

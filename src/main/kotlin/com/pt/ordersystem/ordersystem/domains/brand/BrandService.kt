@@ -3,10 +3,7 @@ package com.pt.ordersystem.ordersystem.domains.brand
 import com.pt.ordersystem.ordersystem.domains.brand.helpers.BrandValidators
 import com.pt.ordersystem.ordersystem.domains.brand.models.*
 import com.pt.ordersystem.ordersystem.domains.product.ProductService
-import com.pt.ordersystem.ordersystem.exception.ServiceException
-import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.storage.S3StorageService
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -18,17 +15,8 @@ class BrandService(
     private val s3StorageService: S3StorageService
 ) {
 
-    fun getBrandIfExists(managerId: String, brandId: Long): BrandDbEntity =
-        brandRepository.findByManagerIdAndId(managerId, brandId)
-            ?: throw ServiceException(
-                status = HttpStatus.NOT_FOUND,
-                userMessage = BrandFailureReason.NOT_FOUND.userMessage,
-                technicalMessage = BrandFailureReason.NOT_FOUND.technical + "brandId=$brandId",
-                severity = SeverityLevel.WARN
-            )
-
     fun getBrandById(managerId: String, brandId: Long): Brand {
-        val brandDbEntity = getBrandIfExists(managerId, brandId)
+        val brandDbEntity = brandRepository.findByManagerIdAndId(managerId, brandId)
         val imageUrl = s3StorageService.getPublicUrl(brandDbEntity.s3Key)
         return brandDbEntity.toBrand(imageUrl)
     }
@@ -81,7 +69,7 @@ class BrandService(
 
     @Transactional
     fun updateBrand(managerId: String, brandId: Long, request: UpdateBrandRequest): BrandUpdateResponse {
-        val brandDbEntity = getBrandIfExists(managerId, brandId)
+        val brandDbEntity = brandRepository.findByManagerIdAndId(managerId, brandId)
 
         val trimmedBrandName = request.name.trim()
         val brandAlreadyExists = brandRepository.existsByManagerIdAndNameAndIdNot(managerId, trimmedBrandName, brandId)
@@ -131,7 +119,7 @@ class BrandService(
 
     @Transactional
     fun deleteBrand(managerId: String, brandId: Long) {
-        val brandDbEntity = getBrandIfExists(managerId, brandId)
+        val brandDbEntity = brandRepository.findByManagerIdAndId(managerId, brandId)
 
         // Delete image from S3 if exists
         brandDbEntity.s3Key?.let { s3Key ->
