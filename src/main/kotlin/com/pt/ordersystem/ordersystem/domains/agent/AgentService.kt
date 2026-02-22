@@ -38,13 +38,7 @@ class AgentService(
     agentRepository.findEntityById(agentId)
 
   fun getAgentByEmail(email: String): AgentDbEntity =
-    agentRepository.findEntityByEmail(email.trim().lowercase())
-      ?: throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = AgentFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = AgentFailureReason.NOT_FOUND.technical + "email=$email",
-        severity = SeverityLevel.WARN,
-      )
+    agentRepository.findEntityByEmail(email)
 
   fun validateCreateAgent(request: NewAgentRequest, managerId: String) {
     AgentValidators.validateNewAgentRequest(request)
@@ -110,6 +104,26 @@ class AgentService(
     return agentRepository.save(updated)
   }
 
+  fun validateUpdatePassword(
+    agent: AgentDbEntity,
+    oldPassword: String,
+    newPassword: String,
+    newPasswordConfirmation: String
+  ) {
+    FieldValidators.validateNewPasswordEqualConfirmationPassword(newPassword, newPasswordConfirmation)
+    FieldValidators.validateNewPasswordNotEqualOldPassword(oldPassword, newPassword)
+    FieldValidators.validateStrongPassword(newPassword)
+
+    if (!passwordEncoder.matches(oldPassword, agent.password)) {
+      throw ServiceException(
+        status = HttpStatus.UNAUTHORIZED,
+        userMessage = "Old password is incorrect",
+        technicalMessage = "Password mismatch for agent with id=${agent.id}",
+        severity = SeverityLevel.WARN
+      )
+    }
+  }
+
   @Transactional
   fun updatePassword(
     agentId: String,
@@ -117,21 +131,9 @@ class AgentService(
     newPassword: String,
     newPasswordConfirmation: String
   ) {
-    FieldValidators.validateNewPasswordEqualConfirmationPassword(newPassword, newPasswordConfirmation)
-    FieldValidators.validateNewPasswordNotEqualOldPassword(oldPassword, newPassword)
-
-    FieldValidators.validateStrongPassword(newPassword)
-
     val agent = agentRepository.findEntityById(agentId)
 
-    if (!passwordEncoder.matches(oldPassword, agent.password)) {
-      throw ServiceException(
-        status = HttpStatus.UNAUTHORIZED,
-        userMessage = "Old password is incorrect",
-        technicalMessage = "Password mismatch for agent with id=$agentId",
-        severity = SeverityLevel.WARN
-      )
-    }
+    validateUpdatePassword(agent, oldPassword, newPassword, newPasswordConfirmation)
 
     val updatedAgent = agent.copy(
       password = passwordEncoder.encode(newPassword),

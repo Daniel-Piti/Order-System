@@ -2,6 +2,8 @@ package com.pt.ordersystem.ordersystem.domains.agent
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_AGENT
 import com.pt.ordersystem.ordersystem.auth.AuthUser
+import com.pt.ordersystem.ordersystem.domains.agent.helpers.AgentHelper
+import com.pt.ordersystem.ordersystem.domains.agent.helpers.AgentValidators
 import com.pt.ordersystem.ordersystem.domains.agent.models.AgentDto
 import com.pt.ordersystem.ordersystem.domains.agent.models.UpdateAgentRequest
 import com.pt.ordersystem.ordersystem.domains.agent.models.toDto
@@ -36,8 +38,11 @@ class AgentSelfController(
   fun updateCurrentAgentProfile(
     @AuthenticationPrincipal agent: AuthUser,
     @RequestBody request: UpdateAgentRequest,
-  ): ResponseEntity<AgentDto> =
-    ResponseEntity.ok(agentService.updateAgent(agent.id, request).toDto())
+  ): ResponseEntity<AgentDto> {
+    val normalizedRequest = AgentHelper.normalizeUpdateAgentRequest(request)
+    AgentValidators.validateUpdateAgentRequest(normalizedRequest)
+    return ResponseEntity.ok(agentService.updateAgent(agent.id, normalizedRequest).toDto())
+  }
 
   @PutMapping("/update-password")
   fun updateCurrentAgentPassword(

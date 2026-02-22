@@ -56,8 +56,9 @@ class AgentManagerController(
     @RequestBody request: UpdateAgentRequest,
   ): ResponseEntity<AgentDto> {
     agentService.validateAgentOfManager(agentId, manager.id)
-    AgentValidators.validateUpdateAgentRequest(request)
-    return ResponseEntity.ok(agentService.updateAgent(agentId, request).toDto())
+    val normalizedRequest = AgentHelper.normalizeUpdateAgentRequest(request)
+    AgentValidators.validateUpdateAgentRequest(normalizedRequest)
+    return ResponseEntity.ok(agentService.updateAgent(agentId, normalizedRequest).toDto())
   }
 
   @DeleteMapping("/{agentId}")

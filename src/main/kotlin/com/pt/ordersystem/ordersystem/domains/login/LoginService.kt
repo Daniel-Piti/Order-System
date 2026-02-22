@@ -58,7 +58,7 @@ class LoginService(
 
   fun loginAgent(request: AgentLoginRequest): LoginResponse {
     try {
-      val agent = agentService.getAgentByEmail(request.email)
+      val agent = agentService.getAgentByEmail(request.email.trim().lowercase())
 
       if (!passwordEncoder.matches(request.password, agent.password)) {
         println("[AUTH] Invalid agent password attempt for email=${request.email}")
