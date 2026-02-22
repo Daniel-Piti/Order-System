@@ -47,15 +47,6 @@ class BrandRepository(
         return saved.id
     }
 
-    /** Returns the entity for update/delete; use [findByManagerIdAndId] for read (returns [Brand] with imageUrl). */
-    fun findEntityByManagerIdAndId(managerId: String, id: Long): BrandDbEntity =
-        brandDao.findByManagerIdAndId(managerId, id) ?: throw ServiceException(
-            status = HttpStatus.NOT_FOUND,
-            userMessage = BrandFailureReason.NOT_FOUND.userMessage,
-            technicalMessage = BrandFailureReason.NOT_FOUND.technical + "brandId=$id",
-            severity = SeverityLevel.WARN
-        )
-
     fun deleteById(brandId: Long): Unit =
         brandDao.deleteById(brandId)
 
