@@ -147,22 +147,8 @@ class ManagerService(
     newPassword: String,
     newPasswordConfirmation: String
   ) {
-    if (newPassword != newPasswordConfirmation)
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = "New password and confirmation do not match",
-        technicalMessage = "Mismatch between passwords",
-        severity = SeverityLevel.INFO
-      )
-
-    if (oldPassword == newPassword) {
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = "New password cannot be the same as the old password",
-        technicalMessage = "New password = old password",
-        severity = SeverityLevel.INFO
-      )
-    }
+    FieldValidators.validateNewPasswordEqualConfirmationPassword(newPassword, newPasswordConfirmation)
+    FieldValidators.validateNewPasswordNotEqualOldPassword(oldPassword, newPassword)
 
     FieldValidators.validateStrongPassword(newPassword)
 

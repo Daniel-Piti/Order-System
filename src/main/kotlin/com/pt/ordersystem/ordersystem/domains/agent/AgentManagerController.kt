@@ -2,9 +2,12 @@ package com.pt.ordersystem.ordersystem.domains.agent
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
+import com.pt.ordersystem.ordersystem.domains.agent.helpers.AgentHelper
+import com.pt.ordersystem.ordersystem.domains.agent.helpers.AgentValidators
 import com.pt.ordersystem.ordersystem.domains.agent.models.AgentDto
 import com.pt.ordersystem.ordersystem.domains.agent.models.NewAgentRequest
 import com.pt.ordersystem.ordersystem.domains.agent.models.UpdateAgentRequest
+import com.pt.ordersystem.ordersystem.domains.agent.models.toDto
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
@@ -39,9 +42,11 @@ class AgentManagerController(
   fun createAgent(
     @AuthenticationPrincipal manager: AuthUser,
     @RequestBody request: NewAgentRequest,
-  ): ResponseEntity<String> {
-    val agentId = agentService.createAgent(manager.id, request)
-    return ResponseEntity.status(HttpStatus.CREATED).body(agentId)
+  ): ResponseEntity<AgentDto> {
+    val normalizedRequest = AgentHelper.normalizeCreateAgentRequest(request)
+    agentService.validateCreateAgent(normalizedRequest, manager.id)
+    val agentDto = agentService.createAgent(manager.id, normalizedRequest).toDto()
+    return ResponseEntity.status(HttpStatus.CREATED).body(agentDto)
   }
 
   @PutMapping("/{agentId}")
@@ -49,8 +54,11 @@ class AgentManagerController(
     @AuthenticationPrincipal manager: AuthUser,
     @PathVariable agentId: String,
     @RequestBody request: UpdateAgentRequest,
-  ): ResponseEntity<AgentDto> =
-    ResponseEntity.ok(agentService.updateAgentForManager(manager.id, agentId, request))
+  ): ResponseEntity<AgentDto> {
+    agentService.validateAgentOfManager(agentId, manager.id)
+    AgentValidators.validateUpdateAgentRequest(request)
+    return ResponseEntity.ok(agentService.updateAgent(agentId, request).toDto())
+  }
 
   @DeleteMapping("/{agentId}")
   fun deleteAgent(

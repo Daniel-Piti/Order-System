@@ -4,6 +4,7 @@ import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_AGENT
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.agent.models.AgentDto
 import com.pt.ordersystem.ordersystem.domains.agent.models.UpdateAgentRequest
+import com.pt.ordersystem.ordersystem.domains.agent.models.toDto
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
@@ -36,7 +37,7 @@ class AgentSelfController(
     @AuthenticationPrincipal agent: AuthUser,
     @RequestBody request: UpdateAgentRequest,
   ): ResponseEntity<AgentDto> =
-    ResponseEntity.ok(agentService.updateAgentSelf(agent.id, request))
+    ResponseEntity.ok(agentService.updateAgent(agent.id, request).toDto())
 
   @PutMapping("/update-password")
   fun updateCurrentAgentPassword(

@@ -27,7 +27,7 @@ class CustomerService(
     val customers = if (agentId == null) {
       customerRepository.findByManagerId(managerId)
     } else {
-      validateAgentExists(managerId, agentId)
+      agentRepository.findByManagerIdAndId(managerId, agentId)
       customerRepository.findByManagerIdAndAgentId(managerId, agentId)
     }
     return customers.map { it.toDto() }
@@ -42,7 +42,7 @@ class CustomerService(
 
     // Validations
     validatePayload(normalizedPayload)
-    agentId?.also { validateAgentExists(managerId, agentId) }
+    agentId?.also { agentRepository.findByManagerIdAndId(managerId, agentId) }
     validateUniquePhoneNumber(managerId, normalizedPayload.phoneNumber, excludeCustomerId = null)
     validateCustomerCap(managerId, agentId)
 
@@ -76,7 +76,7 @@ class CustomerService(
     val normalizedPayload = normalizePayload(customerPayload)
 
     validatePayload(normalizedPayload)
-    agentId?.also { validateAgentExists(managerId, agentId) }
+    agentId?.also { agentRepository.findByManagerIdAndId(managerId, agentId) }
     validateUniquePhoneNumber(managerId, normalizedPayload.phoneNumber, excludeCustomerId = customerId)
 
     val currentCustomer = getCustomer(managerId, agentId, customerId)
@@ -160,7 +160,7 @@ class CustomerService(
         )
     }
 
-    validateAgentExists(managerId, agentId)
+    agentRepository.findByManagerIdAndId(managerId, agentId)
 
     return customerRepository.findByManagerIdAndAgentIdAndId(managerId, agentId, customerId)
       ?: throw ServiceException(
@@ -193,16 +193,6 @@ class CustomerService(
         )
       }
     }
-  }
-
-  private fun validateAgentExists(managerId: String, agentId: String) {
-    agentRepository.findByManagerIdAndId(managerId, agentId)
-      ?: throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = CustomerFailureReason.AGENT_NOT_FOUND.userMessage,
-        technicalMessage = CustomerFailureReason.AGENT_NOT_FOUND.technical + "managerId=$managerId agentId=$agentId",
-        severity = SeverityLevel.WARN,
-      )
   }
 
 }

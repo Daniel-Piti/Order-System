@@ -14,16 +14,3 @@ data class AgentDto(
   val createdAt: LocalDateTime,
   val updatedAt: LocalDateTime,
 )
-
-fun AgentDbEntity.toDto(): AgentDto = AgentDto(
-  id = this.id,
-  managerId = this.managerId,
-  firstName = this.firstName,
-  lastName = this.lastName,
-  email = this.email,
-  phoneNumber = this.phoneNumber,
-  streetAddress = this.streetAddress,
-  city = this.city,
-  createdAt = this.createdAt,
-  updatedAt = this.updatedAt,
-)

@@ -1,7 +1,9 @@
 package com.pt.ordersystem.ordersystem.domains.agent
 
-import com.pt.ordersystem.ordersystem.domains.agent.models.AgentDbEntity
+import com.pt.ordersystem.ordersystem.domains.agent.helpers.AgentValidators
+import com.pt.ordersystem.ordersystem.domains.agent.models.Agent
 import com.pt.ordersystem.ordersystem.domains.agent.models.AgentDto
+import com.pt.ordersystem.ordersystem.domains.agent.models.AgentDbEntity
 import com.pt.ordersystem.ordersystem.domains.agent.models.AgentFailureReason
 import com.pt.ordersystem.ordersystem.domains.agent.models.NewAgentRequest
 import com.pt.ordersystem.ordersystem.domains.agent.models.UpdateAgentRequest
@@ -26,93 +28,75 @@ class AgentService(
   private val customerService: CustomerService,
 ) {
 
-  companion object {
-    private const val MAX_AGENTS_PER_MANAGER = 1000
-  }
-
   fun getAgentsForManager(managerId: String): List<AgentDto> =
     agentRepository.findByManagerId(managerId).map { it.toDto() }
 
   fun getAgentProfile(agentId: String): AgentDto =
-    agentRepository.findById(agentId).orElseThrow { agentNotFound("agentId=$agentId") }.toDto()
+    agentRepository.findById(agentId).toDto()
 
   fun getAgentEntity(agentId: String): AgentDbEntity =
-    agentRepository.findById(agentId).orElseThrow { agentNotFound("agentId=$agentId") }
+    agentRepository.findEntityById(agentId)
 
   fun getAgentByEmail(email: String): AgentDbEntity =
-    agentRepository.findByEmail(email.trim().lowercase()) ?: throw agentNotFound("email=$email")
+    agentRepository.findEntityByEmail(email.trim().lowercase())
+      ?: throw ServiceException(
+        status = HttpStatus.NOT_FOUND,
+        userMessage = AgentFailureReason.NOT_FOUND.userMessage,
+        technicalMessage = AgentFailureReason.NOT_FOUND.technical + "email=$email",
+        severity = SeverityLevel.WARN,
+      )
 
-  fun createAgent(managerId: String, request: NewAgentRequest): String {
-    validateNewAgentRequest(request)
+  fun validateCreateAgent(request: NewAgentRequest, managerId: String) {
+    AgentValidators.validateNewAgentRequest(request)
 
-    val normalizedEmail = request.email.trim().lowercase()
+    val agentCount = agentRepository.countByManagerId(managerId)
+    AgentValidators.validateMaxAgentsNumber(agentCount, managerId)
 
-    if (agentRepository.existsByEmail(normalizedEmail)) {
+    if (agentRepository.existsByEmail(request.email)) {
       throw ServiceException(
         status = HttpStatus.CONFLICT,
         userMessage = AgentFailureReason.EMAIL_ALREADY_EXISTS.userMessage,
-        technicalMessage = AgentFailureReason.EMAIL_ALREADY_EXISTS.technical + "email=$normalizedEmail",
+        technicalMessage = AgentFailureReason.EMAIL_ALREADY_EXISTS.technical + "email=${request.email}",
         severity = SeverityLevel.INFO,
       )
     }
+  }
 
-    val agentCount = agentRepository.countByManagerId(managerId)
-    if (agentCount >= MAX_AGENTS_PER_MANAGER) {
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = AgentFailureReason.LIMIT_REACHED.userMessage,
-        technicalMessage = AgentFailureReason.LIMIT_REACHED.technical + "managerId=$managerId, limit=$MAX_AGENTS_PER_MANAGER",
-        severity = SeverityLevel.INFO,
-      )
-    }
+  fun createAgent(managerId: String, request: NewAgentRequest): Agent {
 
     val now = LocalDateTime.now()
+
     val agent = AgentDbEntity(
       id = GeneralUtils.genId(),
       managerId = managerId,
-      firstName = request.firstName.trim(),
-      lastName = request.lastName.trim(),
-      email = normalizedEmail,
+      firstName = request.firstName,
+      lastName = request.lastName,
+      email = request.email,
       password = passwordEncoder.encode(request.password),
-      phoneNumber = request.phoneNumber.trim(),
-      streetAddress = request.streetAddress.trim(),
-      city = request.city.trim(),
+      phoneNumber = request.phoneNumber,
+      streetAddress = request.streetAddress,
+      city = request.city,
       createdAt = now,
       updatedAt = now,
     )
 
-    return agentRepository.save(agent).id
+    return agentRepository.save(agent)
   }
 
-  fun updateAgentForManager(managerId: String, agentId: String, request: UpdateAgentRequest): AgentDto {
-    validateUpdateAgentRequest(request)
-
-    val existing = agentRepository.findByManagerIdAndId(managerId, agentId)
-      ?: throw ServiceException(
+  fun validateAgentOfManager(agentId: String, managerId: String): Unit {
+    val existing = agentRepository.findEntityById(agentId)
+    if (existing.managerId != managerId) {
+      throw ServiceException(
         status = HttpStatus.NOT_FOUND,
         userMessage = AgentFailureReason.NOT_FOUND.userMessage,
         technicalMessage = AgentFailureReason.NOT_FOUND.technical + "managerId=$managerId, agentId=$agentId",
         severity = SeverityLevel.WARN,
       )
-
-    val updated = existing.copy(
-      firstName = request.firstName.trim(),
-      lastName = request.lastName.trim(),
-      phoneNumber = request.phoneNumber.trim(),
-      streetAddress = request.streetAddress.trim(),
-      city = request.city.trim(),
-      updatedAt = LocalDateTime.now(),
-    )
-
-    return agentRepository.save(updated).toDto()
+    }
   }
 
-  fun updateAgentSelf(agentId: String, request: UpdateAgentRequest): AgentDto {
-    validateUpdateAgentRequest(request)
-
-    val existing = agentRepository.findById(agentId).orElseThrow {
-      agentNotFound("agentId=$agentId")
-    }
+  fun updateAgent(agentId: String, request: UpdateAgentRequest): Agent {
+    val existing = agentRepository.findEntityById(agentId)
 
     val updated = existing.copy(
       firstName = request.firstName.trim(),
@@ -123,7 +107,7 @@ class AgentService(
       updatedAt = LocalDateTime.now(),
     )
 
-    return agentRepository.save(updated).toDto()
+    return agentRepository.save(updated)
   }
 
   @Transactional
@@ -133,28 +117,12 @@ class AgentService(
     newPassword: String,
     newPasswordConfirmation: String
   ) {
-    if (newPassword != newPasswordConfirmation)
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = "New password and confirmation do not match",
-        technicalMessage = "Mismatch between passwords",
-        severity = SeverityLevel.INFO
-      )
-
-    if (oldPassword == newPassword) {
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = "New password cannot be the same as the old password",
-        technicalMessage = "New password = old password",
-        severity = SeverityLevel.INFO
-      )
-    }
+    FieldValidators.validateNewPasswordEqualConfirmationPassword(newPassword, newPasswordConfirmation)
+    FieldValidators.validateNewPasswordNotEqualOldPassword(oldPassword, newPassword)
 
     FieldValidators.validateStrongPassword(newPassword)
 
-    val agent = agentRepository.findById(agentId).orElseThrow {
-      agentNotFound("agentId=$agentId")
-    }
+    val agent = agentRepository.findEntityById(agentId)
 
     if (!passwordEncoder.matches(oldPassword, agent.password)) {
       throw ServiceException(
@@ -174,13 +142,7 @@ class AgentService(
 
   @Transactional
   fun deleteAgent(managerId: String, agentId: String) {
-    val agent = agentRepository.findByManagerIdAndId(managerId, agentId)
-      ?: throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = AgentFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = AgentFailureReason.NOT_FOUND.technical + "managerId=$managerId, agentId=$agentId",
-        severity = SeverityLevel.WARN,
-      )
+    validateAgentOfManager(agentId, managerId)
 
     // Delete all product overrides associated with this agent
     productOverrideService.deleteAllOverridesForAgent(managerId, agentId)
@@ -188,31 +150,6 @@ class AgentService(
     // Unassign all customers from this agent (set agentId to null)
     customerService.unassignCustomersFromAgent(managerId, agentId)
 
-    agentRepository.delete(agent)
+    agentRepository.deleteById(agentId)
   }
-
-  private fun validateNewAgentRequest(request: NewAgentRequest) {
-    FieldValidators.validateNonEmpty(request.firstName, "'first name'")
-    FieldValidators.validateNonEmpty(request.lastName, "'last name'")
-    FieldValidators.validateEmail(request.email)
-    FieldValidators.validateStrongPassword(request.password)
-    FieldValidators.validatePhoneNumber(request.phoneNumber)
-    FieldValidators.validateNonEmpty(request.streetAddress, "'street address'")
-    FieldValidators.validateNonEmpty(request.city, "'city'")
-  }
-
-  private fun validateUpdateAgentRequest(request: UpdateAgentRequest) {
-    FieldValidators.validateNonEmpty(request.firstName, "'first name'")
-    FieldValidators.validateNonEmpty(request.lastName, "'last name'")
-    FieldValidators.validatePhoneNumber(request.phoneNumber)
-    FieldValidators.validateNonEmpty(request.streetAddress, "'street address'")
-    FieldValidators.validateNonEmpty(request.city, "'city'")
-  }
-
-  private fun agentNotFound(details: String) = ServiceException(
-    status = HttpStatus.NOT_FOUND,
-    userMessage = AgentFailureReason.NOT_FOUND.userMessage,
-    technicalMessage = AgentFailureReason.NOT_FOUND.technical + details,
-    severity = SeverityLevel.WARN,
-  )
 }
