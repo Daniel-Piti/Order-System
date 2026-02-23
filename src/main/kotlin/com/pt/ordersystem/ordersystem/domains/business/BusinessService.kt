@@ -5,14 +5,15 @@ import com.pt.ordersystem.ordersystem.domains.business.models.Business
 import com.pt.ordersystem.ordersystem.domains.business.models.BusinessDbEntity
 import com.pt.ordersystem.ordersystem.domains.business.models.BusinessDto
 import com.pt.ordersystem.ordersystem.domains.business.models.BusinessFailureReason
-import com.pt.ordersystem.ordersystem.domains.business.models.BusinessUpdateResponse
 import com.pt.ordersystem.ordersystem.domains.business.models.CreateBusinessRequest
-import com.pt.ordersystem.ordersystem.domains.business.models.UpdateBusinessRequest
+import com.pt.ordersystem.ordersystem.domains.business.models.SetBusinessImageResponse
+import com.pt.ordersystem.ordersystem.domains.business.models.UpdateBusinessDetailsRequest
 import com.pt.ordersystem.ordersystem.domains.business.models.toDto
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerRepository
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.storage.S3StorageService
+import com.pt.ordersystem.ordersystem.storage.models.ImageMetadata
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -84,60 +85,61 @@ class BusinessService(
     }
 
     @Transactional
-    fun updateBusiness(managerId: String, request: UpdateBusinessRequest): BusinessUpdateResponse {
+    fun updateBusinessDetails(managerId: String, request: UpdateBusinessDetailsRequest): BusinessDto {
         BusinessValidators.validateUpdateBusinessFields(request)
 
-        val business = businessRepository.findEntityByManagerId(managerId)
+        val entity = businessRepository.findEntityByManagerId(managerId)
 
-        // Handle image removal if we want to remove image
-        if (request.removeImage == true) {
-            s3StorageService.deleteImageIfExists(business.s3Key)
-        }
-
-        // Handle image removal & update in case of update
-        val preSignedUrlResult = request.imageMetadata?.let { imageMetadata ->
-            s3StorageService.deleteImageIfExists(business.s3Key)
-            s3StorageService.generatePreSignedUploadUrl(
-                basePath = "managers/$managerId/business",
-                imageMetadata = imageMetadata
-            )
-        }
-
-        val updatedBusiness = business.copy(
+        val updatedEntity = entity.copy(
             name = request.name,
             stateIdNumber = request.stateIdNumber,
             email = request.email,
             phoneNumber = request.phoneNumber,
             streetAddress = request.streetAddress,
             city = request.city,
-            s3Key = when {
-                request.removeImage == true -> null
-                preSignedUrlResult != null -> preSignedUrlResult.s3Key
-                else -> business.s3Key
-            },
-            fileName = when {
-                request.removeImage == true -> null
-                request.imageMetadata != null -> request.imageMetadata.fileName
-                else -> business.fileName
-            },
-            fileSizeBytes = when {
-                request.removeImage == true -> null
-                request.imageMetadata != null -> request.imageMetadata.fileSizeBytes
-                else -> business.fileSizeBytes
-            },
-            mimeType = when {
-                request.removeImage == true -> null
-                request.imageMetadata != null -> request.imageMetadata.contentType
-                else -> business.mimeType
-            },
             updatedAt = LocalDateTime.now()
         )
 
-        val saved = businessRepository.save(updatedBusiness)
+        val business = businessRepository.save(updatedEntity)
+        return business.toDto(s3StorageService.getPublicUrl(business.s3Key))
+    }
 
-        return BusinessUpdateResponse(
-            businessDto = saved.toDto(s3StorageService.getPublicUrl(saved.s3Key)),
-            preSignedUrl = preSignedUrlResult?.preSignedUrl
+    @Transactional
+    fun removeBusinessImage(managerId: String) {
+        val entity = businessRepository.findEntityByManagerId(managerId)
+        s3StorageService.deleteImageIfExists(entity.s3Key)
+        val updatedEntity = entity.copy(
+            s3Key = null,
+            fileName = null,
+            fileSizeBytes = null,
+            mimeType = null,
+            updatedAt = LocalDateTime.now()
+        )
+        businessRepository.save(updatedEntity)
+    }
+
+    @Transactional
+    fun setBusinessImage(managerId: String, imageMetadata: ImageMetadata): SetBusinessImageResponse {
+        val entity = businessRepository.findEntityByManagerId(managerId)
+        entity.s3Key?.let { s3StorageService.deleteImageIfExists(it) }
+
+        val preSignedUrlResult = s3StorageService.generatePreSignedUploadUrl(
+            basePath = "managers/$managerId/business",
+            imageMetadata = imageMetadata
+        )
+
+        val updatedEntity = entity.copy(
+            s3Key = preSignedUrlResult.s3Key,
+            fileName = imageMetadata.fileName,
+            fileSizeBytes = imageMetadata.fileSizeBytes,
+            mimeType = imageMetadata.contentType,
+            updatedAt = LocalDateTime.now()
+        )
+
+        val saved = businessRepository.save(updatedEntity)
+        return SetBusinessImageResponse(
+            business = saved.toDto(s3StorageService.getPublicUrl(saved.s3Key)),
+            preSignedUrl = preSignedUrlResult.preSignedUrl
         )
     }
 }

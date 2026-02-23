@@ -1,7 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.business.helpers
 
 import com.pt.ordersystem.ordersystem.domains.business.models.CreateBusinessRequest
-import com.pt.ordersystem.ordersystem.domains.business.models.UpdateBusinessRequest
+import com.pt.ordersystem.ordersystem.domains.business.models.UpdateBusinessDetailsRequest
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 
 object BusinessValidators {
@@ -18,7 +18,7 @@ object BusinessValidators {
         }
     }
 
-    fun validateUpdateBusinessFields(request: UpdateBusinessRequest) {
+    fun validateUpdateBusinessFields(request: UpdateBusinessDetailsRequest) {
         with(request) {
             FieldValidators.validateNonEmpty(name, "'name'")
             FieldValidators.validateNonEmpty(stateIdNumber, "'state id number'")
