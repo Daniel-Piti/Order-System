@@ -1,8 +1,8 @@
-package com.pt.ordersystem.ordersystem.domains.agent
+package com.pt.ordersystem.ordersystem.domains.agent.controllers
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
-import com.pt.ordersystem.ordersystem.domains.agent.helpers.AgentHelper
+import com.pt.ordersystem.ordersystem.domains.agent.AgentService
 import com.pt.ordersystem.ordersystem.domains.agent.helpers.AgentValidators
 import com.pt.ordersystem.ordersystem.domains.agent.models.AgentDto
 import com.pt.ordersystem.ordersystem.domains.agent.models.NewAgentRequest
@@ -43,7 +43,7 @@ class AgentManagerController(
     @AuthenticationPrincipal manager: AuthUser,
     @RequestBody request: NewAgentRequest,
   ): ResponseEntity<AgentDto> {
-    val normalizedRequest = AgentHelper.normalizeCreateAgentRequest(request)
+    val normalizedRequest = request.normalize()
     agentService.validateCreateAgent(normalizedRequest, manager.id)
     val agentDto = agentService.createAgent(manager.id, normalizedRequest).toDto()
     return ResponseEntity.status(HttpStatus.CREATED).body(agentDto)
@@ -56,7 +56,7 @@ class AgentManagerController(
     @RequestBody request: UpdateAgentRequest,
   ): ResponseEntity<AgentDto> {
     agentService.validateAgentOfManager(agentId, manager.id)
-    val normalizedRequest = AgentHelper.normalizeUpdateAgentRequest(request)
+    val normalizedRequest = request.normalize()
     AgentValidators.validateUpdateAgentRequest(normalizedRequest)
     return ResponseEntity.ok(agentService.updateAgent(agentId, normalizedRequest).toDto())
   }

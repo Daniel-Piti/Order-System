@@ -23,12 +23,11 @@ class BrandService(
 
     @Transactional
     fun createBrand(managerId: String, request: CreateBrandRequest): BrandCreateResponse {
-        val trimmedBrandName = request.name.trim()
         val count = brandRepository.countByManagerId(managerId)
-        val brandAlreadyExists = brandRepository.existsByManagerIdAndName(managerId, trimmedBrandName)
+        val brandAlreadyExists = brandRepository.existsByManagerIdAndName(managerId, request.name)
 
         BrandValidators.validateCreateBrand(
-            brandName = trimmedBrandName,
+            brandName = request.name,
             managerId = managerId,
             brandsCount = count,
             brandAlreadyExists = brandAlreadyExists,
@@ -45,7 +44,7 @@ class BrandService(
         val now = LocalDateTime.now()
         val brand = BrandDbEntity(
             managerId = managerId,
-            name = trimmedBrandName,
+            name = request.name,
             s3Key = preSignedUrlResult?.s3Key,
             fileName = request.imageMetadata?.fileName,
             fileSizeBytes = request.imageMetadata?.fileSizeBytes,
@@ -66,11 +65,10 @@ class BrandService(
     fun updateBrand(managerId: String, brandId: Long, request: UpdateBrandRequest): BrandUpdateResponse {
         val brand = brandRepository.findByManagerIdAndId(managerId, brandId)
 
-        val trimmedBrandName = request.name.trim()
-        val brandAlreadyExists = brandRepository.hasDuplicateName(managerId, trimmedBrandName, brandId)
+        val brandAlreadyExists = brandRepository.hasDuplicateName(managerId, request.name, brandId)
 
         BrandValidators.validateUpdateBrand(
-            brandName = trimmedBrandName,
+            brandName = request.name,
             managerId = managerId,
             brandAlreadyExists = brandAlreadyExists,
         )
@@ -90,7 +88,7 @@ class BrandService(
         val updatedEntity = BrandDbEntity(
             id = brand.id,
             managerId = brand.managerId,
-            name = trimmedBrandName,
+            name = request.name,
             s3Key = preSignedUrlResult?.s3Key ?: brand.s3Key,
             fileName = request.imageMetadata?.fileName ?: brand.fileName,
             fileSizeBytes = request.imageMetadata?.fileSizeBytes ?: brand.fileSizeBytes,

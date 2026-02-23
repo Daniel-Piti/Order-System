@@ -77,7 +77,7 @@ class AgentService(
     return agentRepository.save(agent)
   }
 
-  fun validateAgentOfManager(agentId: String, managerId: String): Unit {
+  fun validateAgentOfManager(agentId: String, managerId: String) {
     val existing = agentRepository.findEntityById(agentId)
     if (existing.managerId != managerId) {
       throw ServiceException(
@@ -93,11 +93,11 @@ class AgentService(
     val existing = agentRepository.findEntityById(agentId)
 
     val updated = existing.copy(
-      firstName = request.firstName.trim(),
-      lastName = request.lastName.trim(),
-      phoneNumber = request.phoneNumber.trim(),
-      streetAddress = request.streetAddress.trim(),
-      city = request.city.trim(),
+      firstName = request.firstName,
+      lastName = request.lastName,
+      phoneNumber = request.phoneNumber,
+      streetAddress = request.streetAddress,
+      city = request.city,
       updatedAt = LocalDateTime.now(),
     )
 

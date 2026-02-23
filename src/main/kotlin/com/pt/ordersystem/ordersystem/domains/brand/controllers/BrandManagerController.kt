@@ -1,7 +1,8 @@
-package com.pt.ordersystem.ordersystem.domains.brand
+package com.pt.ordersystem.ordersystem.domains.brand.controllers
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
+import com.pt.ordersystem.ordersystem.domains.brand.BrandService
 import com.pt.ordersystem.ordersystem.domains.brand.models.CreateBrandRequest
 import com.pt.ordersystem.ordersystem.domains.brand.models.UpdateBrandRequest
 import com.pt.ordersystem.ordersystem.domains.brand.models.BrandCreateResponse
@@ -28,7 +29,8 @@ class BrandManagerController(
         @RequestBody request: CreateBrandRequest,
         @AuthenticationPrincipal manager: AuthUser
     ): ResponseEntity<BrandCreateResponse> {
-        val response = brandService.createBrand(manager.id, request)
+        val normalizedRequest = request.normalize()
+        val response = brandService.createBrand(manager.id, normalizedRequest)
         return ResponseEntity.status(HttpStatus.CREATED).body(response)
     }
 
@@ -38,7 +40,8 @@ class BrandManagerController(
         @RequestBody request: UpdateBrandRequest,
         @AuthenticationPrincipal manager: AuthUser
     ): ResponseEntity<BrandUpdateResponse> {
-        val response = brandService.updateBrand(manager.id, brandId, request)
+        val normalizedRequest = request.normalize()
+        val response = brandService.updateBrand(manager.id, brandId, normalizedRequest)
         return ResponseEntity.ok(response)
     }
 

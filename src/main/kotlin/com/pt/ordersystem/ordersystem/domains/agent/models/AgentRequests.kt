@@ -8,7 +8,16 @@ data class NewAgentRequest(
   val phoneNumber: String,
   val streetAddress: String,
   val city: String,
-)
+) {
+  fun normalize() = this.copy(
+    firstName = firstName.trim(),
+    lastName = lastName.trim(),
+    email = email.trim().lowercase(),
+    phoneNumber = phoneNumber.trim(),
+    streetAddress = streetAddress.trim(),
+    city = city.trim(),
+  )
+}
 
 data class UpdateAgentRequest(
   val firstName: String,
@@ -16,4 +25,12 @@ data class UpdateAgentRequest(
   val phoneNumber: String,
   val streetAddress: String,
   val city: String,
-)
+) {
+  fun normalize() = this.copy(
+    firstName = firstName.trim(),
+    lastName = lastName.trim(),
+    phoneNumber = phoneNumber.trim(),
+    streetAddress = streetAddress.trim(),
+    city = city.trim(),
+  )
+}
