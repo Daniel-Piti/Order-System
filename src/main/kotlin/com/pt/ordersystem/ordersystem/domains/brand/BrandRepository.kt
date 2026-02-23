@@ -42,9 +42,9 @@ class BrandRepository(
     fun hasDuplicateName(managerId: String, name: String, id: Long): Boolean =
         brandDao.existsByManagerIdAndNameAndIdNot(managerId, name, id)
 
-    fun save(brandDbEntity: BrandDbEntity): Long {
-        val saved = brandDao.save(brandDbEntity)
-        return saved.id
+    fun save(brandDbEntity: BrandDbEntity): Brand {
+        val brand = brandDao.save(brandDbEntity)
+        return brand.toModel(s3StorageService.getPublicUrl(brand.s3Key))
     }
 
     fun deleteById(brandId: Long): Unit =

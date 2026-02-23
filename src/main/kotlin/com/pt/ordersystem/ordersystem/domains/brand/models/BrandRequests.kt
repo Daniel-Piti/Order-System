@@ -13,19 +13,22 @@ data class CreateBrandRequest(
 
 data class UpdateBrandRequest(
     val name: String,
-    val imageMetadata: ImageMetadata? = null,
 ) {
     fun normalize(): UpdateBrandRequest = this.copy(
         name = name.trim(),
     )
 }
 
-data class BrandCreateResponse(
-    val brandId: Long,
+data class CreateBrandResponse(
+    val brand: BrandDto,
     val preSignedUrl: String? = null,
 )
 
-data class BrandUpdateResponse(
-    val brandId: Long,
-    val preSignedUrl: String? = null,
+data class UpdateBrandNameResponse(
+    val brand: BrandDto,
+)
+
+data class UpdateBrandImageResponse(
+    val brand: BrandDto,
+    val preSignedUrl: String,
 )

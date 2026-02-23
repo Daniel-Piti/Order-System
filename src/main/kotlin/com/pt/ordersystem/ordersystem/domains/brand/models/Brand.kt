@@ -2,10 +2,6 @@ package com.pt.ordersystem.ordersystem.domains.brand.models
 
 import java.time.LocalDateTime
 
-/**
- * Domain model for Brand. Used by the service layer.
- * Controllers map this to [BrandDto] for API responses.
- */
 data class Brand(
     val id: Long,
     val managerId: String,
