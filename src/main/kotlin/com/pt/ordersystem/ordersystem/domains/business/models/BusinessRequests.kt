@@ -1,6 +1,5 @@
 package com.pt.ordersystem.ordersystem.domains.business.models
 
-import com.fasterxml.jackson.annotation.JsonProperty
 import com.pt.ordersystem.ordersystem.storage.models.ImageMetadata
 
 data class CreateBusinessRequest(
@@ -11,7 +10,17 @@ data class CreateBusinessRequest(
   val phoneNumber: String,
   val streetAddress: String,
   val city: String,
-)
+) {
+  fun normalize(): CreateBusinessRequest =
+    this.copy(
+      name = name.trim(),
+      stateIdNumber = stateIdNumber.trim(),
+      email = email.trim().lowercase(),
+      phoneNumber = phoneNumber.trim(),
+      streetAddress = streetAddress.trim(),
+      city = city.trim(),
+    )
+}
 
 data class UpdateBusinessRequest(
   val name: String,
@@ -21,16 +30,20 @@ data class UpdateBusinessRequest(
   val streetAddress: String,
   val city: String,
   val imageMetadata: ImageMetadata? = null,
-  @JsonProperty("removeImage") val removeImage: Boolean? = null,
-)
+  val removeImage: Boolean? = null,
+) {
+  fun normalize(): UpdateBusinessRequest =
+    this.copy(
+      name = name.trim(),
+      stateIdNumber = stateIdNumber.trim(),
+      email = email.trim().lowercase(),
+      phoneNumber = phoneNumber.trim(),
+      streetAddress = streetAddress.trim(),
+      city = city.trim(),
+    )
+}
 
 data class BusinessUpdateResponse(
-  val businessId: String,
+  val businessDto: BusinessDto,
   val preSignedUrl: String? = null,
-)
-
-/** Minimal DTO for public store header (name + logo only). */
-data class BusinessStoreDto(
-  val name: String,
-  val imageUrl: String?,
 )

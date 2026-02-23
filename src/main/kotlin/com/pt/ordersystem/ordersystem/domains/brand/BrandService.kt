@@ -78,13 +78,7 @@ class BrandService(
         // Handle image: generate preSigned URL if image metadata provided
         val preSignedUrlResult = request.imageMetadata?.let { imageMetadata ->
             // Delete old image if exists
-            brand.s3Key?.let { oldS3Key ->
-                try {
-                    s3StorageService.deleteFile(oldS3Key)
-                } catch (e: Exception) {
-                    println("Warning: Failed to delete old brand image: ${e.message}")
-                }
-            }
+            s3StorageService.deleteImageIfExists(brand.s3Key)
 
             // Generate preSigned URL (includes all validation, S3 key generation, and URL creation)
             s3StorageService.generatePreSignedUploadUrl(
@@ -118,14 +112,7 @@ class BrandService(
         val entity = brandRepository.findByManagerIdAndId(managerId, brandId)
 
         // Delete image from S3 if exists
-        entity.s3Key?.let { s3Key ->
-            try {
-                s3StorageService.deleteFile(s3Key)
-            } catch (e: Exception) {
-                // Log but don't fail if deletion fails
-                println("Warning: Failed to delete brand image: ${e.message}")
-            }
-        }
+        s3StorageService.deleteImageIfExists(entity.s3Key)
 
         // Remove brand from all products that use this brand
         productService.removeBrandFromProducts(managerId, brandId)

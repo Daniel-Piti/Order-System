@@ -1,6 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.business
 
-import com.pt.ordersystem.ordersystem.domains.business.models.BusinessStoreDto
+import com.pt.ordersystem.ordersystem.domains.business.models.PublicBusinessDto
+import com.pt.ordersystem.ordersystem.domains.business.models.toPublicDto
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -16,13 +17,8 @@ class PublicBusinessController(
 ) {
 
   @GetMapping("/manager/{managerId}")
-  fun getByManagerId(@PathVariable managerId: String): ResponseEntity<BusinessStoreDto> {
+  fun getByManagerId(@PathVariable managerId: String): ResponseEntity<PublicBusinessDto> {
     val business = businessService.getBusinessByManagerId(managerId)
-    return ResponseEntity.ok(
-      BusinessStoreDto(
-        name = business.name,
-        imageUrl = business.imageUrl,
-      )
-    )
+    return ResponseEntity.ok(business.toPublicDto())
   }
 }

@@ -1,5 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.business
 
+import com.pt.ordersystem.ordersystem.domains.business.helpers.BusinessValidators
+import com.pt.ordersystem.ordersystem.domains.business.models.Business
 import com.pt.ordersystem.ordersystem.domains.business.models.BusinessDbEntity
 import com.pt.ordersystem.ordersystem.domains.business.models.BusinessDto
 import com.pt.ordersystem.ordersystem.domains.business.models.BusinessFailureReason
@@ -10,7 +12,6 @@ import com.pt.ordersystem.ordersystem.domains.business.models.toDto
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerRepository
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
-import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.storage.S3StorageService
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.springframework.http.HttpStatus
@@ -20,170 +21,123 @@ import java.time.LocalDateTime
 
 @Service
 class BusinessService(
-  private val businessRepository: BusinessRepository,
-  private val managerRepository: ManagerRepository,
-  private val s3StorageService: S3StorageService,
+    private val businessRepository: BusinessRepository,
+    private val managerRepository: ManagerRepository,
+    private val s3StorageService: S3StorageService,
 ) {
 
-  fun getBusinessByManagerId(managerId: String): BusinessDto {
-    val business = businessRepository.findByManagerId(managerId)
-      ?: throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = BusinessFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = BusinessFailureReason.NOT_FOUND.technical + "managerId=$managerId",
-        severity = SeverityLevel.WARN
-      )
-    return business.toDto(s3StorageService.getPublicUrl(business.s3Key))
-  }
-
-  fun getBusinessesByManagerIds(managerIds: List<String>): Map<String, BusinessDto> {
-    if (managerIds.isEmpty()) return emptyMap()
-
-    val businesses = businessRepository.findByManagerIdIn(managerIds)
-    return businesses.associateBy({ it.managerId }) { business ->
-      business.toDto(s3StorageService.getPublicUrl(business.s3Key))
-    }
-  }
-
-  @Transactional
-  fun createBusiness(request: CreateBusinessRequest): String {
-    with(request) {
-      FieldValidators.validateNonEmpty(managerId, "'manager id'")
-      FieldValidators.validateNonEmpty(name, "'name'")
-      FieldValidators.validateNonEmpty(stateIdNumber, "'state id number'")
-      FieldValidators.validateEmail(email)
-      FieldValidators.validatePhoneNumber(phoneNumber)
-      FieldValidators.validateNonEmpty(streetAddress, "'street address'")
-      FieldValidators.validateNonEmpty(city, "'city'")
+    fun getBusinessByManagerId(managerId: String): BusinessDto {
+        val business = businessRepository.findByManagerId(managerId)
+        return business.toDto(s3StorageService.getPublicUrl(business.s3Key))
     }
 
-    // Check if manager exists
-    managerRepository.findById(request.managerId).orElseThrow {
-      ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = BusinessFailureReason.MANAGER_NOT_FOUND.userMessage,
-        technicalMessage = BusinessFailureReason.MANAGER_NOT_FOUND.technical + "managerId=${request.managerId}",
-        severity = SeverityLevel.WARN
-      )
-    }
+    fun getBusinessesByManagerIds(managerIds: List<String>): List<Business> =
+        businessRepository.findByManagerIdIn(managerIds)
 
-    // Check if business already exists for this manager
-    if (businessRepository.existsByManagerId(request.managerId)) {
-      throw ServiceException(
-        status = HttpStatus.CONFLICT,
-        userMessage = BusinessFailureReason.ALREADY_EXISTS.userMessage,
-        technicalMessage = BusinessFailureReason.ALREADY_EXISTS.technical + "managerId=${request.managerId}",
-        severity = SeverityLevel.INFO
-      )
-    }
+    fun validateCreateBusiness(request: CreateBusinessRequest) {
+        BusinessValidators.validateCreateBusinessFields(request)
 
-    val now = LocalDateTime.now()
-    val business = BusinessDbEntity(
-      id = GeneralUtils.genId(),
-      managerId = request.managerId,
-      name = request.name.trim(),
-      stateIdNumber = request.stateIdNumber.trim(),
-      email = request.email.trim(),
-      phoneNumber = request.phoneNumber,
-      streetAddress = request.streetAddress.trim(),
-      city = request.city.trim(),
-      s3Key = null,
-      fileName = null,
-      fileSizeBytes = null,
-      mimeType = null,
-      createdAt = now,
-      updatedAt = now
-    )
-
-    val savedBusiness = businessRepository.save(business)
-    return savedBusiness.id
-  }
-
-  @Transactional
-  fun updateBusiness(managerId: String, request: UpdateBusinessRequest): BusinessUpdateResponse {
-    with(request) {
-      FieldValidators.validateNonEmpty(name, "'name'")
-      FieldValidators.validateNonEmpty(stateIdNumber, "'state id number'")
-      FieldValidators.validateEmail(email)
-      FieldValidators.validatePhoneNumber(phoneNumber)
-      FieldValidators.validateNonEmpty(streetAddress, "'street address'")
-      FieldValidators.validateNonEmpty(city, "'city'")
-    }
-
-    val business = businessRepository.findByManagerId(managerId)
-      ?: throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = BusinessFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = BusinessFailureReason.NOT_FOUND.technical + "managerId=$managerId",
-        severity = SeverityLevel.WARN
-      )
-
-    // Handle image removal
-    if (request.removeImage == true) {
-      // Delete old image from S3 if exists
-      business.s3Key?.let { oldS3Key ->
-        try {
-          s3StorageService.deleteFile(oldS3Key)
-        } catch (e: Exception) {
-          println("Warning: Failed to delete business image: ${e.message}")
+        // Check if manager exists
+        managerRepository.findById(request.managerId).orElseThrow {
+            ServiceException(
+                status = HttpStatus.NOT_FOUND,
+                userMessage = BusinessFailureReason.MANAGER_NOT_FOUND.userMessage,
+                technicalMessage = BusinessFailureReason.MANAGER_NOT_FOUND.technical + "managerId=${request.managerId}",
+                severity = SeverityLevel.WARN
+            )
         }
-      }
-    }
 
-    val preSignedUrlResult = request.imageMetadata?.let { imageMetadata ->
-      // Delete old image if exists (only if not already deleted by removeImage)
-      if (request.removeImage != true) {
-        business.s3Key?.let { oldS3Key ->
-          try {
-            s3StorageService.deleteFile(oldS3Key)
-          } catch (e: Exception) {
-            println("Warning: Failed to delete old business image: ${e.message}")
-          }
+        // Check if business already exists for this manager
+        if (businessRepository.existsByManagerId(request.managerId)) {
+            throw ServiceException(
+                status = HttpStatus.CONFLICT,
+                userMessage = BusinessFailureReason.ALREADY_EXISTS.userMessage,
+                technicalMessage = BusinessFailureReason.ALREADY_EXISTS.technical + "managerId=${request.managerId}",
+                severity = SeverityLevel.INFO
+            )
         }
-      }
-
-      s3StorageService.generatePreSignedUploadUrl(
-        basePath = "managers/$managerId/business",
-        imageMetadata = imageMetadata
-      )
     }
 
-    // Update business
-    val updatedBusiness = business.copy(
-      name = request.name.trim(),
-      stateIdNumber = request.stateIdNumber.trim(),
-      email = request.email.trim(),
-      phoneNumber = request.phoneNumber,
-      streetAddress = request.streetAddress.trim(),
-      city = request.city.trim(),
-      s3Key = when {
-        request.removeImage == true -> null
-        preSignedUrlResult != null -> preSignedUrlResult.s3Key
-        else -> business.s3Key
-      },
-      fileName = when {
-        request.removeImage == true -> null
-        request.imageMetadata != null -> request.imageMetadata.fileName
-        else -> business.fileName
-      },
-      fileSizeBytes = when {
-        request.removeImage == true -> null
-        request.imageMetadata != null -> request.imageMetadata.fileSizeBytes
-        else -> business.fileSizeBytes
-      },
-      mimeType = when {
-        request.removeImage == true -> null
-        request.imageMetadata != null -> request.imageMetadata.contentType
-        else -> business.mimeType
-      },
-      updatedAt = LocalDateTime.now()
-    )
+    @Transactional
+    fun createBusiness(request: CreateBusinessRequest): Business {
+        validateCreateBusiness(request)
 
-    val savedBusiness = businessRepository.save(updatedBusiness)
+        val now = LocalDateTime.now()
+        val business = BusinessDbEntity(
+            id = GeneralUtils.genId(),
+            managerId = request.managerId,
+            name = request.name,
+            stateIdNumber = request.stateIdNumber,
+            email = request.email,
+            phoneNumber = request.phoneNumber,
+            streetAddress = request.streetAddress,
+            city = request.city,
+            s3Key = null,
+            fileName = null,
+            fileSizeBytes = null,
+            mimeType = null,
+            createdAt = now,
+            updatedAt = now
+        )
 
-    return BusinessUpdateResponse(
-      businessId = savedBusiness.id,
-      preSignedUrl = preSignedUrlResult?.preSignedUrl
-    )
-  }
+        return businessRepository.save(business)
+    }
+
+    @Transactional
+    fun updateBusiness(managerId: String, request: UpdateBusinessRequest): BusinessUpdateResponse {
+        BusinessValidators.validateUpdateBusinessFields(request)
+
+        val business = businessRepository.findEntityByManagerId(managerId)
+
+        // Handle image removal if we want to remove image
+        if (request.removeImage == true) {
+            s3StorageService.deleteImageIfExists(business.s3Key)
+        }
+
+        // Handle image removal & update in case of update
+        val preSignedUrlResult = request.imageMetadata?.let { imageMetadata ->
+            s3StorageService.deleteImageIfExists(business.s3Key)
+            s3StorageService.generatePreSignedUploadUrl(
+                basePath = "managers/$managerId/business",
+                imageMetadata = imageMetadata
+            )
+        }
+
+        val updatedBusiness = business.copy(
+            name = request.name,
+            stateIdNumber = request.stateIdNumber,
+            email = request.email,
+            phoneNumber = request.phoneNumber,
+            streetAddress = request.streetAddress,
+            city = request.city,
+            s3Key = when {
+                request.removeImage == true -> null
+                preSignedUrlResult != null -> preSignedUrlResult.s3Key
+                else -> business.s3Key
+            },
+            fileName = when {
+                request.removeImage == true -> null
+                request.imageMetadata != null -> request.imageMetadata.fileName
+                else -> business.fileName
+            },
+            fileSizeBytes = when {
+                request.removeImage == true -> null
+                request.imageMetadata != null -> request.imageMetadata.fileSizeBytes
+                else -> business.fileSizeBytes
+            },
+            mimeType = when {
+                request.removeImage == true -> null
+                request.imageMetadata != null -> request.imageMetadata.contentType
+                else -> business.mimeType
+            },
+            updatedAt = LocalDateTime.now()
+        )
+
+        val saved = businessRepository.save(updatedBusiness)
+
+        return BusinessUpdateResponse(
+            businessDto = saved.toDto(s3StorageService.getPublicUrl(saved.s3Key)),
+            preSignedUrl = preSignedUrlResult?.preSignedUrl
+        )
+    }
 }

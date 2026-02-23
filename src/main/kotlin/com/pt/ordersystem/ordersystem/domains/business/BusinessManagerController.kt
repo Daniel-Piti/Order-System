@@ -38,7 +38,8 @@ class BusinessManagerController(
     @RequestBody updateRequest: UpdateBusinessRequest,
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<BusinessUpdateResponse> {
-    val response = businessService.updateBusiness(manager.id, updateRequest)
+    val normalizedRequest = updateRequest.normalize()
+    val response = businessService.updateBusiness(manager.id, normalizedRequest)
     return ResponseEntity.ok(response)
   }
 }

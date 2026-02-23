@@ -203,4 +203,15 @@ class S3StorageService(
       )
     }
   }
+
+  fun deleteImageIfExists(s3Key: String?) {
+    s3Key?.let { oldS3Key ->
+      try {
+        deleteFile(oldS3Key)
+      } catch (e: Exception) {
+        println("tryDeleteImage | Failed to delete business image: ${e.message}")
+      }
+    }
+  }
+
 }
