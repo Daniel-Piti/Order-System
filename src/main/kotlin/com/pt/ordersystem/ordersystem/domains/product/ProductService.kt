@@ -1,9 +1,9 @@
 package com.pt.ordersystem.ordersystem.domains.product
 
 import com.pt.ordersystem.ordersystem.domains.brand.BrandRepository
+import com.pt.ordersystem.ordersystem.domains.category.CategoryRepository
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.domains.product.models.*
-import com.pt.ordersystem.ordersystem.domains.category.CategoryService
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerRepository
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
@@ -18,7 +18,6 @@ import com.pt.ordersystem.ordersystem.storage.S3StorageService
 import com.pt.ordersystem.ordersystem.storage.models.ImageMetadata
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.slf4j.LoggerFactory
-import org.springframework.context.annotation.Lazy
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -39,7 +38,7 @@ class ProductService(
   private val productOverrideRepository: ProductOverrideRepository,
   private val s3StorageService: S3StorageService,
   private val brandRepository: BrandRepository,
-  @Lazy private val categoryService: CategoryService,
+  private val categoryRepository: CategoryRepository,
   private val customerRepository: CustomerRepository,
 ) {
 
@@ -118,7 +117,7 @@ class ProductService(
     val brands = brandRepository.findByManagerId(managerId)
     val brandMap = brands.associate { it.id to it.name }
     
-    val categories = categoryService.getManagerCategories(managerId)
+    val categories = categoryRepository.findByManagerId(managerId)
     val categoryMap = categories.associate { it.id to it.category }
     
     val enrichedContent = productPage.content.map { product ->
@@ -148,7 +147,7 @@ class ProductService(
     val brands = brandRepository.findByManagerId(order.managerId)
     val brandMap = brands.associate { it.id to it.name }
     
-    val categories = categoryService.getManagerCategories(order.managerId)
+    val categories = categoryRepository.findByManagerId(order.managerId)
     val categoryMap = categories.associate { it.id to it.category }
 
     // If no customer assigned, return products with default prices
@@ -204,16 +203,16 @@ class ProductService(
       try {
         brandRepository.findByManagerIdAndId(managerId, it).name
       } catch (e: Exception) {
-        logger.warn("Brand with ID=${product.brandId} not found")
+        logger.warn("Brand with ID=${product.brandId} not found | $e")
         null
       }
     }
 
     val categoryName = product.categoryId?.let {
       try {
-        categoryService.getCategoryById(managerId, it).category
+        categoryRepository.findByManagerIdAndId(managerId, it).category
       } catch (e: Exception) {
-        logger.warn("category with ID=${product.categoryId} not found")
+        logger.warn("category with ID=${product.categoryId} not found | $e")
         null
       }
     }
@@ -241,7 +240,7 @@ class ProductService(
       brandId?.let { brandRepository.findByManagerIdAndId(managerId, it) }
 
       // Validate categoryId belongs to manager (if provided)
-      categoryId?.let { categoryService.getCategoryById(managerId, it) }
+      categoryId?.let { categoryRepository.findByManagerIdAndId(managerId, it) }
     }
   }
 
