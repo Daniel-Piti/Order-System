@@ -46,8 +46,13 @@ class CustomerAgentController(
     @AuthenticationPrincipal agent: AuthUser,
     @RequestBody payload: CustomerPayload,
   ): ResponseEntity<CustomerDto> {
+    val normalPayload = payload.normalize()
     val agent = agentService.getAgent(agent.id)
-    val customer = customerService.createCustomer(managerId = agent.managerId, agentId = agent.id, customerPayload = payload)
+    val customer = customerService.createCustomer(
+      managerId = agent.managerId,
+      agentId = agent.id,
+      customerPayload = normalPayload
+    )
     return ResponseEntity.status(HttpStatus.CREATED).body(customer)
   }
 
@@ -57,14 +62,15 @@ class CustomerAgentController(
     @PathVariable customerId: String,
     @RequestBody payload: CustomerPayload,
   ): ResponseEntity<CustomerDto> {
+    val normalizedPayload = payload.normalize()
     val agent = agentService.getAgent(agent.id)
     val updated = customerService.updateCustomer(
       managerId = agent.managerId,
       agentId = agent.id,
       customerId = customerId,
-      customerPayload = payload,
+      customerPayload = normalizedPayload,
     )
-    return ResponseEntity.ok(updated)
+    return ResponseEntity.ok(updated.toDto())
   }
 
   @DeleteMapping("/{customerId}")

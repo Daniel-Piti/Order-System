@@ -60,7 +60,7 @@ class CustomerManagerController(
       customerId = customerId,
       customerPayload = payload,
     )
-    return ResponseEntity.ok(customer)
+    return ResponseEntity.ok(customer.toDto())
   }
 
   @DeleteMapping("/{customerId}")

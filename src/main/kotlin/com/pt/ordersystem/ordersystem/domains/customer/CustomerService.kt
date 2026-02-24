@@ -40,8 +40,8 @@ class CustomerService(
 
   @Transactional
   fun createCustomer(managerId: String, agentId: String?, customerPayload: CustomerPayload): CustomerDto {
-    val normalizedPayload = normalizePayload(customerPayload)
 
+    val normalizedPayload = customerPayload.normalize()
     CustomerValidators.validatePayload(normalizedPayload)
     agentId?.also { agentRepository.findByManagerIdAndId(managerId, it) }
     validateUniquePhoneNumber(managerId, normalizedPayload.phoneNumber, excludeCustomerId = null)
@@ -74,9 +74,9 @@ class CustomerService(
     agentId: String?,
     customerId: String,
     customerPayload: CustomerPayload
-  ): CustomerDto {
-    val normalizedPayload = normalizePayload(customerPayload)
+  ): Customer {
 
+    val normalizedPayload = customerPayload.normalize()
     CustomerValidators.validatePayload(normalizedPayload)
     agentId?.also { agentRepository.findByManagerIdAndId(managerId, it) }
     validateUniquePhoneNumber(managerId, normalizedPayload.phoneNumber, excludeCustomerId = customerId)
@@ -94,8 +94,7 @@ class CustomerService(
       updatedAt = LocalDateTime.now(),
     )
 
-    val customer = customerRepository.save(updatedEntity)
-    return customer.toDto()
+    return customerRepository.save(updatedEntity)
   }
 
   @Transactional
@@ -131,17 +130,6 @@ class CustomerService(
       )
     }
   }
-
-  private fun normalizePayload(customerPayload: CustomerPayload) =
-    CustomerPayload(
-      name = customerPayload.name.trim(),
-      phoneNumber = customerPayload.phoneNumber.trim(),
-      discountPercentage = customerPayload.discountPercentage.coerceIn(0, 100),
-      email = customerPayload.email.trim(),
-      streetAddress = customerPayload.streetAddress.trim(),
-      city = customerPayload.city.trim(),
-      stateId = customerPayload.stateId.trim(),
-    )
 
   private fun getCustomer(managerId: String, agentId: String?, customerId: String): Customer {
     if (agentId == null) {
