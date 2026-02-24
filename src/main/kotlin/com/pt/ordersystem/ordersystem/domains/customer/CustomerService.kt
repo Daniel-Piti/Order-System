@@ -4,16 +4,12 @@ import com.pt.ordersystem.ordersystem.domains.agent.AgentRepository
 import com.pt.ordersystem.ordersystem.domains.customer.models.Customer
 import com.pt.ordersystem.ordersystem.domains.customer.models.CustomerDbEntity
 import com.pt.ordersystem.ordersystem.domains.customer.models.CustomerDto
-import com.pt.ordersystem.ordersystem.domains.customer.models.CustomerFailureReason
 import com.pt.ordersystem.ordersystem.domains.customer.models.CustomerPayload
 import com.pt.ordersystem.ordersystem.domains.customer.models.toDto
 import com.pt.ordersystem.ordersystem.domains.customer.models.toDbEntity
 import com.pt.ordersystem.ordersystem.domains.customer.validators.CustomerValidators
 import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideRepository
-import com.pt.ordersystem.ordersystem.exception.ServiceException
-import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -47,7 +43,6 @@ class CustomerService(
     val normalizedPayload = customerPayload.normalize()
     CustomerValidators.validatePayload(normalizedPayload)
     agentId?.also { agentRepository.findByManagerIdAndId(managerId, it) }
-    validateCustomerUniquePhoneNumber(managerId, normalizedPayload.phoneNumber, excludeCustomerId = null)
     validateCustomerCap(managerId, agentId)
 
     val now = LocalDateTime.now()
@@ -82,7 +77,6 @@ class CustomerService(
     val normalizedPayload = customerPayload.normalize()
     CustomerValidators.validatePayload(normalizedPayload)
     agentId?.also { agentRepository.findByManagerIdAndId(managerId, it) }
-    validateCustomerUniquePhoneNumber(managerId, normalizedPayload.phoneNumber, excludeCustomerId = customerId)
 
     val currentCustomer = findCustomerByAgentIdAndManagerId(managerId, agentId, customerId)
 
@@ -119,18 +113,6 @@ class CustomerService(
         updatedAt = LocalDateTime.now()
       )
       customerRepository.save(updatedEntity)
-    }
-  }
-
-  private fun validateCustomerUniquePhoneNumber(managerId: String, phoneNumber: String, excludeCustomerId: String?) {
-    val customerWithSamePhoneNumber = customerRepository.findByManagerIdAndPhoneNumber(managerId, phoneNumber)
-    if (customerWithSamePhoneNumber != null && customerWithSamePhoneNumber.id != excludeCustomerId) {
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = CustomerFailureReason.CUSTOMER_ALREADY_EXISTS.userMessage,
-        technicalMessage = CustomerFailureReason.CUSTOMER_ALREADY_EXISTS.technical + "phoneNumber=$phoneNumber managerId=$managerId",
-        severity = SeverityLevel.WARN,
-      )
     }
   }
 

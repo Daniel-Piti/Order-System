@@ -42,9 +42,6 @@ class CustomerRepository(
     return entity.toModel()
   }
 
-  fun findByManagerIdAndPhoneNumber(managerId: String, phoneNumber: String): Customer? =
-    customerDao.findByManagerIdAndPhoneNumber(managerId, phoneNumber)?.toModel()
-
   fun findByManagerIdAndAgentId(managerId: String, agentId: String): List<Customer> =
     customerDao.findByManagerIdAndAgentId(managerId, agentId).map { it.toModel() }
 
