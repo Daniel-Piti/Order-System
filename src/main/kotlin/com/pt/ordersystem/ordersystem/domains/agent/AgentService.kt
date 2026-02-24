@@ -31,11 +31,8 @@ class AgentService(
   fun getAgentsForManager(managerId: String): List<AgentDto> =
     agentRepository.findByManagerId(managerId).map { it.toDto() }
 
-  fun getAgentProfile(agentId: String): AgentDto =
-    agentRepository.findById(agentId).toDto()
-
-  fun getAgentEntity(agentId: String): AgentDbEntity =
-    agentRepository.findEntityById(agentId)
+  fun getAgent(agentId: String): Agent =
+    agentRepository.findById(agentId)
 
   fun getAgentByEmail(email: String): AgentDbEntity =
     agentRepository.findEntityByEmail(email)

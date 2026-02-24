@@ -37,28 +37,28 @@ class OrderAgentController(
     @RequestParam(required = false) status: String?,
     @RequestParam(required = false) customerId: String?
   ): ResponseEntity<Page<OrderDto>> {
-    val agentEntity = agentService.getAgentEntity(agent.id)
+    val agent = agentService.getAgent(agent.id)
     val orders = if (customerId != null) {
       orderService.getOrdersByCustomerId(
-        managerId = agentEntity.managerId,
+        managerId = agent.managerId,
         customerId = customerId,
         page = page,
         size = size,
         sortBy = sortBy,
         sortDirection = sortDirection,
         status = status,
-        agentId = agentEntity.id
+        agentId = agent.id
       )
     } else {
       orderService.getOrders(
-        managerId = agentEntity.managerId,
+        managerId = agent.managerId,
         page = page,
         size = size,
         sortBy = sortBy,
         sortDirection = sortDirection,
         status = status,
         filterAgent = true,
-        agentId = agentEntity.id
+        agentId = agent.id
       )
     }
     return ResponseEntity.ok(orders)
@@ -69,9 +69,9 @@ class OrderAgentController(
     @PathVariable orderId: String,
     @AuthenticationPrincipal agent: AuthUser
   ): ResponseEntity<OrderDto> {
-    val agentEntity = agentService.getAgentEntity(agent.id)
+    val agent = agentService.getAgent(agent.id)
     return ResponseEntity.ok(
-      orderService.getOrderById(orderId = orderId, managerId = agentEntity.managerId, agentId = agentEntity.id)
+      orderService.getOrderById(orderId = orderId, managerId = agent.managerId, agentId = agent.id)
     )
   }
 
@@ -80,10 +80,10 @@ class OrderAgentController(
     @RequestBody request: CreateOrderRequest,
     @AuthenticationPrincipal agent: AuthUser
   ): ResponseEntity<String> {
-    val agentEntity = agentService.getAgentEntity(agent.id)
+    val agent = agentService.getAgent(agent.id)
     val newOrderId = orderService.createOrder(
-      managerId = agentEntity.managerId,
-      agentId = agentEntity.id,
+      managerId = agent.managerId,
+      agentId = agent.id,
       orderSource = OrderSource.AGENT,
       request = request,
     )
@@ -95,8 +95,8 @@ class OrderAgentController(
     @PathVariable orderId: String,
     @AuthenticationPrincipal agent: AuthUser
   ): ResponseEntity<Void> {
-    val agentEntity = agentService.getAgentEntity(agent.id)
-    orderService.cancelOrder(orderId, agentEntity.managerId, agentEntity.id)
+    val agent = agentService.getAgent(agent.id)
+    orderService.cancelOrder(orderId, agent.managerId, agent.id)
     return ResponseEntity.noContent().build()
   }
 
@@ -106,11 +106,11 @@ class OrderAgentController(
     @RequestBody request: UpdateOrderRequest,
     @AuthenticationPrincipal agent: AuthUser
   ): ResponseEntity<Void> {
-    val agentEntity = agentService.getAgentEntity(agent.id)
+    val agent = agentService.getAgent(agent.id)
     orderService.updateOrder(
       orderId = orderId,
-      managerId = agentEntity.managerId,
-      agentId = agentEntity.id,
+      managerId = agent.managerId,
+      agentId = agent.id,
       request = request
     )
     return ResponseEntity.noContent().build()
@@ -122,11 +122,11 @@ class OrderAgentController(
     @RequestBody request: UpdateDiscountRequest,
     @AuthenticationPrincipal agent: AuthUser
   ): ResponseEntity<Void> {
-    val agentEntity = agentService.getAgentEntity(agent.id)
+    val agent = agentService.getAgent(agent.id)
     orderService.updateOrderDiscount(
       orderId = orderId,
-      managerId = agentEntity.managerId,
-      agentId = agentEntity.id,
+      managerId = agent.managerId,
+      agentId = agent.id,
       request = request
     )
     return ResponseEntity.noContent().build()

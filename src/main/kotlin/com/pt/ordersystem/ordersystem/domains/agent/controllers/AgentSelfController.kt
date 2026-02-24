@@ -32,7 +32,7 @@ class AgentSelfController(
   fun getCurrentAgent(
     @AuthenticationPrincipal agent: AuthUser,
   ): ResponseEntity<AgentDto> =
-    ResponseEntity.ok(agentService.getAgentProfile(agent.id))
+    ResponseEntity.ok(agentService.getAgent(agent.id).toDto())
 
   @PutMapping
   fun updateCurrentAgentProfile(

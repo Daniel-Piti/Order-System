@@ -1,9 +1,11 @@
-package com.pt.ordersystem.ordersystem.domains.customer
+package com.pt.ordersystem.ordersystem.domains.customer.controllers
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
+import com.pt.ordersystem.ordersystem.domains.customer.CustomerService
 import com.pt.ordersystem.ordersystem.domains.customer.models.CustomerDto
 import com.pt.ordersystem.ordersystem.domains.customer.models.CustomerPayload
+import com.pt.ordersystem.ordersystem.domains.customer.models.toDto
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
@@ -33,7 +35,7 @@ class CustomerManagerController(
   @GetMapping
   fun getAllCustomers(@AuthenticationPrincipal manager: AuthUser): ResponseEntity<List<CustomerDto>> {
     val customers = customerService.getCustomers(manager.id, agentId = null)
-    return ResponseEntity.ok(customers)
+    return ResponseEntity.ok(customers.map { it.toDto() })
   }
 
   @PostMapping

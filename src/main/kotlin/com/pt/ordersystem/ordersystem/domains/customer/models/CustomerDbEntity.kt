@@ -45,16 +45,3 @@ data class CustomerDbEntity(
   @Column(name = "updated_at", nullable = false)
   var updatedAt: LocalDateTime = LocalDateTime.now()
 )
-
-fun CustomerDbEntity.toDto() = CustomerDto(
-  id = id,
-  agentId = agentId,
-  managerId = managerId,
-  discountPercentage = discountPercentage,
-  name = name,
-  phoneNumber = phoneNumber,
-  email = email,
-  streetAddress = streetAddress,
-  city = city,
-  stateId = stateId,
-)

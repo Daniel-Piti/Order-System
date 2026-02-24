@@ -36,11 +36,11 @@ class ProductOverrideAgentController(
     @RequestParam(required = false) productId: String?,
     @RequestParam(required = false) customerId: String?,
   ): ResponseEntity<Page<ProductOverrideWithPriceDto>> {
-    val agentEntity = agentService.getAgentEntity(agent.id)
+    val agent = agentService.getAgent(agent.id)
     val overrides = productOverrideService.getAllOverrides(
-      managerId = agentEntity.managerId,
-      actorAgentId = agentEntity.id,
-      filterAgentId = agentEntity.id,
+      managerId = agent.managerId,
+      actorAgentId = agent.id,
+      filterAgentId = agent.id,
       includeManagerOverrides = false,
       includeAgentOverrides = true,
       page = page,
@@ -58,8 +58,8 @@ class ProductOverrideAgentController(
     @AuthenticationPrincipal agent: AuthUser,
     @PathVariable overrideId: Long,
   ): ResponseEntity<ProductOverrideDto> {
-    val agentEntity = agentService.getAgentEntity(agent.id)
-    val override = productOverrideService.getProductOverrideById(agentEntity.managerId, overrideId, agentEntity.id)
+    val agent = agentService.getAgent(agent.id)
+    val override = productOverrideService.getProductOverrideById(agent.managerId, overrideId, agent.id)
     return ResponseEntity.ok(override)
   }
 
@@ -68,8 +68,8 @@ class ProductOverrideAgentController(
     @AuthenticationPrincipal agent: AuthUser,
     @PathVariable productId: String,
   ): ResponseEntity<List<ProductOverrideDto>> {
-    val agentEntity = agentService.getAgentEntity(agent.id)
-    val overrides = productOverrideService.getProductOverridesForProductId(agentEntity.managerId, productId, agentEntity.id)
+    val agent = agentService.getAgent(agent.id)
+    val overrides = productOverrideService.getProductOverridesForProductId(agent.managerId, productId, agent.id)
     return ResponseEntity.ok(overrides)
   }
 
@@ -78,8 +78,8 @@ class ProductOverrideAgentController(
     @AuthenticationPrincipal agent: AuthUser,
     @PathVariable customerId: String,
   ): ResponseEntity<List<ProductOverrideDto>> {
-    val agentEntity = agentService.getAgentEntity(agent.id)
-    val overrides = productOverrideService.getProductOverridesByCustomerId(agentEntity.managerId, customerId, agentEntity.id)
+    val agent = agentService.getAgent(agent.id)
+    val overrides = productOverrideService.getProductOverridesByCustomerId(agent.managerId, customerId, agent.id)
     return ResponseEntity.ok(overrides)
   }
 
@@ -88,8 +88,8 @@ class ProductOverrideAgentController(
     @AuthenticationPrincipal agent: AuthUser,
     @RequestBody request: CreateProductOverrideRequest,
   ): ResponseEntity<ProductOverrideDto> {
-    val agentEntity = agentService.getAgentEntity(agent.id)
-    val override = productOverrideService.createProductOverride(agentEntity.managerId, request, agentEntity.id)
+    val agent = agentService.getAgent(agent.id)
+    val override = productOverrideService.createProductOverride(agent.managerId, request, agent.id)
     return ResponseEntity.status(HttpStatus.CREATED).body(override)
   }
 
@@ -99,8 +99,8 @@ class ProductOverrideAgentController(
     @PathVariable overrideId: Long,
     @RequestBody request: UpdateProductOverrideRequest,
   ): ResponseEntity<ProductOverrideDto> {
-    val agentEntity = agentService.getAgentEntity(agent.id)
-    val override = productOverrideService.updateProductOverride(agentEntity.managerId, overrideId, request, agentEntity.id)
+    val agent = agentService.getAgent(agent.id)
+    val override = productOverrideService.updateProductOverride(agent.managerId, overrideId, request, agent.id)
     return ResponseEntity.ok(override)
   }
 
@@ -109,8 +109,8 @@ class ProductOverrideAgentController(
     @AuthenticationPrincipal agent: AuthUser,
     @PathVariable overrideId: Long,
   ): ResponseEntity<String> {
-    val agentEntity = agentService.getAgentEntity(agent.id)
-    productOverrideService.deleteProductOverride(agentEntity.managerId, overrideId, agentEntity.id)
+    val agent = agentService.getAgent(agent.id)
+    productOverrideService.deleteProductOverride(agent.managerId, overrideId, agent.id)
     return ResponseEntity.ok("Product override deleted successfully")
   }
 }

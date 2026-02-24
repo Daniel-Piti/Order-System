@@ -161,12 +161,6 @@ class ProductService(
 
     // Customer exists - get customer and overrides
     val customer = customerRepository.findByManagerIdAndId(order.managerId, order.customerId)
-      ?: throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = "Customer not found",
-        technicalMessage = "Customer with id ${order.customerId} not found for manager ${order.managerId}",
-        severity = SeverityLevel.WARN
-      )
 
     val overrides = productOverrideRepository.findByManagerIdAndCustomerId(
       managerId = order.managerId,
