@@ -3,9 +3,7 @@ package com.pt.ordersystem.ordersystem.domains.customer
 import com.pt.ordersystem.ordersystem.domains.agent.AgentRepository
 import com.pt.ordersystem.ordersystem.domains.customer.models.Customer
 import com.pt.ordersystem.ordersystem.domains.customer.models.CustomerDbEntity
-import com.pt.ordersystem.ordersystem.domains.customer.models.CustomerDto
 import com.pt.ordersystem.ordersystem.domains.customer.models.CustomerPayload
-import com.pt.ordersystem.ordersystem.domains.customer.models.toDto
 import com.pt.ordersystem.ordersystem.domains.customer.models.toDbEntity
 import com.pt.ordersystem.ordersystem.domains.customer.validators.CustomerValidators
 import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideRepository
@@ -38,7 +36,7 @@ class CustomerService(
     else customerRepository.findByManagerIdAndAgentIdAndId(managerId, agentId, customerId)
 
   @Transactional
-  fun createCustomer(managerId: String, agentId: String?, customerPayload: CustomerPayload): CustomerDto {
+  fun createCustomer(managerId: String, agentId: String?, customerPayload: CustomerPayload): Customer {
 
     val normalizedPayload = customerPayload.normalize()
     CustomerValidators.validatePayload(normalizedPayload)
@@ -63,7 +61,7 @@ class CustomerService(
     )
 
     val customer = customerRepository.save(entity)
-    return customer.toDto()
+    return customer
   }
 
   @Transactional

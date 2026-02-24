@@ -53,7 +53,7 @@ class CustomerAgentController(
       agentId = agent.id,
       customerPayload = normalPayload
     )
-    return ResponseEntity.status(HttpStatus.CREATED).body(customer)
+    return ResponseEntity.status(HttpStatus.CREATED).body(customer.toDto())
   }
 
   @PutMapping("/{customerId}")

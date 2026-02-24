@@ -44,7 +44,7 @@ class CustomerManagerController(
     @AuthenticationPrincipal manager: AuthUser,
   ): ResponseEntity<CustomerDto> {
     val customer = customerService.createCustomer(manager.id, agentId = null, customerPayload = payload)
-    return ResponseEntity.status(HttpStatus.CREATED).body(customer)
+    return ResponseEntity.status(HttpStatus.CREATED).body(customer.toDto())
   }
 
   @PutMapping("/{customerId}")
