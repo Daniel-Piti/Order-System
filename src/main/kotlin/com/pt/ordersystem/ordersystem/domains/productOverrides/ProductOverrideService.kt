@@ -1,6 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.productOverrides
 
-import com.pt.ordersystem.ordersystem.domains.customer.CustomerService
+import com.pt.ordersystem.ordersystem.domains.customer.CustomerRepository
 import com.pt.ordersystem.ordersystem.domains.product.ProductRepository
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
@@ -19,7 +19,7 @@ import java.time.LocalDateTime
 class ProductOverrideService(
   private val productOverrideRepository: ProductOverrideRepository,
   private val productRepository: ProductRepository,
-  private val customerService: CustomerService
+  private val customerRepository: CustomerRepository,
 ) {
   
   companion object {
@@ -120,7 +120,8 @@ class ProductOverrideService(
       )
     }
 
-    validateCustomerAccess(managerId, agentId, request.customerId)
+    if (agentId == null) customerRepository.findByManagerIdAndId(managerId, request.customerId)
+    else customerRepository.findByManagerIdAndAgentIdAndId(managerId, agentId, request.customerId)
 
     // Check if override already exists
     val existingOverride = if (agentId == null) {
@@ -237,21 +238,6 @@ class ProductOverrideService(
       )
     }
     return override
-  }
-
-  private fun validateCustomerAccess(managerId: String, agentId: String?, customerId: String) {
-    try {
-      customerService.getCustomerDto(managerId, customerId, agentId)
-    } catch (e: ServiceException) {
-      throw e
-    } catch (e: Exception) {
-      throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = ProductOverrideFailureReason.CUSTOMER_NOT_FOUND.message,
-        technicalMessage = "Customer with id $customerId not found for manager $managerId",
-        severity = SeverityLevel.WARN
-      )
-    }
   }
 
 }

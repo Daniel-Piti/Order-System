@@ -37,7 +37,7 @@ class CustomerAgentController(
     @AuthenticationPrincipal agent: AuthUser,
   ): ResponseEntity<List<CustomerDto>> {
     val agent = agentService.getAgent(agent.id)
-    val customers = customerService.getCustomers(agent.managerId, agent.id)
+    val customers = customerService.getCustomersForAgent(agent.id)
     return ResponseEntity.ok(customers.map { it.toDto() })
   }
 

@@ -1,7 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.order
 
 import com.pt.ordersystem.ordersystem.constants.TaxConstants
-import com.pt.ordersystem.ordersystem.domains.customer.CustomerService
+import com.pt.ordersystem.ordersystem.domains.customer.CustomerRepository
 import com.pt.ordersystem.ordersystem.domains.location.LocationRepository
 import com.pt.ordersystem.ordersystem.domains.location.LocationService
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
@@ -24,7 +24,7 @@ import java.time.LocalDateTime
 @Service
 class OrderService(
   private val orderRepository: OrderRepository,
-  private val customerService: CustomerService,
+  private val customerRepository: CustomerRepository,
   private val locationRepository: LocationRepository,
   private val locationService: LocationService,
   private val managerService: ManagerService,
@@ -114,7 +114,7 @@ class OrderService(
   ): Page<OrderDto> {
     // When agent scoped, ensure customer belongs to this agent (throws if not)
     if (agentId != null) {
-      customerService.getCustomerDto(managerId, customerId, agentId)
+      customerRepository.findByManagerIdAndAgentIdAndId(managerId, agentId, customerId)
     }
     val validatedSize = size.coerceAtMost(MAX_PAGE_SIZE)
     val safeSortBy = resolveSortBy(sortBy)
@@ -200,7 +200,8 @@ class OrderService(
 
     // If customerId is provided, fetch customer data to pre-fill
     val customer = request.customerId?.let { customerId ->
-      customerService.getCustomerDto(managerId, customerId, agentId)
+      if (agentId == null) customerRepository.findByManagerIdAndId(managerId, customerId)
+      else customerRepository.findByManagerIdAndAgentIdAndId(managerId, agentId, customerId)
     }
 
     val now = LocalDateTime.now()
@@ -285,8 +286,9 @@ class OrderService(
       sum + (product.pricePerUnit.multiply(BigDecimal.valueOf(product.quantity.toLong())))
     }
 
-    val customer = order.customerId?.let { 
-      customerService.getCustomerDto(order.managerId, it, order.agentId)
+    val customer = order.customerId?.let { customerId ->
+      if (order.agentId == null) customerRepository.findByManagerIdAndId(order.managerId, customerId)
+      else customerRepository.findByManagerIdAndAgentIdAndId(order.managerId, order.agentId, customerId)
     }
 
     // Update order

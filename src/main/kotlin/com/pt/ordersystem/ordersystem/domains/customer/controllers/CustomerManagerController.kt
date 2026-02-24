@@ -28,13 +28,13 @@ class CustomerManagerController(
     @PathVariable customerId: String,
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<CustomerDto> {
-    val customer = customerService.getCustomerDto(manager.id, customerId)
+    val customer = customerService.findCustomerForManager(manager.id, customerId).toDto()
     return ResponseEntity.ok(customer)
   }
 
   @GetMapping
-  fun getAllCustomers(@AuthenticationPrincipal manager: AuthUser): ResponseEntity<List<CustomerDto>> {
-    val customers = customerService.getCustomers(manager.id, agentId = null)
+  fun getCustomersForManager(@AuthenticationPrincipal manager: AuthUser): ResponseEntity<List<CustomerDto>> {
+    val customers = customerService.getCustomersForManager(manager.id)
     return ResponseEntity.ok(customers.map { it.toDto() })
   }
 
@@ -53,7 +53,7 @@ class CustomerManagerController(
     @RequestBody payload: CustomerPayload,
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<CustomerDto> {
-    val existing = customerService.getCustomerDto(manager.id, customerId)
+    val existing = customerService.findCustomerForManager(manager.id, customerId)
     val customer = customerService.updateCustomer(
       managerId = manager.id,
       agentId = existing.agentId,
@@ -68,7 +68,7 @@ class CustomerManagerController(
     @PathVariable customerId: String,
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<String> {
-    val existing = customerService.getCustomerDto(manager.id, customerId)
+    val existing = customerService.findCustomerForManager(manager.id, customerId)
     customerService.deleteCustomer(manager.id, agentId = existing.agentId, customerId = customerId)
     return ResponseEntity.ok("Customer deleted successfully")
   }

@@ -25,18 +25,21 @@ class CustomerService(
   private val agentRepository: AgentRepository,
 ) {
 
-  fun getCustomers(managerId: String, agentId: String?): List<Customer> {
-    val customers = if (agentId == null) {
-      customerRepository.findByManagerId(managerId)
-    } else {
-      agentRepository.findByManagerIdAndId(managerId, agentId)
-      customerRepository.findByManagerIdAndAgentId(managerId, agentId)
-    }
-    return customers
-  }
+  fun getCustomersForManager(managerId: String): List<Customer> =
+    customerRepository.findByManagerId(managerId)
 
-  fun getCustomerDto(managerId: String, customerId: String, agentId: String? = null) =
-    getCustomer(managerId, agentId, customerId).toDto()
+  fun findCustomerForManager(managerId: String, customerId: String): Customer =
+    customerRepository.findByManagerIdAndId(managerId, customerId)
+
+  fun getCustomersForAgent(agentId: String) =
+    customerRepository.findByAgentId(agentId)
+
+  fun findCustomerForAgent(agentId: String, customerId: String): Customer =
+    customerRepository.findByAgentIdAndId(agentId, customerId)
+
+  fun findCustomerByAgentIdAndManagerId(managerId: String, agentId: String?, customerId: String): Customer =
+    if (agentId == null) customerRepository.findByManagerIdAndId(managerId, customerId)
+    else customerRepository.findByManagerIdAndAgentIdAndId(managerId, agentId, customerId)
 
   @Transactional
   fun createCustomer(managerId: String, agentId: String?, customerPayload: CustomerPayload): CustomerDto {
@@ -44,7 +47,7 @@ class CustomerService(
     val normalizedPayload = customerPayload.normalize()
     CustomerValidators.validatePayload(normalizedPayload)
     agentId?.also { agentRepository.findByManagerIdAndId(managerId, it) }
-    validateUniquePhoneNumber(managerId, normalizedPayload.phoneNumber, excludeCustomerId = null)
+    validateCustomerUniquePhoneNumber(managerId, normalizedPayload.phoneNumber, excludeCustomerId = null)
     validateCustomerCap(managerId, agentId)
 
     val now = LocalDateTime.now()
@@ -79,9 +82,9 @@ class CustomerService(
     val normalizedPayload = customerPayload.normalize()
     CustomerValidators.validatePayload(normalizedPayload)
     agentId?.also { agentRepository.findByManagerIdAndId(managerId, it) }
-    validateUniquePhoneNumber(managerId, normalizedPayload.phoneNumber, excludeCustomerId = customerId)
+    validateCustomerUniquePhoneNumber(managerId, normalizedPayload.phoneNumber, excludeCustomerId = customerId)
 
-    val currentCustomer = getCustomer(managerId, agentId, customerId)
+    val currentCustomer = findCustomerByAgentIdAndManagerId(managerId, agentId, customerId)
 
     val updatedEntity = currentCustomer.toDbEntity().copy(
       name = normalizedPayload.name,
@@ -99,7 +102,7 @@ class CustomerService(
 
   @Transactional
   fun deleteCustomer(managerId: String, agentId: String?, customerId: String) {
-    getCustomer(managerId, agentId, customerId)
+    findCustomerByAgentIdAndManagerId(managerId, agentId, customerId)
 
     val overrides = productOverrideRepository.findByManagerIdAndCustomerId(managerId, customerId)
     productOverrideRepository.deleteAll(overrides)
@@ -119,7 +122,7 @@ class CustomerService(
     }
   }
 
-  private fun validateUniquePhoneNumber(managerId: String, phoneNumber: String, excludeCustomerId: String?) {
+  private fun validateCustomerUniquePhoneNumber(managerId: String, phoneNumber: String, excludeCustomerId: String?) {
     val customerWithSamePhoneNumber = customerRepository.findByManagerIdAndPhoneNumber(managerId, phoneNumber)
     if (customerWithSamePhoneNumber != null && customerWithSamePhoneNumber.id != excludeCustomerId) {
       throw ServiceException(
@@ -129,16 +132,6 @@ class CustomerService(
         severity = SeverityLevel.WARN,
       )
     }
-  }
-
-  private fun getCustomer(managerId: String, agentId: String?, customerId: String): Customer {
-    if (agentId == null) {
-      return customerRepository.findByManagerIdAndId(managerId, customerId)
-    }
-
-    agentRepository.findByManagerIdAndId(managerId, agentId)
-
-    return customerRepository.findByManagerIdAndAgentIdAndId(managerId, agentId, customerId)
   }
 
   private fun validateCustomerCap(managerId: String, agentId: String?) {
