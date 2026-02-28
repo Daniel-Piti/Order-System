@@ -60,8 +60,7 @@ class CustomerService(
       updatedAt = now,
     )
 
-    val customer = customerRepository.save(entity)
-    return customer
+    return customerRepository.save(entity)
   }
 
   @Transactional
