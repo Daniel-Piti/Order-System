@@ -61,7 +61,7 @@ class AgentRepository(
         agentDao.deleteById(id)
 
     fun existsByEmail(email: String): Boolean =
-        agentDao.existsByEmail(email)
+        agentDao.existsByEmail(email.trim().lowercase())
 
     fun countByManagerId(managerId: String): Long =
         agentDao.countByManagerId(managerId)

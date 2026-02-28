@@ -3,7 +3,7 @@ package com.pt.ordersystem.ordersystem.domains.order
 import com.pt.ordersystem.ordersystem.constants.TaxConstants
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerRepository
 import com.pt.ordersystem.ordersystem.domains.location.LocationRepository
-import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
+import com.pt.ordersystem.ordersystem.domains.manager.ManagerRepository
 import com.pt.ordersystem.ordersystem.domains.order.models.*
 import com.pt.ordersystem.ordersystem.domains.product.ProductRepository
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductDataForOrder
@@ -25,7 +25,7 @@ class OrderService(
   private val orderRepository: OrderRepository,
   private val customerRepository: CustomerRepository,
   private val locationRepository: LocationRepository,
-  private val managerService: ManagerService,
+  private val managerRepository: ManagerRepository,
   private val productRepository: ProductRepository,
 ) {
 
@@ -321,7 +321,7 @@ class OrderService(
   @Transactional
   fun createAndPlacePublicOrder(managerId: String, request: PlaceOrderRequest): String {
     // Validate manager exists
-    managerService.getManagerById(managerId)
+    managerRepository.findById(managerId)
 
     // Validate products are not empty
     if (request.products.isEmpty()) {

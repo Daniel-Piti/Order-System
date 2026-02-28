@@ -22,7 +22,7 @@ class PublicProductController(
     @PathVariable productId: String
   ): ResponseEntity<ProductDto> {
     // Validate user exists
-    managerService.getManagerById(managerId)
+    managerService.validateManagerExists(managerId)
     
     val product = productService.getProductById(managerId = managerId, productId = productId)
     return ResponseEntity.ok(product)
@@ -39,7 +39,7 @@ class PublicProductController(
     @RequestParam(required = false) brandId: Long?
   ): ResponseEntity<Page<ProductDto>> {
     // Validate user exists first - will throw 404 if not found
-    managerService.getManagerById(managerId)
+    managerService.validateManagerExists(managerId)
     
     val products = productService.getAllProductsForManager(
       managerId = managerId,

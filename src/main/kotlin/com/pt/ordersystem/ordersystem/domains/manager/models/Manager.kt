@@ -1,0 +1,43 @@
+package com.pt.ordersystem.ordersystem.domains.manager.models
+
+import java.time.LocalDate
+import java.time.LocalDateTime
+
+data class Manager(
+    val id: String,
+    val firstName: String,
+    val lastName: String,
+    val email: String,
+    val phoneNumber: String,
+    val dateOfBirth: LocalDate,
+    val streetAddress: String,
+    val city: String,
+    val createdAt: LocalDateTime,
+    val updatedAt: LocalDateTime,
+)
+
+fun ManagerDbEntity.toModel(): Manager = Manager(
+    id = this.id,
+    firstName = this.firstName,
+    lastName = this.lastName,
+    email = this.email,
+    phoneNumber = this.phoneNumber,
+    dateOfBirth = this.dateOfBirth,
+    streetAddress = this.streetAddress,
+    city = this.city,
+    createdAt = this.createdAt,
+    updatedAt = this.updatedAt,
+)
+
+fun Manager.toDto(): ManagerDto = ManagerDto(
+    id = this.id,
+    firstName = this.firstName,
+    lastName = this.lastName,
+    email = this.email,
+    phoneNumber = this.phoneNumber,
+    dateOfBirth = this.dateOfBirth,
+    streetAddress = this.streetAddress,
+    city = this.city,
+    createdAt = this.createdAt,
+    updatedAt = this.updatedAt,
+)

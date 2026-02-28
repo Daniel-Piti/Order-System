@@ -6,7 +6,7 @@ import com.pt.ordersystem.ordersystem.domains.invoices.helpers.InvoiceRenderHelp
 import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceRequest
 import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceResponse
 import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceDbEntity
-import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
+import com.pt.ordersystem.ordersystem.domains.manager.ManagerRepository
 import com.pt.ordersystem.ordersystem.domains.order.OrderRepository
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDbEntity
 import com.pt.ordersystem.ordersystem.exception.ServiceException
@@ -22,7 +22,7 @@ class InvoiceService(
   private val orderRepository: OrderRepository,
   private val invoiceRepository: InvoiceRepository,
   private val s3StorageService: S3StorageService,
-  private val managerService: ManagerService,
+  private val managerRepository: ManagerRepository,
   private val businessService: BusinessService,
 ) {
 
@@ -51,7 +51,7 @@ class InvoiceService(
     val maxSequence = invoiceRepository.findMaxSequenceNumberByManagerId(createInvoiceRequest.managerId) ?: 0
     val invoiceSequenceNumber = maxSequence + 1
 
-    val manager = managerService.getManagerById(order.managerId)
+    val manager = managerRepository.findById(order.managerId)
     val business = businessService.getBusinessByManagerId(order.managerId)
 
     // Generate PDF (invoiceNumber is formatted inside renderPdf)

@@ -1,8 +1,10 @@
 package com.pt.ordersystem.ordersystem.domains.manager
 
+import com.pt.ordersystem.ordersystem.domains.manager.helpers.ManagerValidators
+import com.pt.ordersystem.ordersystem.domains.manager.models.Manager
 import com.pt.ordersystem.ordersystem.domains.manager.models.ManagerDbEntity
 import com.pt.ordersystem.ordersystem.domains.manager.models.ManagerFailureReason
-import com.pt.ordersystem.ordersystem.domains.manager.models.NewManagerRequest
+import com.pt.ordersystem.ordersystem.domains.manager.models.CreateManagerRequest
 import com.pt.ordersystem.ordersystem.domains.manager.models.UpdateManagerDetailsRequest
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
@@ -15,177 +17,142 @@ import java.time.LocalDateTime
 
 @Service
 class ManagerService(
-  private val managerRepository: ManagerRepository,
-  private val passwordEncoder: BCryptPasswordEncoder,
+    private val managerRepository: ManagerRepository,
+    private val passwordEncoder: BCryptPasswordEncoder,
 ) {
 
-  fun getAllManagers(): List<ManagerDbEntity> = managerRepository.findAll()
+    fun getAllManagers(): List<Manager> =
+        managerRepository.findAll()
 
-  fun getManagerByEmail(email: String): ManagerDbEntity =
-    managerRepository.findByEmail(email) ?: throw ServiceException(
-      status = HttpStatus.NOT_FOUND,
-      userMessage = ManagerFailureReason.NOT_FOUND.userMessage,
-      technicalMessage = ManagerFailureReason.NOT_FOUND.technical + "email=$email",
-      severity = SeverityLevel.WARN
-    )
+    fun getManagerByEmail(email: String): Manager =
+        managerRepository.findByEmail(email)
 
-  fun getManagerById(managerId: String): ManagerDbEntity =
-    managerRepository.findById(managerId).orElseThrow {
-      ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = ManagerFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = ManagerFailureReason.NOT_FOUND.technical + "managerId=$managerId",
-        severity = SeverityLevel.WARN
-      )
+    fun validateManagerExists(managerId: String) {
+        if (!managerRepository.existsById(managerId)) {
+            throw ServiceException(
+                status = HttpStatus.NOT_FOUND,
+                userMessage = ManagerFailureReason.NOT_FOUND.userMessage,
+                technicalMessage = ManagerFailureReason.NOT_FOUND.technical + "managerId=$managerId",
+                severity = SeverityLevel.WARN,
+            )
+        }
     }
 
-  fun validateManagerExists(managerId: String) {
-    if (!managerRepository.existsById(managerId)) {
-      throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = ManagerFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = ManagerFailureReason.NOT_FOUND.technical + "managerId=$managerId",
-        severity = SeverityLevel.WARN
-      )
-    }
-  }
+    fun createManager(createManagerRequest: CreateManagerRequest): Manager {
+        ManagerValidators.validateCreateManagerRequestFields(createManagerRequest)
 
-  fun createManager(newManagerRequest: NewManagerRequest): String {
+        if (managerRepository.existsByEmail(createManagerRequest.email)) {
+            throw ServiceException(
+                status = HttpStatus.CONFLICT,
+                userMessage = ManagerFailureReason.EMAIL_ALREADY_EXISTS.userMessage,
+                technicalMessage = ManagerFailureReason.EMAIL_ALREADY_EXISTS.technical + "email=${createManagerRequest.email}",
+                severity = SeverityLevel.INFO,
+            )
+        }
 
-    with(newManagerRequest) {
-      FieldValidators.validateNonEmpty(firstName, "'first name'")
-      FieldValidators.validateNonEmpty(lastName, "'last name'")
-      FieldValidators.validateEmail(email)
-      FieldValidators.validateStrongPassword(password)
-      FieldValidators.validatePhoneNumber(phoneNumber)
-      FieldValidators.validateDateNotFuture(dateOfBirth)
-      FieldValidators.validateNonEmpty(streetAddress, "'street address'")
-      FieldValidators.validateNonEmpty(city, "'city'")
-    }
+        val now = LocalDateTime.now()
+        val entity = ManagerDbEntity(
+            id = GeneralUtils.genId(),
+            firstName = createManagerRequest.firstName,
+            lastName = createManagerRequest.lastName,
+            email = createManagerRequest.email,
+            password = passwordEncoder.encode(createManagerRequest.password),
+            phoneNumber = createManagerRequest.phoneNumber,
+            dateOfBirth = createManagerRequest.dateOfBirth,
+            streetAddress = createManagerRequest.streetAddress,
+            city = createManagerRequest.city,
+            createdAt = now,
+            updatedAt = now,
+        )
 
-    val managerEntity = ManagerDbEntity(
-      id = GeneralUtils.genId(),
-      firstName = newManagerRequest.firstName,
-      lastName = newManagerRequest.lastName,
-      email = newManagerRequest.email,
-      password = passwordEncoder.encode(newManagerRequest.password),
-      phoneNumber = newManagerRequest.phoneNumber,
-      dateOfBirth = newManagerRequest.dateOfBirth,
-      streetAddress = newManagerRequest.streetAddress,
-      city = newManagerRequest.city,
-      createdAt = LocalDateTime.now(),
-      updatedAt = LocalDateTime.now()
-    )
-
-    val manager = managerRepository.save(managerEntity)
-
-    return manager.id
-  }
-
-  fun updateManagerDetails(email: String, updatedManagerDetails: UpdateManagerDetailsRequest): String {
-
-    with(updatedManagerDetails) {
-      FieldValidators.validateNonEmpty(firstName, "'first name'")
-      FieldValidators.validateNonEmpty(lastName, "'last name'")
-      FieldValidators.validatePhoneNumber(phoneNumber)
-      FieldValidators.validateDateNotFuture(dateOfBirth)
-      FieldValidators.validateNonEmpty(streetAddress, "'street address'")
-      FieldValidators.validateNonEmpty(city, "'city'")
+        return managerRepository.save(entity)
     }
 
-    val manager = managerRepository.findByEmail(email) ?: throw ServiceException(
-      status = HttpStatus.NOT_FOUND,
-      userMessage = ManagerFailureReason.NOT_FOUND.userMessage,
-      technicalMessage = ManagerFailureReason.NOT_FOUND.technical + "email=$email",
-      severity = SeverityLevel.WARN
-    )
+    fun updateManagerDetails(email: String, updateManagerDetailsRequest: UpdateManagerDetailsRequest): Manager {
+        ManagerValidators.validateUpdateManagerRequestFields(updateManagerDetailsRequest)
 
-    val managerToSave = manager.copy(
-      firstName = updatedManagerDetails.firstName,
-      lastName = updatedManagerDetails.lastName,
-      phoneNumber = updatedManagerDetails.phoneNumber,
-      dateOfBirth = updatedManagerDetails.dateOfBirth,
-      streetAddress = updatedManagerDetails.streetAddress,
-      city = updatedManagerDetails.city,
-      updatedAt = LocalDateTime.now()
-    )
+        val normalizedEmail = email.trim().lowercase()
+        val manager = managerRepository.getManagerEntityByEmail(normalizedEmail)
 
-    val updatedManager = managerRepository.save(managerToSave)
+        val entity = manager.copy(
+            firstName = updateManagerDetailsRequest.firstName,
+            lastName = updateManagerDetailsRequest.lastName,
+            phoneNumber = updateManagerDetailsRequest.phoneNumber,
+            dateOfBirth = updateManagerDetailsRequest.dateOfBirth,
+            streetAddress = updateManagerDetailsRequest.streetAddress,
+            city = updateManagerDetailsRequest.city,
+            updatedAt = LocalDateTime.now(),
+        )
 
-    return updatedManager.id
-  }
-
-  fun deleteManagerByIdAndEmail(id: String, email: String) {
-    val manager = managerRepository.findById(id).orElse(null)
-
-    if (manager == null || manager.email != email) {
-      throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = ManagerFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = ManagerFailureReason.NOT_FOUND.technical + "id=$id, email=$email",
-        severity = SeverityLevel.WARN
-      )
+        return managerRepository.save(entity)
     }
 
-    managerRepository.delete(manager)
-  }
+    fun deleteManagerByIdAndEmail(id: String, email: String) {
+        val manager = managerRepository.findById(id)
 
-  fun validateMatchingPassword(email: String, password: String): Boolean {
-    val manager = managerRepository.findByEmail(email) ?: throw ServiceException(
-      status = HttpStatus.NOT_FOUND,
-      userMessage = ManagerFailureReason.NOT_FOUND.userMessage,
-      technicalMessage = ManagerFailureReason.NOT_FOUND.technical + "email=$email",
-      severity = SeverityLevel.WARN
-    )
+        val normalizedEmail = email.trim().lowercase()
 
-    return passwordEncoder.matches(password, manager.password)
-  }
+        if (manager.email != normalizedEmail) {
+            throw ServiceException(
+                status = HttpStatus.NOT_FOUND,
+                userMessage = ManagerFailureReason.NOT_FOUND.userMessage,
+                technicalMessage = ManagerFailureReason.NOT_FOUND.technical + "id=$id, email=$email",
+                severity = SeverityLevel.WARN,
+            )
+        }
 
-  fun updatePassword(
-    email: String,
-    oldPassword: String,
-    newPassword: String,
-    newPasswordConfirmation: String
-  ) {
-    FieldValidators.validateNewPasswordEqualConfirmationPassword(newPassword, newPasswordConfirmation)
-    FieldValidators.validateNewPasswordNotEqualOldPassword(oldPassword, newPassword)
-
-    FieldValidators.validateStrongPassword(newPassword)
-
-    val manager = managerRepository.findByEmail(email)
-      ?: throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = ManagerFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = ManagerFailureReason.NOT_FOUND.technical + "email=$email",
-        severity = SeverityLevel.WARN
-      )
-
-    if (!passwordEncoder.matches(oldPassword, manager.password)) {
-      throw ServiceException(
-        status = HttpStatus.UNAUTHORIZED,
-        userMessage = "Old password is incorrect",
-        technicalMessage = "Password mismatch for manager with email=$email",
-        severity = SeverityLevel.WARN
-      )
+        managerRepository.deleteById(id)
     }
 
-    val updatedManager = manager.copy(
-      password = passwordEncoder.encode(newPassword),
-      updatedAt = LocalDateTime.now()
-    )
-    managerRepository.save(updatedManager)
-  }
+    fun validateMatchingPassword(email: String, password: String): Boolean {
+        val normalizedEmail = email.trim().lowercase()
+        val managerEntity = managerRepository.getManagerEntityByEmail(normalizedEmail)
+        return passwordEncoder.matches(password, managerEntity.password)
+    }
 
-  fun resetPassword(email: String, newPassword: String) {
-    val manager = managerRepository.findByEmail(email)
-      ?: throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = ManagerFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = "Manager not found with email=$email",
-        severity = SeverityLevel.INFO
-      )
+    fun updatePassword(
+        email: String,
+        oldPassword: String,
+        newPassword: String,
+        newPasswordConfirmation: String,
+    ) {
+        val normalizedEmail = email.trim().lowercase()
 
-    manager.password = passwordEncoder.encode(newPassword)
-    managerRepository.save(manager)
-  }
+        FieldValidators.validateNewPasswordEqualConfirmationPassword(newPassword, newPasswordConfirmation)
+        FieldValidators.validateNewPasswordNotEqualOldPassword(oldPassword, newPassword)
+        FieldValidators.validateStrongPassword(newPassword)
+
+        val managerEntity = managerRepository.getManagerEntityByEmail(normalizedEmail)
+
+        if (!passwordEncoder.matches(oldPassword, managerEntity.password)) {
+            throw ServiceException(
+                status = HttpStatus.UNAUTHORIZED,
+                userMessage = "Old password is incorrect",
+                technicalMessage = "Password mismatch for manager with email=$normalizedEmail",
+                severity = SeverityLevel.WARN,
+            )
+        }
+
+        val updated = managerEntity.copy(
+            password = passwordEncoder.encode(newPassword),
+            updatedAt = LocalDateTime.now(),
+        )
+        managerRepository.save(updated)
+    }
+
+    fun resetPassword(email: String, newPassword: String) {
+        val normalizedEmail = email.trim().lowercase()
+        val trimmedPassword = newPassword.trim()
+
+        FieldValidators.validateStrongPassword(trimmedPassword)
+
+        val managerEntity = managerRepository.getManagerEntityByEmail(normalizedEmail)
+
+        val updated = managerEntity.copy(
+            password = passwordEncoder.encode(trimmedPassword),
+            updatedAt = LocalDateTime.now(),
+        )
+        managerRepository.save(updated)
+    }
+
 }

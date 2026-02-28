@@ -8,9 +8,9 @@ import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.domains.login.models.AdminLoginRequest
 import com.pt.ordersystem.ordersystem.domains.login.models.LoginResponse
 import com.pt.ordersystem.ordersystem.domains.agent.AgentService
-import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
 import com.pt.ordersystem.ordersystem.domains.login.models.AgentLoginRequest
 import com.pt.ordersystem.ordersystem.domains.login.models.ManagerLoginRequest
+import com.pt.ordersystem.ordersystem.domains.manager.ManagerRepository
 import org.springframework.http.HttpStatus
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service
 @Service
 class LoginService(
   private val passwordEncoder: BCryptPasswordEncoder,
-  private val managerService: ManagerService,
+  private val managerRepository: ManagerRepository,
   private val agentService: AgentService,
   private val jwtUtil: JwtUtil,
   private val config: ApplicationConfig,
@@ -26,9 +26,10 @@ class LoginService(
 
   fun loginManager(request: ManagerLoginRequest): LoginResponse {
     try {
-      val manager = managerService.getManagerByEmail(request.email)
+      val normalizedEmail = request.email.trim().lowercase()
+      val managerEntity = managerRepository.getManagerEntityByEmail(normalizedEmail)
 
-      if (!passwordEncoder.matches(request.password, manager.password)) {
+      if (!passwordEncoder.matches(request.password, managerEntity.password)) {
         // Log the actual reason for debugging
         println("[AUTH] Invalid password attempt for email=${request.email}")
         throw ServiceException(
@@ -39,7 +40,7 @@ class LoginService(
         )
       }
 
-      val token = jwtUtil.generateToken(manager.email, manager.id, listOf(Roles.MANAGER))
+      val token = jwtUtil.generateToken(managerEntity.email, managerEntity.id, listOf(Roles.MANAGER))
       return LoginResponse(token)
     } catch (e: ServiceException) {
       // Log the actual reason for debugging
@@ -101,8 +102,9 @@ class LoginService(
     }
 
     val token = if (request.userEmail != null) {
-      val manager = try {
-        managerService.getManagerByEmail(request.userEmail)
+      val normalizedEmail = request.userEmail.trim().lowercase()
+      val managerEntity = try {
+        managerRepository.getManagerEntityByEmail(normalizedEmail)
       } catch (e: ServiceException) {
         if (e.status == HttpStatus.NOT_FOUND) {
           throw ServiceException(
@@ -115,7 +117,7 @@ class LoginService(
         throw e
       }
 
-      jwtUtil.generateToken(manager.email, manager.id, listOf(Roles.ADMIN, Roles.MANAGER))
+      jwtUtil.generateToken(managerEntity.email, managerEntity.id, listOf(Roles.ADMIN, Roles.MANAGER))
     } else {
       jwtUtil.generateToken("ADMIN", "ADMIN", listOf(Roles.ADMIN))
     }

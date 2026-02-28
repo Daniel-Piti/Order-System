@@ -18,7 +18,7 @@ class PublicCategoryController(
 
     @GetMapping("/manager/{managerId}")
     fun getAllCategories(@PathVariable managerId: String): ResponseEntity<List<CategoryDto>> {
-        managerService.getManagerById(managerId)
+        managerService.validateManagerExists(managerId)
         return ResponseEntity.ok(categoryService.getManagerCategories(managerId).map { it.toDto() })
     }
 
@@ -27,7 +27,7 @@ class PublicCategoryController(
         @PathVariable managerId: String,
         @PathVariable categoryId: Long
     ): ResponseEntity<CategoryDto> {
-        managerService.getManagerById(managerId)
+        managerService.validateManagerExists(managerId)
         return ResponseEntity.ok(categoryService.getCategoryById(managerId, categoryId).toDto())
     }
 }

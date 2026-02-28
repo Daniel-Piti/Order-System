@@ -38,15 +38,8 @@ class BusinessService(
     fun validateCreateBusiness(request: CreateBusinessRequest) {
         BusinessValidators.validateCreateBusinessFields(request)
 
-        // Check if manager exists
-        managerRepository.findById(request.managerId).orElseThrow {
-            ServiceException(
-                status = HttpStatus.NOT_FOUND,
-                userMessage = BusinessFailureReason.MANAGER_NOT_FOUND.userMessage,
-                technicalMessage = BusinessFailureReason.MANAGER_NOT_FOUND.technical + "managerId=${request.managerId}",
-                severity = SeverityLevel.WARN
-            )
-        }
+        // Check if manager exists (throws if not found)
+        managerRepository.findById(request.managerId)
 
         // Check if business already exists for this manager
         if (businessRepository.existsByManagerId(request.managerId)) {
