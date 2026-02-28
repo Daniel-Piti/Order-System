@@ -10,7 +10,7 @@ import org.springframework.http.HttpStatus
 
 object AgentValidators {
 
-    private const val MAX_AGENTS_PER_MANAGER = 1000
+    private const val MAX_AGENTS_PER_MANAGER = 10
 
     fun validateMaxAgentsNumber(agentCount: Long, managerId: String) {
         if (agentCount >= MAX_AGENTS_PER_MANAGER) {
