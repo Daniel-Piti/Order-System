@@ -3,7 +3,6 @@ package com.pt.ordersystem.ordersystem.domains.order
 import com.pt.ordersystem.ordersystem.constants.TaxConstants
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerRepository
 import com.pt.ordersystem.ordersystem.domains.location.LocationRepository
-import com.pt.ordersystem.ordersystem.domains.location.LocationService
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
 import com.pt.ordersystem.ordersystem.domains.order.models.*
 import com.pt.ordersystem.ordersystem.domains.product.ProductRepository
@@ -26,7 +25,6 @@ class OrderService(
   private val orderRepository: OrderRepository,
   private val customerRepository: CustomerRepository,
   private val locationRepository: LocationRepository,
-  private val locationService: LocationService,
   private val managerService: ManagerService,
   private val productRepository: ProductRepository,
 ) {
@@ -189,7 +187,7 @@ class OrderService(
     
     // Validate manager has at least one location
     val locationCount = locationRepository.countByManagerId(managerId)
-    if (locationCount == 0) {
+    if (locationCount == 0L) {
       throw ServiceException(
         status = HttpStatus.BAD_REQUEST,
         userMessage = OrderFailureReason.NO_LOCATIONS.userMessage,
@@ -279,7 +277,7 @@ class OrderService(
     validateProductPrices(request.products, order.managerId)
 
     // Fetch pickup location
-    val selectedLocation = locationService.getLocationById(order.managerId, request.pickupLocationId)
+    val selectedLocation = locationRepository.findByManagerIdAndId(order.managerId, request.pickupLocationId)
 
     // Calculate total price
     val totalPrice = request.products.fold(BigDecimal.ZERO) { sum, product ->
@@ -339,7 +337,7 @@ class OrderService(
     validateProductPrices(request.products, managerId)
 
     // Validate and fetch pickup location (will throw exception if location doesn't exist or doesn't belong to manager)
-    val selectedLocation = locationService.getLocationById(managerId, request.pickupLocationId)
+    val selectedLocation = locationRepository.findByManagerIdAndId(managerId, request.pickupLocationId)
 
     // Calculate total price
     val totalPrice = request.products.fold(BigDecimal.ZERO) { sum, product ->
@@ -457,7 +455,7 @@ class OrderService(
     validateProductPrices(request.products, managerId)
 
     // Validate and fetch pickup location (will throw exception if location doesn't exist or doesn't belong to manager)
-    val selectedLocation = locationService.getLocationById(managerId, request.pickupLocationId)
+    val selectedLocation = locationRepository.findByManagerIdAndId(managerId, request.pickupLocationId)
 
     val productsTotal = request.products.fold(BigDecimal.ZERO) { sum, product ->
       sum + (product.pricePerUnit.multiply(BigDecimal.valueOf(product.quantity.toLong())))

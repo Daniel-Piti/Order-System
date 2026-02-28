@@ -1,118 +1,73 @@
 package com.pt.ordersystem.ordersystem.domains.location
 
+import com.pt.ordersystem.ordersystem.domains.location.helpers.LocationValidators
 import com.pt.ordersystem.ordersystem.domains.location.models.*
-import com.pt.ordersystem.ordersystem.exception.ServiceException
-import com.pt.ordersystem.ordersystem.exception.SeverityLevel
-import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
-import com.pt.ordersystem.ordersystem.utils.GeneralUtils
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 
 @Service
 class LocationService(
-  private val locationRepository: LocationRepository
+    private val locationRepository: LocationRepository,
 ) {
 
-  companion object {
-    const val MAXIMUM_LOCATIONS = 10
-  }
+    fun getManagerLocations(managerId: String): List<Location> =
+        locationRepository.findByManagerId(managerId)
 
-  fun getLocationById(managerId: String, locationId: Long): LocationDto {
-    val location = locationRepository.findByManagerIdAndId(managerId, locationId)
-      ?: throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = LocationFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = LocationFailureReason.NOT_FOUND.technical + "locationId=$locationId",
-        severity = SeverityLevel.WARN
-      )
-
-    return location.toDto()
-  }
-
-  fun getManagerLocations(managerId: String): List<LocationDto> =
-    locationRepository.findByManagerId(managerId).map { it.toDto() }
-
-  fun createLocation(managerId: String, request: NewLocationRequest): Long {
-    val managerLocationCount = locationRepository.countByManagerId(managerId)
-
-    with(request) {
-      FieldValidators.validateNonEmpty(name, "'name'")
-      FieldValidators.validateNonEmpty(streetAddress, "'street address'")
-      FieldValidators.validateNonEmpty(city, "'city'")
-      FieldValidators.validatePhoneNumber(phoneNumber)
+    fun validateCreateLocation(
+        request: CreateLocationRequest,
+        managerId: String,
+    ) {
+        val managerLocationCount = locationRepository.countByManagerId(managerId)
+        LocationValidators.validateCreateLocationRequestFields(request)
+        LocationValidators.validateMaxLocationCount(managerLocationCount, managerId)
     }
 
-    if (managerLocationCount >= MAXIMUM_LOCATIONS) {
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = LocationFailureReason.TWO_MANY_LOCATIONS.userMessage,
-        technicalMessage = LocationFailureReason.TWO_MANY_LOCATIONS.technical + "manager=${managerId}",
-        severity = SeverityLevel.INFO
-      )
+    @Transactional
+    fun createLocation(managerId: String, request: CreateLocationRequest): Location {
+        validateCreateLocation(request, managerId)
+
+        val now = LocalDateTime.now()
+        val entity = LocationDbEntity(
+            managerId = managerId,
+            name = request.name,
+            streetAddress = request.streetAddress,
+            city = request.city,
+            phoneNumber = request.phoneNumber,
+            createdAt = now,
+            updatedAt = now,
+        )
+
+        return locationRepository.save(entity)
     }
 
-    val location = LocationDbEntity(
-      managerId = managerId,
-      name = request.name,
-      streetAddress = request.streetAddress,
-      city = request.city,
-      phoneNumber = request.phoneNumber,
-      createdAt = LocalDateTime.now(),
-      updatedAt = LocalDateTime.now()
-    )
+    @Transactional
+    fun updateLocation(managerId: String, locationId: Long, request: UpdateLocationRequest): Location {
+        LocationValidators.validateUpdateLocationRequestFields(request)
 
-    return locationRepository.save(location).id
-  }
+        val existingLocation = locationRepository.findByManagerIdAndId(managerId, locationId)
 
-  fun updateLocation(managerId: String, locationId: Long, request: UpdateLocationRequest): Long {
+        val updatedEntity = LocationDbEntity(
+            id = existingLocation.id,
+            managerId = existingLocation.managerId,
+            name = request.name,
+            streetAddress = request.streetAddress,
+            city = request.city,
+            phoneNumber = request.phoneNumber,
+            createdAt = existingLocation.createdAt,
+            updatedAt = LocalDateTime.now(),
+        )
 
-    with(request) {
-      FieldValidators.validateNonEmpty(name, "'name'")
-      FieldValidators.validateNonEmpty(streetAddress, "'street address'")
-      FieldValidators.validateNonEmpty(city, "'city'")
-      FieldValidators.validatePhoneNumber(phoneNumber)
+        return locationRepository.save(updatedEntity)
     }
 
-    val location = locationRepository.findByManagerIdAndId(managerId, locationId)
-      ?: throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = LocationFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = LocationFailureReason.NOT_FOUND.technical + "locationId=$locationId",
-        severity = SeverityLevel.WARN
-      )
+    @Transactional
+    fun deleteLocation(managerId: String, locationId: Long) {
+        locationRepository.findByManagerIdAndId(managerId, locationId)
 
-    val updatedLocation = location.copy(
-      name = request.name,
-      streetAddress = request.streetAddress,
-      city = request.city,
-      phoneNumber = request.phoneNumber,
-      updatedAt = LocalDateTime.now()
-    )
+        val locationCount = locationRepository.countByManagerId(managerId)
+        LocationValidators.validateAtLeastOneLocationExists(locationCount, managerId)
 
-    return locationRepository.save(updatedLocation).id
-  }
-
-  fun deleteLocation(managerId: String, locationId: Long) {
-    val location = locationRepository.findByManagerIdAndId(managerId, locationId)
-      ?: throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = "Location not found",
-        technicalMessage = "Location ID: $locationId not found",
-        severity = SeverityLevel.WARN
-      )
-
-    val locationCount = locationRepository.countByManagerId(managerId)
-    if (locationCount <= 1) {
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = "Cannot delete the last location. You must have at least one location.",
-        technicalMessage = "Manager $managerId attempted to delete their last location",
-        severity = SeverityLevel.INFO
-      )
+        locationRepository.deleteById(locationId)
     }
-
-    locationRepository.delete(location)
-  }
-
 }
