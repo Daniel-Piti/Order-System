@@ -1,5 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.brand.models
 
+import com.pt.ordersystem.ordersystem.storage.S3Helper
 import java.time.LocalDateTime
 
 data class Brand(
@@ -15,11 +16,11 @@ data class Brand(
     val updatedAt: LocalDateTime,
 )
 
-fun BrandDbEntity.toModel(imageUrl: String?) = Brand(
+fun BrandDbEntity.toModel() = Brand(
     id = this.id,
     managerId = this.managerId,
     name = this.name,
-    imageUrl = imageUrl,
+    imageUrl = S3Helper.getPublicUrl(s3Key),
     s3Key = s3Key,
     fileName = this.fileName,
     fileSizeBytes = this.fileSizeBytes,

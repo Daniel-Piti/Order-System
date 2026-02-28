@@ -36,8 +36,8 @@ config:
   admin-username-hash: ${ADMIN_USERNAME_HASH:}
   admin-password-hash: ${ADMIN_PASSWORD_HASH:}
   
-  # AWS S3 configuration
+  # AWS S3 configuration (all required - app fails to start if missing)
   s3:
     bucket-name: ${S3_BUCKET_NAME}
     region: ${S3_REGION}
-    public-domain: ${S3_PUBLIC_DOMAIN}
+    public-domain: ${S3_PUBLIC_DOMAIN}  # Required: CloudFront/public URL base (e.g. https://xxx.cloudfront.net/)

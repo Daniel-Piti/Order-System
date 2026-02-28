@@ -44,6 +44,10 @@ class S3StorageService(
 
   @PostConstruct
   fun init() {
+    if (s3.publicDomain.isBlank()) {
+      throw IllegalStateException("S3 public domain must be configured (config.s3.public-domain)")
+    }
+    S3Helper.init(s3.publicDomain)
     val credentialsProvider = DefaultCredentialsProvider.create()
     val region = Region.of(s3.region)
     
@@ -86,18 +90,7 @@ class S3StorageService(
     return "$basePath/${uuid}_$sanitizedFileName"
   }
 
-  fun getPublicUrl(s3Key: String?): String? {
-    if (s3Key == null) return null
-    // When public domain is not configured (e.g. local dev), return null so callers
-    // can still load entities without image URL instead of throwing 500
-    if (s3.publicDomain.isBlank()) return null
-
-    // Ensure domain ends with "/" for proper URL construction
-    val publicDomain = s3.publicDomain.let {
-      if (it.endsWith("/")) it else "$it/"
-    }
-    return "${publicDomain}${s3Key}"
-  }
+  fun getPublicUrl(s3Key: String?): String? = S3Helper.getPublicUrl(s3Key)
 
   fun validateImageMetadata(imageMetadata: ImageMetadata) {
     // Validate file name
@@ -111,7 +104,7 @@ class S3StorageService(
     }
 
     // Validate file size
-    if (imageMetadata.fileSizeBytes <= 0 || imageMetadata.fileSizeBytes > MAX_FILE_SIZE_BYTES) {
+    if (imageMetadata.fileSizeBytes !in 1..MAX_FILE_SIZE_BYTES) {
       throw ServiceException(
         status = HttpStatus.BAD_REQUEST,
         userMessage = "File size must be between 1 byte and ${MAX_FILE_SIZE_MB}MB",

@@ -29,7 +29,7 @@ class BusinessService(
 
     fun getBusinessByManagerId(managerId: String): BusinessDto {
         val business = businessRepository.findByManagerId(managerId)
-        return business.toDto(s3StorageService.getPublicUrl(business.s3Key))
+        return business.toDto()
     }
 
     fun getBusinessesByManagerIds(managerIds: List<String>): List<Business> =
@@ -94,7 +94,7 @@ class BusinessService(
         )
 
         val business = businessRepository.save(updatedEntity)
-        return business.toDto(s3StorageService.getPublicUrl(business.s3Key))
+        return business.toDto()
     }
 
     @Transactional
@@ -131,7 +131,7 @@ class BusinessService(
 
         val saved = businessRepository.save(updatedEntity)
         return SetBusinessImageResponse(
-            business = saved.toDto(s3StorageService.getPublicUrl(saved.s3Key)),
+            business = saved.toDto(),
             preSignedUrl = preSignedUrlResult.preSignedUrl
         )
     }

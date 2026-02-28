@@ -1,5 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.business.models
 
+import com.pt.ordersystem.ordersystem.storage.S3Helper
 import java.time.LocalDateTime
 
 data class Business(
@@ -36,7 +37,7 @@ fun BusinessDbEntity.toModel(): Business = Business(
     updatedAt = this.updatedAt,
 )
 
-fun Business.toDto(imageUrl: String?): BusinessDto =
+fun Business.toDto(): BusinessDto =
     BusinessDto(
         id = this.id,
         managerId = this.managerId,
@@ -46,7 +47,7 @@ fun Business.toDto(imageUrl: String?): BusinessDto =
         phoneNumber = this.phoneNumber,
         streetAddress = this.streetAddress,
         city = this.city,
-        imageUrl = imageUrl,
+        imageUrl = S3Helper.getPublicUrl(s3Key),
         fileName = this.fileName,
         mimeType = this.mimeType,
         createdAt = this.createdAt,

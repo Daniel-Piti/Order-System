@@ -238,20 +238,8 @@ class ProductService(
     }
   }
 
-  fun getImagesForProduct(productId: String): List<ProductImageDto> {
-    val images = productImageRepository.findByProductId(productId)
-
-    return images.map { image ->
-      val publicUrl = s3StorageService.getPublicUrl(image.s3Key)
-        ?: throw ServiceException(
-          status = HttpStatus.INTERNAL_SERVER_ERROR,
-          userMessage = "Failed to get image URL",
-          technicalMessage = "s3Key is null for image id=${image.id}",
-          severity = SeverityLevel.ERROR
-        )
-      image.toDto(publicUrl)
-    }
-  }
+  fun getImagesForProduct(productId: String): List<ProductImageDto> =
+    productImageRepository.findByProductId(productId).map { it.toDto() }
 
   @Transactional
   fun createProduct(
