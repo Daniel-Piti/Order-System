@@ -7,6 +7,7 @@ import com.pt.ordersystem.ordersystem.domains.productOverrides.models.CreateProd
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.ProductOverrideDto
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.ProductOverrideWithPriceDto
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.UpdateProductOverrideRequest
+import com.pt.ordersystem.ordersystem.domains.productOverrides.models.toDto
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
@@ -54,7 +55,7 @@ class ProductOverrideManagerController(
       productId = productId,
       customerId = customerId
     )
-    return ResponseEntity.ok(overrides)
+    return ResponseEntity.ok(overrides.map { it.toDto() })
   }
 
   @GetMapping("/override/{overrideId}")
@@ -63,7 +64,7 @@ class ProductOverrideManagerController(
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<ProductOverrideDto> {
     val override = productOverrideService.getProductOverrideById(manager.id, null, overrideId)
-    return ResponseEntity.ok(override)
+    return ResponseEntity.ok(override.toDto())
   }
 
   @GetMapping("/product/{productId}")
@@ -72,7 +73,7 @@ class ProductOverrideManagerController(
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<List<ProductOverrideDto>> {
     val overrides = productOverrideService.getProductOverridesForProductId(manager.id, null, productId)
-    return ResponseEntity.ok(overrides)
+    return ResponseEntity.ok(overrides.map { it.toDto() })
   }
 
   @PostMapping
@@ -82,7 +83,7 @@ class ProductOverrideManagerController(
   ): ResponseEntity<ProductOverrideDto> {
     val normalizedRequest = request.normalize()
     val override = productOverrideService.createProductOverride(manager.id, null, normalizedRequest)
-    return ResponseEntity.status(HttpStatus.CREATED).body(override)
+    return ResponseEntity.status(HttpStatus.CREATED).body(override.toDto())
   }
 
   @PutMapping("/override/{overrideId}")
@@ -91,8 +92,8 @@ class ProductOverrideManagerController(
     @RequestBody request: UpdateProductOverrideRequest,
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<ProductOverrideDto> {
-    val override = productOverrideService.updateProductOverride(manager.id, overrideId, request)
-    return ResponseEntity.ok(override)
+    val override = productOverrideService.updateProductOverride(manager.id, null, overrideId, request)
+    return ResponseEntity.ok(override.toDto())
   }
 
   @DeleteMapping("/override/{overrideId}")

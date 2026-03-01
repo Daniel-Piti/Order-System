@@ -8,6 +8,7 @@ import com.pt.ordersystem.ordersystem.domains.productOverrides.models.CreateProd
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.ProductOverrideDto
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.ProductOverrideWithPriceDto
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.UpdateProductOverrideRequest
+import com.pt.ordersystem.ordersystem.domains.productOverrides.models.toDto
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
@@ -51,7 +52,7 @@ class ProductOverrideAgentController(
       productId = productId,
       customerId = customerId,
     )
-    return ResponseEntity.ok(overrides)
+    return ResponseEntity.ok(overrides.map { it.toDto() })
   }
 
   @GetMapping("/override/{overrideId}")
@@ -61,7 +62,7 @@ class ProductOverrideAgentController(
   ): ResponseEntity<ProductOverrideDto> {
     val agent = agentService.getAgent(agent.id)
     val override = productOverrideService.getProductOverrideById(agent.managerId, agent.id, overrideId)
-    return ResponseEntity.ok(override)
+    return ResponseEntity.ok(override.toDto())
   }
 
   @GetMapping("/product/{productId}")
@@ -71,7 +72,7 @@ class ProductOverrideAgentController(
   ): ResponseEntity<List<ProductOverrideDto>> {
     val agent = agentService.getAgent(agent.id)
     val overrides = productOverrideService.getProductOverridesForProductId(agent.managerId, agent.id, productId)
-    return ResponseEntity.ok(overrides)
+    return ResponseEntity.ok(overrides.map { it.toDto() })
   }
 
   @GetMapping("/customer/{customerId}")
@@ -81,7 +82,7 @@ class ProductOverrideAgentController(
   ): ResponseEntity<List<ProductOverrideDto>> {
     val agent = agentService.getAgent(agent.id)
     val overrides = productOverrideService.getProductOverridesByCustomerId(agent.managerId, agent.id, customerId)
-    return ResponseEntity.ok(overrides)
+    return ResponseEntity.ok(overrides.map { it.toDto() })
   }
 
   @PostMapping
@@ -92,7 +93,7 @@ class ProductOverrideAgentController(
     val agent = agentService.getAgent(agent.id)
     val normalizedRequest = request.normalize()
     val override = productOverrideService.createProductOverride(agent.managerId, agent.id, normalizedRequest)
-    return ResponseEntity.status(HttpStatus.CREATED).body(override)
+    return ResponseEntity.status(HttpStatus.CREATED).body(override.toDto())
   }
 
   @PutMapping("/override/{overrideId}")
@@ -102,8 +103,8 @@ class ProductOverrideAgentController(
     @RequestBody request: UpdateProductOverrideRequest,
   ): ResponseEntity<ProductOverrideDto> {
     val agent = agentService.getAgent(agent.id)
-    val override = productOverrideService.updateProductOverride(agent.managerId, overrideId, request, agent.id)
-    return ResponseEntity.ok(override)
+    val override = productOverrideService.updateProductOverride(agent.managerId, agent.id, overrideId, request)
+    return ResponseEntity.ok(override.toDto())
   }
 
   @DeleteMapping("/override/{overrideId}")
