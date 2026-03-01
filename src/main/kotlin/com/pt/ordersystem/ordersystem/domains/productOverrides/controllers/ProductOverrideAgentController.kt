@@ -32,21 +32,16 @@ class ProductOverrideAgentController(
   @GetMapping
   fun getAgentOverrides(
     @AuthenticationPrincipal agent: AuthUser,
-    pageParams: PageRequestBaseExternal,
     @RequestParam(required = false) productId: String?,
-    @RequestParam(required = false) customerId: String?,
+    pageParams: PageRequestBaseExternal,
   ): ResponseEntity<Page<ProductOverrideWithPriceDto>> {
 
     val agent = agentService.getAgent(agent.id)
-    val overrides = productOverrideService.getAllOverrides(
+    val overrides = productOverrideService.getOverrides(
       managerId = agent.managerId,
       agentId = agent.id,
-      filterAgentId = agent.id,
-      includeManagerOverrides = false,
-      includeAgentOverrides = true,
       pageRequestBase = pageParams.toPageRequestBase(),
       productId = productId,
-      customerId = customerId,
     )
     return ResponseEntity.ok(overrides.map { it.toDto() })
   }

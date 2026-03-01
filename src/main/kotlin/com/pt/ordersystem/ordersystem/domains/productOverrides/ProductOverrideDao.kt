@@ -21,7 +21,6 @@ interface ProductOverrideDao : JpaRepository<ProductOverrideDbEntity, Long> {
   fun findByManagerIdAndAgentId(managerId: String, agentId: String): List<ProductOverrideDbEntity>
   fun findByManagerIdAndAgentIdAndId(managerId: String, agentId: String?, id: Long): ProductOverrideDbEntity?
   fun findByManagerIdAndAgentIdAndProductId(managerId: String, agentId: String?, productId: String): List<ProductOverrideDbEntity>
-  /** agentId = null → manager overrides only, non-null → that agent's overrides */
   fun findByManagerIdAndAgentIdAndCustomerId(managerId: String, agentId: String?, customerId: String): List<ProductOverrideDbEntity>
 
   @Modifying
@@ -45,31 +44,22 @@ interface ProductOverrideDao : JpaRepository<ProductOverrideDbEntity, Long> {
     FROM product_overrides po
     JOIN products p ON po.product_id = p.id
     WHERE po.manager_id = :managerId
-    AND (:productId IS NULL OR po.product_id = :productId)
-    AND (:customerId IS NULL OR po.customer_id = :customerId)
     AND (:agentId IS NULL OR po.agent_id = :agentId)
-    AND (:includeManagerOverrides = true OR po.agent_id IS NOT NULL)
-    AND (:includeAgentOverrides = true OR po.agent_id IS NULL)
+    AND (:productId IS NULL OR po.product_id = :productId)
   """,
     countQuery = """
     SELECT COUNT(*)
     FROM product_overrides po
     JOIN products p ON po.product_id = p.id
     WHERE po.manager_id = :managerId
-    AND (:productId IS NULL OR po.product_id = :productId)
-    AND (:customerId IS NULL OR po.customer_id = :customerId)
     AND (:agentId IS NULL OR po.agent_id = :agentId)
-    AND (:includeManagerOverrides = true OR po.agent_id IS NOT NULL)
-    AND (:includeAgentOverrides = true OR po.agent_id IS NULL)
+    AND (:productId IS NULL OR po.product_id = :productId)
   """,
     nativeQuery = true)
   fun findOverridesWithPrice(
     @Param("managerId") managerId: String,
     @Param("agentId") agentId: String?,
-    @Param("includeManagerOverrides") includeManagerOverrides: Boolean,
-    @Param("includeAgentOverrides") includeAgentOverrides: Boolean,
     @Param("productId") productId: String?,
-    @Param("customerId") customerId: String?,
     pageable: Pageable
   ): Page<Array<Any>>
 }

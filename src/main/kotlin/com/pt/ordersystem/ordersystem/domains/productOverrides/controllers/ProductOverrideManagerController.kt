@@ -27,28 +27,18 @@ class ProductOverrideManagerController(
   private val productOverrideService: ProductOverrideService
 ) {
 
+  /** All overrides for the manager, with optional filter by product. */
   @GetMapping
   fun getAllOverrides(
     @AuthenticationPrincipal manager: AuthUser,
-    pageParams: PageRequestBaseExternal,
     @RequestParam(required = false) productId: String?,
-    @RequestParam(required = false) customerId: String?,
-    @RequestParam(required = false) agentId: String?
+    pageParams: PageRequestBaseExternal,
   ): ResponseEntity<Page<ProductOverrideWithPriceDto>> {
-    val (filterAgentId, includeManagerOverrides, includeAgentOverrides) = when {
-      agentId.isNullOrBlank() -> Triple(null, true, true)
-      agentId.equals("manager", ignoreCase = true) -> Triple(null, true, false)
-      else -> Triple(agentId, false, true)
-    }
-
-    val overrides = productOverrideService.getAllOverrides(
+    val overrides = productOverrideService.getOverrides(
       managerId = manager.id,
-      filterAgentId = filterAgentId,
-      includeManagerOverrides = includeManagerOverrides,
-      includeAgentOverrides = includeAgentOverrides,
+      agentId = null,
       pageRequestBase = pageParams.toPageRequestBase(),
       productId = productId,
-      customerId = customerId
     )
     return ResponseEntity.ok(overrides.map { it.toDto() })
   }

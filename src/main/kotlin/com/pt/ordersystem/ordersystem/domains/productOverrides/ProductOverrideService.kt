@@ -22,37 +22,17 @@ class ProductOverrideService(
   private val customerRepository: CustomerRepository,
 ) {
 
-  fun getAllOverrides(
+  fun getOverrides(
     managerId: String,
-    agentId: String? = null,
-    filterAgentId: String? = null,
-    includeManagerOverrides: Boolean = true,
-    includeAgentOverrides: Boolean = true,
-    pageRequestBase: PageRequestBase,
+    agentId: String?,
     productId: String?,
-    customerId: String?,
+    pageRequestBase: PageRequestBase,
   ): Page<ProductOverrideWithPrice> {
-
     val pageRequest = PaginationUtils.getValidatedPageRequest(pageRequestBase)
-
-    val effectiveIncludeManager = when {
-      agentId != null -> false
-      filterAgentId != null -> false
-      else -> includeManagerOverrides
-    }
-    val effectiveIncludeAgent = when {
-      agentId != null -> true
-      filterAgentId != null -> true
-      else -> includeAgentOverrides
-    }
-
     return productOverrideRepository.findOverridesWithPrice(
       managerId = managerId,
-      agentId = filterAgentId ?: agentId,
-      includeManagerOverrides = effectiveIncludeManager,
-      includeAgentOverrides = effectiveIncludeAgent,
+      agentId = agentId,
       productId = productId,
-      customerId = customerId,
       pageable = pageRequest,
     )
   }

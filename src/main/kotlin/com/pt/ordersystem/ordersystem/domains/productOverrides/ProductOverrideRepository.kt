@@ -83,19 +83,13 @@ class ProductOverrideRepository(
   fun findOverridesWithPrice(
     managerId: String,
     agentId: String?,
-    includeManagerOverrides: Boolean,
-    includeAgentOverrides: Boolean,
     productId: String?,
-    customerId: String?,
     pageable: Pageable,
   ): Page<ProductOverrideWithPrice> =
     productOverrideDao.findOverridesWithPrice(
       managerId = managerId,
       agentId = agentId,
-      includeManagerOverrides = includeManagerOverrides,
-      includeAgentOverrides = includeAgentOverrides,
       productId = productId,
-      customerId = customerId,
       pageable = pageable,
     ).map { it.toProductOverrideWithPrice() }
 }
