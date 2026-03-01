@@ -6,9 +6,9 @@ import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.*
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
+import com.pt.ordersystem.ordersystem.utils.PaginationUtils
+import com.pt.ordersystem.ordersystem.utils.SortOrder
 import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -21,10 +21,6 @@ class ProductOverrideService(
   private val productRepository: ProductRepository,
   private val customerRepository: CustomerRepository,
 ) {
-  
-  companion object {
-    private const val MAX_PAGE_SIZE = 100
-  }
 
   fun getAllOverrides(
     managerId: String,
@@ -35,22 +31,17 @@ class ProductOverrideService(
     page: Int,
     size: Int,
     sortBy: String,
-    sortDirection: String,
+    sortOrder: SortOrder,
     productId: String?,
     customerId: String?,
   ): Page<ProductOverrideWithPrice> {
-    // Enforce max page size
-    val validatedSize = size.coerceAtMost(MAX_PAGE_SIZE)
 
-    // Create sort
-    val sort = if (sortDirection.uppercase() == "DESC") {
-      Sort.by(sortBy).descending()
-    } else {
-      Sort.by(sortBy).ascending()
-    }
-
-    // Create pageable
-    val pageable = PageRequest.of(page, validatedSize, sort)
+    val pageRequest = PaginationUtils.getValidatedPageRequest(
+      pageNumber = page,
+      pageSize = size,
+      sortOrder = sortOrder,
+      sortBy = sortBy,
+    )
 
     val effectiveIncludeManager = when {
       actorAgentId != null -> false
@@ -70,7 +61,7 @@ class ProductOverrideService(
       includeAgentOverrides = effectiveIncludeAgent,
       productId = productId,
       customerId = customerId,
-      pageable = pageable,
+      pageable = pageRequest,
     )
   }
 
@@ -78,18 +69,17 @@ class ProductOverrideService(
     productOverrideRepository.getProductOverride(managerId, agentId, overrideId)
 
   fun getProductOverridesForProductId(managerId: String, agentId: String?, productId: String): List<ProductOverride> =
-    productOverrideRepository.findByManagerIdAndAgentIdAndProductId(managerId, agentId, productId)
+    productOverrideRepository.getAllForManagerAgentAndProduct(managerId, agentId, productId)
 
   fun getProductOverridesByCustomerId(managerId: String, agentId: String?, customerId: String): List<ProductOverride> =
-    if (agentId == null) {
-      productOverrideRepository.getAllForManagerIdAndCustomerId(managerId, customerId)
-    } else {
-      productOverrideRepository.findByManagerIdAndAgentIdAndCustomerId(managerId, agentId, customerId)
-    }
+    productOverrideRepository.findByManagerIdAndAgentIdAndCustomerId(managerId, agentId, customerId)
 
-  @Transactional
-  fun createProductOverride(managerId: String, agentId: String?, request: CreateProductOverrideRequest): ProductOverride {
-    FieldValidators.validatePrice(request.overridePrice)
+  fun validateCreateProductOverride(
+    managerId: String,
+    agentId: String?,
+    request: CreateProductOverrideRequest,
+  ) {
+    FieldValidators.validatePriceRange(request.overridePrice)
 
     val product = productRepository.findByManagerIdAndId(managerId, request.productId)
       ?: throw ServiceException(
@@ -108,15 +98,19 @@ class ProductOverrideService(
       )
     }
 
-    if (agentId == null) customerRepository.findByManagerIdAndId(managerId, request.customerId)
-    else customerRepository.findByManagerIdAndAgentIdAndId(managerId, agentId, request.customerId)
-
     productOverrideRepository.validateOverrideNotExists(
       managerId = managerId,
       agentId = agentId,
       productId = request.productId,
       customerId = request.customerId,
     )
+
+    customerRepository.findByManagerIdAndAgentIdAndId(managerId, agentId, request.customerId)
+  }
+
+  @Transactional
+  fun createProductOverride(managerId: String, agentId: String?, request: CreateProductOverrideRequest): ProductOverride {
+    validateCreateProductOverride(managerId, agentId, request)
 
     val productOverride = ProductOverrideDbEntity(
       productId = request.productId,
@@ -138,7 +132,7 @@ class ProductOverrideService(
     overrideId: Long,
     request: UpdateProductOverrideRequest,
   ): ProductOverride {
-    FieldValidators.validatePrice(request.overridePrice)
+    FieldValidators.validatePriceRange(request.overridePrice)
 
     val override = productOverrideRepository.getProductOverride(managerId, agentId, overrideId)
 
@@ -174,13 +168,13 @@ class ProductOverrideService(
 
   @Transactional
   fun deleteAllOverridesForProduct(managerId: String, productId: String) {
-    val overrides = productOverrideRepository.getAllForManagerIdAndProductId(managerId, productId)
+    val overrides = productOverrideRepository.getAllForManagerAndProduct(managerId, productId)
     productOverrideRepository.deleteAll(overrides)
   }
 
   @Transactional
   fun deleteAllOverridesForAgent(managerId: String, agentId: String) {
-    val overrides = productOverrideRepository.findByManagerIdAndAgentId(managerId, agentId)
+    val overrides = productOverrideRepository.getAllForManagerAndAgent(managerId, agentId)
     productOverrideRepository.deleteAll(overrides)
   }
 

@@ -17,11 +17,11 @@ import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideSe
 import com.pt.ordersystem.ordersystem.storage.S3StorageService
 import com.pt.ordersystem.ordersystem.storage.models.ImageMetadata
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
+import com.pt.ordersystem.ordersystem.utils.PaginationUtils
+import com.pt.ordersystem.ordersystem.utils.SortOrder
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -45,7 +45,6 @@ class ProductService(
   companion object {
     private val logger = LoggerFactory.getLogger(ProductService::class.java)
     const val MAXIMUM_PRODUCTS_FOR_CUSTOMER = 1000
-    const val MAX_PAGE_SIZE = 100
     private const val MAX_IMAGES_PER_PRODUCT = 5
   }
 
@@ -71,46 +70,41 @@ class ProductService(
     page: Int,
     size: Int,
     sortBy: String,
-    sortDirection: String,
+    sortOrder: SortOrder,
     categoryId: Long?,
     brandId: Long?
   ): Page<ProductDto> {
-    // Enforce max page size
-    val validatedSize = size.coerceAtMost(MAX_PAGE_SIZE)
 
-    // Create sort based on direction
-    val sort = if (sortDirection.uppercase() == "DESC") {
-      Sort.by(sortBy).descending()
-    } else {
-      Sort.by(sortBy).ascending()
-    }
-
-    // Create pageable with sort
-    val pageable = PageRequest.of(page, validatedSize, sort)
+    val pageRequest = PaginationUtils.getValidatedPageRequest(
+      pageNumber = page,
+      pageSize = size,
+      sortOrder = sortOrder,
+      sortBy = sortBy,
+    )
 
     // Fetch products based on filters
     val productPage = when {
       categoryId != null && brandId != null -> {
         // Filter by both category and brand
-        productRepository.findByManagerIdAndCategoryIdAndBrandId(managerId, categoryId, brandId, pageable)
+        productRepository.findByManagerIdAndCategoryIdAndBrandId(managerId, categoryId, brandId, pageRequest)
       }
       categoryId != null -> {
         // Filter by category only
-        productRepository.findByManagerIdAndCategoryId(managerId, categoryId, pageable)
+        productRepository.findByManagerIdAndCategoryId(managerId, categoryId, pageRequest)
       }
       brandId != null -> {
         // Filter by brand only
-        productRepository.findByManagerIdAndBrandId(managerId, brandId, pageable)
+        productRepository.findByManagerIdAndBrandId(managerId, brandId, pageRequest)
       }
       else -> {
         // No filter - return all products
-        productRepository.findAllByManagerId(managerId, pageable)
+        productRepository.findAllByManagerId(managerId, pageRequest)
       }
     }
 
     // Early return if no products
     if (productPage.content.isEmpty()) {
-      return PageImpl(emptyList(), pageable, productPage.totalElements)
+      return PageImpl(emptyList(), pageRequest, productPage.totalElements)
     }
 
     // Enrich with brand names and category names
@@ -134,7 +128,7 @@ class ProductService(
       product.toDto(brandName = brandName, categoryName = categoryName)
     }
 
-    return PageImpl(enrichedContent, pageable, productPage.totalElements)
+    return PageImpl(enrichedContent, pageRequest, productPage.totalElements)
   }
 
   fun getAllProductsForOrder(orderId: String): List<ProductDto> {
@@ -217,8 +211,8 @@ class ProductService(
   private fun validateProductInfo(managerId: String, productInfo: ProductInfo) {
     with(productInfo) {
       FieldValidators.validateNonEmpty(name, "'name'")
-      FieldValidators.validatePrice(minimumPrice)
-      FieldValidators.validatePrice(price)
+      FieldValidators.validatePriceRange(minimumPrice)
+      FieldValidators.validatePriceRange(price)
 
       // Validate that price is not lower than minimum price
       if (price < minimumPrice) {

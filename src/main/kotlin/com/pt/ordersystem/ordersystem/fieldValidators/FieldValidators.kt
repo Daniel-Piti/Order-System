@@ -106,13 +106,13 @@ object FieldValidators {
     }
   }
 
-  fun validatePrice(price: BigDecimal) {
+  fun validatePriceRange(price: BigDecimal) {
     validateNonNegative(price, "Price")
 
     if (price > MAX_PRICE) {
       throw ServiceException(
         status = HttpStatus.BAD_REQUEST,
-        userMessage = "Price cannot exceed 1,000,000",
+        userMessage = "Price cannot exceed $MAX_PRICE",
         technicalMessage = "Price `$price` is greater than allowed maximum $MAX_PRICE",
         severity = SeverityLevel.WARN
       )

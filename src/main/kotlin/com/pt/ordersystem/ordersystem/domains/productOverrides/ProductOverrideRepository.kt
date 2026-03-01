@@ -36,10 +36,10 @@ class ProductOverrideRepository(
       severity = SeverityLevel.WARN
     )
 
-  fun getAllForManagerIdAndProductId(managerId: String, productId: String): List<ProductOverride> =
+  fun getAllForManagerAndProduct(managerId: String, productId: String): List<ProductOverride> =
     productOverrideDao.findByManagerIdAndProductId(managerId, productId).map { it.toModel() }
 
-  fun findByManagerIdAndAgentIdAndProductId(managerId: String, agentId: String?, productId: String): List<ProductOverride> =
+  fun getAllForManagerAgentAndProduct(managerId: String, agentId: String?, productId: String): List<ProductOverride> =
     productOverrideDao.findByManagerIdAndAgentIdAndProductId(managerId, agentId, productId).map { it.toModel() }
 
   fun getAllForManagerIdAndCustomerId(managerId: String, customerId: String): List<ProductOverride> =
@@ -57,10 +57,11 @@ class ProductOverrideRepository(
     }
   }
 
-  fun findByManagerIdAndAgentId(managerId: String, agentId: String): List<ProductOverride> =
+  fun getAllForManagerAndAgent(managerId: String, agentId: String): List<ProductOverride> =
     productOverrideDao.findByManagerIdAndAgentId(managerId, agentId).map { it.toModel() }
 
-  fun findByManagerIdAndAgentIdAndCustomerId(managerId: String, agentId: String, customerId: String): List<ProductOverride> =
+  /** agentId = null → manager overrides only, non-null → that agent's overrides */
+  fun findByManagerIdAndAgentIdAndCustomerId(managerId: String, agentId: String?, customerId: String): List<ProductOverride> =
     productOverrideDao.findByManagerIdAndAgentIdAndCustomerId(managerId, agentId, customerId).map { it.toModel() }
 
   fun save(entity: ProductOverrideDbEntity): ProductOverride = productOverrideDao.save(entity).toModel()

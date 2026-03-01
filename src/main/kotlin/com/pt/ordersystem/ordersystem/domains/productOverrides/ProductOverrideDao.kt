@@ -21,7 +21,8 @@ interface ProductOverrideDao : JpaRepository<ProductOverrideDbEntity, Long> {
   fun findByManagerIdAndAgentId(managerId: String, agentId: String): List<ProductOverrideDbEntity>
   fun findByManagerIdAndAgentIdAndId(managerId: String, agentId: String?, id: Long): ProductOverrideDbEntity?
   fun findByManagerIdAndAgentIdAndProductId(managerId: String, agentId: String?, productId: String): List<ProductOverrideDbEntity>
-  fun findByManagerIdAndAgentIdAndCustomerId(managerId: String, agentId: String, customerId: String): List<ProductOverrideDbEntity>
+  /** agentId = null → manager overrides only, non-null → that agent's overrides */
+  fun findByManagerIdAndAgentIdAndCustomerId(managerId: String, agentId: String?, customerId: String): List<ProductOverrideDbEntity>
 
   @Modifying
   @Query("""

@@ -3,6 +3,7 @@ package com.pt.ordersystem.ordersystem.domains.product
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductDto
 import com.pt.ordersystem.ordersystem.domains.productImage.models.ProductImageDto
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
+import com.pt.ordersystem.ordersystem.utils.SortOrder
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
@@ -34,7 +35,7 @@ class PublicProductController(
     @RequestParam(defaultValue = "0") page: Int,
     @RequestParam(defaultValue = "20") size: Int,
     @RequestParam(defaultValue = "name") sortBy: String,
-    @RequestParam(defaultValue = "ASC") sortDirection: String,
+    @RequestParam(defaultValue = "asc") sortOrder: String,
     @RequestParam(required = false) categoryId: Long?,
     @RequestParam(required = false) brandId: Long?
   ): ResponseEntity<Page<ProductDto>> {
@@ -46,7 +47,7 @@ class PublicProductController(
       page = page,
       size = size,
       sortBy = sortBy,
-      sortDirection = sortDirection,
+      sortOrder = SortOrder.fromString(sortOrder),
       categoryId = categoryId,
       brandId = brandId
     )
