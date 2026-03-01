@@ -17,6 +17,7 @@ import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideSe
 import com.pt.ordersystem.ordersystem.storage.S3StorageService
 import com.pt.ordersystem.ordersystem.storage.models.ImageMetadata
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
+import com.pt.ordersystem.ordersystem.utils.PageRequestBase
 import com.pt.ordersystem.ordersystem.utils.PaginationUtils
 import com.pt.ordersystem.ordersystem.utils.SortOrder
 import org.slf4j.LoggerFactory
@@ -76,10 +77,7 @@ class ProductService(
   ): Page<ProductDto> {
 
     val pageRequest = PaginationUtils.getValidatedPageRequest(
-      pageNumber = page,
-      pageSize = size,
-      sortOrder = sortOrder,
-      sortBy = sortBy,
+      PageRequestBase(page, size, sortOrder, sortBy)
     )
 
     // Fetch products based on filters

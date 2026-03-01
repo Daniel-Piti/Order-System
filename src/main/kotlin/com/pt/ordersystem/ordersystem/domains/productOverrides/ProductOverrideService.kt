@@ -6,8 +6,8 @@ import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.*
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
+import com.pt.ordersystem.ordersystem.utils.PageRequestBase
 import com.pt.ordersystem.ordersystem.utils.PaginationUtils
-import com.pt.ordersystem.ordersystem.utils.SortOrder
 import org.springframework.data.domain.Page
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -24,39 +24,31 @@ class ProductOverrideService(
 
   fun getAllOverrides(
     managerId: String,
-    actorAgentId: String? = null,
+    agentId: String? = null,
     filterAgentId: String? = null,
     includeManagerOverrides: Boolean = true,
     includeAgentOverrides: Boolean = true,
-    page: Int,
-    size: Int,
-    sortBy: String,
-    sortOrder: SortOrder,
+    pageRequestBase: PageRequestBase,
     productId: String?,
     customerId: String?,
   ): Page<ProductOverrideWithPrice> {
 
-    val pageRequest = PaginationUtils.getValidatedPageRequest(
-      pageNumber = page,
-      pageSize = size,
-      sortOrder = sortOrder,
-      sortBy = sortBy,
-    )
+    val pageRequest = PaginationUtils.getValidatedPageRequest(pageRequestBase)
 
     val effectiveIncludeManager = when {
-      actorAgentId != null -> false
+      agentId != null -> false
       filterAgentId != null -> false
       else -> includeManagerOverrides
     }
     val effectiveIncludeAgent = when {
-      actorAgentId != null -> true
+      agentId != null -> true
       filterAgentId != null -> true
       else -> includeAgentOverrides
     }
 
     return productOverrideRepository.findOverridesWithPrice(
       managerId = managerId,
-      agentId = filterAgentId ?: actorAgentId,
+      agentId = filterAgentId ?: agentId,
       includeManagerOverrides = effectiveIncludeManager,
       includeAgentOverrides = effectiveIncludeAgent,
       productId = productId,

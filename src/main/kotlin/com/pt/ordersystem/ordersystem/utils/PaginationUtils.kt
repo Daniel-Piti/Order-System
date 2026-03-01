@@ -12,20 +12,17 @@ object PaginationUtils {
             throw IllegalArgumentException("Max page size is $MAX_PAGE_SIZE")
     }
 
-    fun getValidatedPageRequest(
-        pageNumber: Int,
-        pageSize: Int,
-        sortOrder: SortOrder,
-        sortBy: String,
-    ): PageRequest {
-        validateMaxPageSize(pageSize)
+    fun getValidatedPageRequest(pageRequestBase: PageRequestBase): PageRequest {
+        with(pageRequestBase) {
+            validateMaxPageSize(pageSize)
 
-        val sort = when (sortOrder) {
-            SortOrder.ASC -> Sort.by(sortBy).ascending()
-            SortOrder.DESC -> Sort.by(sortBy).descending()
+            val sort = when (sortOrder) {
+                SortOrder.ASC -> Sort.by(sortBy).ascending()
+                SortOrder.DESC -> Sort.by(sortBy).descending()
+            }
+
+            return PageRequest.of(pageNumber, pageSize, sort)
         }
-
-        return PageRequest.of(pageNumber, pageSize, sort)
     }
 
 }
@@ -44,3 +41,10 @@ enum class SortOrder {
             }
     }
 }
+
+data class PageRequestBase(
+    val pageNumber: Int,
+    val pageSize: Int,
+    val sortOrder: SortOrder,
+    val sortBy: String,
+)

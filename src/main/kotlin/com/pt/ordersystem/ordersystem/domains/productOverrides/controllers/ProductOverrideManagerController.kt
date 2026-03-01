@@ -8,6 +8,7 @@ import com.pt.ordersystem.ordersystem.domains.productOverrides.models.ProductOve
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.ProductOverrideWithPriceDto
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.UpdateProductOverrideRequest
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.toDto
+import com.pt.ordersystem.ordersystem.utils.PageRequestBase
 import com.pt.ordersystem.ordersystem.utils.SortOrder
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -49,10 +50,7 @@ class ProductOverrideManagerController(
       filterAgentId = filterAgentId,
       includeManagerOverrides = includeManagerOverrides,
       includeAgentOverrides = includeAgentOverrides,
-      page = page,
-      size = size,
-      sortBy = sortBy,
-      sortOrder = SortOrder.fromString(sortOrder),
+      pageRequestBase = PageRequestBase(page, size, SortOrder.fromString(sortOrder), sortBy),
       productId = productId,
       customerId = customerId
     )
