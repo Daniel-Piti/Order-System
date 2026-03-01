@@ -3,7 +3,7 @@ package com.pt.ordersystem.ordersystem.domains.product
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductDto
 import com.pt.ordersystem.ordersystem.domains.productImage.models.ProductImageDto
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
-import com.pt.ordersystem.ordersystem.utils.SortOrder
+import com.pt.ordersystem.ordersystem.utils.PageRequestBaseExternal
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
@@ -32,22 +32,14 @@ class PublicProductController(
   @GetMapping("/manager/{managerId}")
   fun getAllManagerProducts(
     @PathVariable managerId: String,
-    @RequestParam(defaultValue = "0") page: Int,
-    @RequestParam(defaultValue = "20") size: Int,
-    @RequestParam(defaultValue = "name") sortBy: String,
-    @RequestParam(defaultValue = "asc") sortOrder: String,
+    pageParams: PageRequestBaseExternal,
     @RequestParam(required = false) categoryId: Long?,
     @RequestParam(required = false) brandId: Long?
   ): ResponseEntity<Page<ProductDto>> {
-    // Validate user exists first - will throw 404 if not found
     managerService.validateManagerExists(managerId)
-    
     val products = productService.getAllProductsForManager(
       managerId = managerId,
-      page = page,
-      size = size,
-      sortBy = sortBy,
-      sortOrder = SortOrder.fromString(sortOrder),
+      pageRequestBase = pageParams.toPageRequestBase(),
       categoryId = categoryId,
       brandId = brandId
     )

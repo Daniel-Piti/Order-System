@@ -19,7 +19,6 @@ import com.pt.ordersystem.ordersystem.storage.models.ImageMetadata
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import com.pt.ordersystem.ordersystem.utils.PageRequestBase
 import com.pt.ordersystem.ordersystem.utils.PaginationUtils
-import com.pt.ordersystem.ordersystem.utils.SortOrder
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
@@ -68,17 +67,12 @@ class ProductService(
 
   fun getAllProductsForManager(
     managerId: String,
-    page: Int,
-    size: Int,
-    sortBy: String,
-    sortOrder: SortOrder,
+    pageRequestBase: PageRequestBase,
     categoryId: Long?,
     brandId: Long?
   ): Page<ProductDto> {
 
-    val pageRequest = PaginationUtils.getValidatedPageRequest(
-      PageRequestBase(page, size, sortOrder, sortBy)
-    )
+    val pageRequest = PaginationUtils.getValidatedPageRequest(pageRequestBase)
 
     // Fetch products based on filters
     val productPage = when {

@@ -5,7 +5,7 @@ import org.springframework.data.domain.Sort
 
 object PaginationUtils {
 
-    const val MAX_PAGE_SIZE = 100
+    const val MAX_PAGE_SIZE = 1000
 
     private fun validateMaxPageSize(pageSize: Int) {
         if (pageSize > MAX_PAGE_SIZE)
@@ -42,9 +42,23 @@ enum class SortOrder {
     }
 }
 
+data class PageRequestBaseExternal(
+    val pageNumber: Int,
+    val pageSize: Int,
+    val sortBy: String,
+    val sortOrder: String,
+) {
+    fun toPageRequestBase(): PageRequestBase = PageRequestBase(
+        pageNumber = pageNumber,
+        pageSize = pageSize,
+        sortBy = sortBy,
+        sortOrder = SortOrder.fromString(sortOrder),
+    )
+}
+
 data class PageRequestBase(
     val pageNumber: Int,
     val pageSize: Int,
-    val sortOrder: SortOrder,
     val sortBy: String,
+    val sortOrder: SortOrder,
 )

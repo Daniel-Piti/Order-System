@@ -8,8 +8,7 @@ import com.pt.ordersystem.ordersystem.domains.productOverrides.models.ProductOve
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.ProductOverrideWithPriceDto
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.UpdateProductOverrideRequest
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.toDto
-import com.pt.ordersystem.ordersystem.utils.PageRequestBase
-import com.pt.ordersystem.ordersystem.utils.SortOrder
+import com.pt.ordersystem.ordersystem.utils.PageRequestBaseExternal
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
@@ -31,10 +30,7 @@ class ProductOverrideManagerController(
   @GetMapping
   fun getAllOverrides(
     @AuthenticationPrincipal manager: AuthUser,
-    @RequestParam(defaultValue = "0") page: Int,
-    @RequestParam(defaultValue = "20") size: Int,
-    @RequestParam(defaultValue = "customer_id") sortBy: String,
-    @RequestParam(defaultValue = "asc") sortOrder: String,
+    pageParams: PageRequestBaseExternal,
     @RequestParam(required = false) productId: String?,
     @RequestParam(required = false) customerId: String?,
     @RequestParam(required = false) agentId: String?
@@ -50,7 +46,7 @@ class ProductOverrideManagerController(
       filterAgentId = filterAgentId,
       includeManagerOverrides = includeManagerOverrides,
       includeAgentOverrides = includeAgentOverrides,
-      pageRequestBase = PageRequestBase(page, size, SortOrder.fromString(sortOrder), sortBy),
+      pageRequestBase = pageParams.toPageRequestBase(),
       productId = productId,
       customerId = customerId
     )
