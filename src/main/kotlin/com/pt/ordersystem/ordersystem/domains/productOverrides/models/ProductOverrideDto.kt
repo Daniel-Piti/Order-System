@@ -23,8 +23,18 @@ data class ProductOverrideWithPriceDto(
   val productMinimumPrice: BigDecimal,
 )
 
-// Extension function to map raw SQL result to DTO
-fun Array<Any>.toProductOverrideWithPriceDto() = ProductOverrideWithPriceDto(
+data class ProductOverrideWithPrice(
+  val id: Long,
+  val productId: String,
+  val managerId: String,
+  val agentId: String?,
+  val customerId: String,
+  val overridePrice: BigDecimal,
+  val productPrice: BigDecimal,
+  val productMinimumPrice: BigDecimal,
+)
+
+fun Array<Any>.toProductOverrideWithPrice(): ProductOverrideWithPrice = ProductOverrideWithPrice(
   id = (this[0] as Number).toLong(),
   productId = this[1] as String,
   managerId = this[2] as String,
@@ -33,5 +43,16 @@ fun Array<Any>.toProductOverrideWithPriceDto() = ProductOverrideWithPriceDto(
   overridePrice = this[5] as BigDecimal,
   productPrice = this[6] as BigDecimal,
   productMinimumPrice = this[7] as BigDecimal,
+)
+
+fun ProductOverrideWithPrice.toDto(): ProductOverrideWithPriceDto = ProductOverrideWithPriceDto(
+  id = id,
+  productId = productId,
+  managerId = managerId,
+  agentId = agentId,
+  customerId = customerId,
+  overridePrice = overridePrice,
+  productPrice = productPrice,
+  productMinimumPrice = productMinimumPrice,
 )
 

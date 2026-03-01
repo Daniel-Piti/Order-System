@@ -1,8 +1,8 @@
-package com.pt.ordersystem.ordersystem.domains.productOverrides
+package com.pt.ordersystem.ordersystem.domains.productOverrides.controllers
 
-import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_AGENT
+import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
-import com.pt.ordersystem.ordersystem.domains.agent.AgentService
+import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideService
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.CreateProductOverrideRequest
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.ProductOverrideDto
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.ProductOverrideWithPriceDto
@@ -16,101 +16,95 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
-@Tag(name = "Agent Product overrides", description = "Product overrides API for agents")
+@Tag(name = "Manager Product overrides", description = "Product overrides API for managers")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
-@RequestMapping("/api/agent/product-overrides")
-@PreAuthorize(AUTH_AGENT)
-class ProductOverrideAgentController(
-  private val agentService: AgentService,
-  private val productOverrideService: ProductOverrideService,
+@RequestMapping("/api/product-overrides")
+@PreAuthorize(AUTH_MANAGER)
+class ProductOverrideManagerController(
+  private val productOverrideService: ProductOverrideService
 ) {
 
   @GetMapping
-  fun getAgentOverrides(
-    @AuthenticationPrincipal agent: AuthUser,
+  fun getAllOverrides(
+    @AuthenticationPrincipal manager: AuthUser,
     @RequestParam(defaultValue = "0") page: Int,
     @RequestParam(defaultValue = "20") size: Int,
     @RequestParam(defaultValue = "customer_id") sortBy: String,
     @RequestParam(defaultValue = "ASC") sortDirection: String,
     @RequestParam(required = false) productId: String?,
     @RequestParam(required = false) customerId: String?,
+    @RequestParam(required = false) agentId: String?
   ): ResponseEntity<Page<ProductOverrideWithPriceDto>> {
-    val agent = agentService.getAgent(agent.id)
+    val (filterAgentId, includeManagerOverrides, includeAgentOverrides) = when {
+      agentId.isNullOrBlank() -> Triple(null, true, true)
+      agentId.equals("manager", ignoreCase = true) -> Triple(null, true, false)
+      else -> Triple(agentId, false, true)
+    }
+
     val overrides = productOverrideService.getAllOverrides(
-      managerId = agent.managerId,
-      actorAgentId = agent.id,
-      filterAgentId = agent.id,
-      includeManagerOverrides = false,
-      includeAgentOverrides = true,
+      managerId = manager.id,
+      filterAgentId = filterAgentId,
+      includeManagerOverrides = includeManagerOverrides,
+      includeAgentOverrides = includeAgentOverrides,
       page = page,
       size = size,
       sortBy = sortBy,
       sortDirection = sortDirection,
       productId = productId,
-      customerId = customerId,
+      customerId = customerId
     )
     return ResponseEntity.ok(overrides)
   }
 
   @GetMapping("/override/{overrideId}")
   fun getOverrideById(
-    @AuthenticationPrincipal agent: AuthUser,
     @PathVariable overrideId: Long,
+    @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<ProductOverrideDto> {
-    val agent = agentService.getAgent(agent.id)
-    val override = productOverrideService.getProductOverrideById(agent.managerId, overrideId, agent.id)
+    val override = productOverrideService.getProductOverrideById(manager.id, null, overrideId)
     return ResponseEntity.ok(override)
   }
 
   @GetMapping("/product/{productId}")
   fun getOverridesByProduct(
-    @AuthenticationPrincipal agent: AuthUser,
     @PathVariable productId: String,
+    @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<List<ProductOverrideDto>> {
-    val agent = agentService.getAgent(agent.id)
-    val overrides = productOverrideService.getProductOverridesForProductId(agent.managerId, productId, agent.id)
-    return ResponseEntity.ok(overrides)
-  }
-
-  @GetMapping("/customer/{customerId}")
-  fun getOverridesByCustomer(
-    @AuthenticationPrincipal agent: AuthUser,
-    @PathVariable customerId: String,
-  ): ResponseEntity<List<ProductOverrideDto>> {
-    val agent = agentService.getAgent(agent.id)
-    val overrides = productOverrideService.getProductOverridesByCustomerId(agent.managerId, customerId, agent.id)
+    val overrides = productOverrideService.getProductOverridesForProductId(manager.id, null, productId)
     return ResponseEntity.ok(overrides)
   }
 
   @PostMapping
   fun createOverride(
-    @AuthenticationPrincipal agent: AuthUser,
     @RequestBody request: CreateProductOverrideRequest,
+    @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<ProductOverrideDto> {
-    val agent = agentService.getAgent(agent.id)
-    val override = productOverrideService.createProductOverride(agent.managerId, request, agent.id)
+    val normalizedRequest = request.normalize()
+    val override = productOverrideService.createProductOverride(manager.id, null, normalizedRequest)
     return ResponseEntity.status(HttpStatus.CREATED).body(override)
   }
 
   @PutMapping("/override/{overrideId}")
   fun updateOverride(
-    @AuthenticationPrincipal agent: AuthUser,
     @PathVariable overrideId: Long,
     @RequestBody request: UpdateProductOverrideRequest,
+    @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<ProductOverrideDto> {
-    val agent = agentService.getAgent(agent.id)
-    val override = productOverrideService.updateProductOverride(agent.managerId, overrideId, request, agent.id)
+    val override = productOverrideService.updateProductOverride(manager.id, overrideId, request)
     return ResponseEntity.ok(override)
   }
 
   @DeleteMapping("/override/{overrideId}")
   fun deleteOverride(
-    @AuthenticationPrincipal agent: AuthUser,
     @PathVariable overrideId: Long,
+    @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<String> {
-    val agent = agentService.getAgent(agent.id)
-    productOverrideService.deleteProductOverride(agent.managerId, overrideId, agent.id)
+    productOverrideService.deleteProductOverride(
+      managerId = manager.id,
+      agentId = null,
+      overrideId = overrideId
+    )
     return ResponseEntity.ok("Product override deleted successfully")
   }
 }

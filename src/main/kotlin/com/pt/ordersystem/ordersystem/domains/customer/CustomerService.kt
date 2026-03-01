@@ -28,9 +28,6 @@ class CustomerService(
   fun getCustomersForAgent(agentId: String) =
     customerRepository.findByAgentId(agentId)
 
-  fun findCustomerForAgent(agentId: String, customerId: String): Customer =
-    customerRepository.findByAgentIdAndId(agentId, customerId)
-
   fun findCustomerByAgentIdAndManagerId(managerId: String, agentId: String?, customerId: String): Customer =
     if (agentId == null) customerRepository.findByManagerIdAndId(managerId, customerId)
     else customerRepository.findByManagerIdAndAgentIdAndId(managerId, agentId, customerId)
@@ -95,7 +92,7 @@ class CustomerService(
   fun deleteCustomer(managerId: String, agentId: String?, customerId: String) {
     findCustomerByAgentIdAndManagerId(managerId, agentId, customerId)
 
-    val overrides = productOverrideRepository.findByManagerIdAndCustomerId(managerId, customerId)
+    val overrides = productOverrideRepository.getAllForManagerIdAndCustomerId(managerId, customerId)
     productOverrideRepository.deleteAll(overrides)
 
     customerRepository.deleteById(customerId)

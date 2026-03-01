@@ -1,75 +1,91 @@
 package com.pt.ordersystem.ordersystem.domains.productOverrides
 
+import com.pt.ordersystem.ordersystem.domains.productOverrides.models.ProductOverride
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.ProductOverrideDbEntity
+import com.pt.ordersystem.ordersystem.domains.productOverrides.models.ProductOverrideFailureReason
+import com.pt.ordersystem.ordersystem.domains.productOverrides.models.ProductOverrideWithPrice
+import com.pt.ordersystem.ordersystem.domains.productOverrides.models.toModel
+import com.pt.ordersystem.ordersystem.domains.productOverrides.models.toProductOverrideWithPrice
+import com.pt.ordersystem.ordersystem.exception.ServiceException
+import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
-import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.data.jpa.repository.Modifying
-import org.springframework.data.jpa.repository.Query
-import org.springframework.data.repository.query.Param
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Repository
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
 @Repository
-interface ProductOverrideRepository : JpaRepository<ProductOverrideDbEntity, Long> {
-  fun findByManagerId(managerId: String): List<ProductOverrideDbEntity>
-  fun findByManagerIdAndId(managerId: String, id: Long): ProductOverrideDbEntity?
-  fun findByManagerIdAndProductId(managerId: String, productId: String): List<ProductOverrideDbEntity>
-  fun findByManagerIdAndCustomerId(managerId: String, customerId: String): List<ProductOverrideDbEntity>
-  fun findByManagerIdAndAgentIdIsNullAndProductIdAndCustomerId(managerId: String, productId: String, customerId: String): ProductOverrideDbEntity?
-  fun findByManagerIdAndAgentIdAndProductIdAndCustomerId(managerId: String, agentId: String, productId: String, customerId: String): ProductOverrideDbEntity?
-  fun findByManagerIdAndAgentId(managerId: String, agentId: String): List<ProductOverrideDbEntity>
-  fun findByManagerIdAndAgentIdAndProductId(managerId: String, agentId: String, productId: String): List<ProductOverrideDbEntity>
-  fun findByManagerIdAndAgentIdAndCustomerId(managerId: String, agentId: String, customerId: String): List<ProductOverrideDbEntity>
+class ProductOverrideRepository(
+  private val productOverrideDao: ProductOverrideDao,
+) {
+  fun findByManagerIdAndId(managerId: String, overrideId: Long): ProductOverride =
+    productOverrideDao.findByManagerIdAndId(managerId, overrideId)?.toModel() ?: throw ServiceException(
+      status = HttpStatus.NOT_FOUND,
+      userMessage = ProductOverrideFailureReason.PRODUCT_OVERRIDE_NOT_FOUND.message,
+      technicalMessage = "Product override with id $overrideId not found for manager $managerId",
+      severity = SeverityLevel.WARN
+    )
 
-  @Modifying
-  @Query("""
-    UPDATE ProductOverrideDbEntity po 
-    SET po.overridePrice = :newMinimumPrice, 
-        po.updatedAt = :updatedAt 
-    WHERE po.managerId = :managerId 
-      AND po.productId = :productId 
-      AND po.overridePrice < :newMinimumPrice
-  """)
-  fun updateInvalidOverridesForProduct(
-    @Param("managerId") managerId: String,
-    @Param("productId") productId: String,
-    @Param("newMinimumPrice") newMinimumPrice: BigDecimal,
-    @Param("updatedAt") updatedAt: LocalDateTime
-  ): Int
+  fun getAllForManagerIdAndProductId(managerId: String, productId: String): List<ProductOverride> =
+    productOverrideDao.findByManagerIdAndProductId(managerId, productId).map { it.toModel() }
 
-  @Query("""
-    SELECT po.id, po.product_id, po.manager_id, po.agent_id, po.customer_id, po.override_price, p.price as product_price, p.minimum_price as product_minimum_price
-    FROM product_overrides po
-    JOIN products p ON po.product_id = p.id
-    WHERE po.manager_id = :managerId
-    AND (:productId IS NULL OR po.product_id = :productId)
-    AND (:customerId IS NULL OR po.customer_id = :customerId)
-    AND (:agentId IS NULL OR po.agent_id = :agentId)
-    AND (:includeManagerOverrides = true OR po.agent_id IS NOT NULL)
-    AND (:includeAgentOverrides = true OR po.agent_id IS NULL)
-  """,
-    countQuery = """
-    SELECT COUNT(*)
-    FROM product_overrides po
-    JOIN products p ON po.product_id = p.id
-    WHERE po.manager_id = :managerId
-    AND (:productId IS NULL OR po.product_id = :productId)
-    AND (:customerId IS NULL OR po.customer_id = :customerId)
-    AND (:agentId IS NULL OR po.agent_id = :agentId)
-    AND (:includeManagerOverrides = true OR po.agent_id IS NOT NULL)
-    AND (:includeAgentOverrides = true OR po.agent_id IS NULL)
-  """,
-    nativeQuery = true)
+  fun findByManagerIdAndAgentIdAndProductId(managerId: String, agentId: String?, productId: String): List<ProductOverride> =
+    productOverrideDao.findByManagerIdAndAgentIdAndProductId(managerId, agentId, productId).map { it.toModel() }
+
+  fun getAllForManagerIdAndCustomerId(managerId: String, customerId: String): List<ProductOverride> =
+    productOverrideDao.findByManagerIdAndCustomerId(managerId, customerId).map { it.toModel() }
+
+  fun validateOverrideNotExists(managerId: String, agentId: String?, productId: String, customerId: String) {
+    val existing = productOverrideDao.findByManagerIdAndAgentIdAndProductIdAndCustomerId(managerId, agentId, productId, customerId)
+    if (existing != null) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = ProductOverrideFailureReason.PRODUCT_OVERRIDE_ALREADY_EXISTS.message,
+        technicalMessage = "Product override already exists for product $productId and customer $customerId",
+        severity = SeverityLevel.WARN,
+      )
+    }
+  }
+
+  fun findByManagerIdAndAgentId(managerId: String, agentId: String): List<ProductOverride> =
+    productOverrideDao.findByManagerIdAndAgentId(managerId, agentId).map { it.toModel() }
+
+  fun findByManagerIdAndAgentIdAndCustomerId(managerId: String, agentId: String, customerId: String): List<ProductOverride> =
+    productOverrideDao.findByManagerIdAndAgentIdAndCustomerId(managerId, agentId, customerId).map { it.toModel() }
+
+  fun save(entity: ProductOverrideDbEntity): ProductOverride = productOverrideDao.save(entity).toModel()
+
+  fun delete(overrideId: Long) = productOverrideDao.deleteById(overrideId)
+
+  fun deleteAll(overrides: List<ProductOverride>) =
+    overrides.forEach { productOverrideDao.deleteById(it.id) }
+
+  fun updateInvalidOverridesForProduct(managerId: String, productId: String, newMinimumPrice: BigDecimal) {
+    productOverrideDao.updateInvalidOverridesForProduct(
+      managerId = managerId,
+      productId = productId,
+      newMinimumPrice = newMinimumPrice,
+      updatedAt = LocalDateTime.now(),
+    )
+  }
+
   fun findOverridesWithPrice(
-    @Param("managerId") managerId: String,
-    @Param("agentId") agentId: String?,
-    @Param("includeManagerOverrides") includeManagerOverrides: Boolean,
-    @Param("includeAgentOverrides") includeAgentOverrides: Boolean,
-    @Param("productId") productId: String?,
-    @Param("customerId") customerId: String?,
-    pageable: Pageable
-  ): Page<Array<Any>>
+    managerId: String,
+    agentId: String?,
+    includeManagerOverrides: Boolean,
+    includeAgentOverrides: Boolean,
+    productId: String?,
+    customerId: String?,
+    pageable: Pageable,
+  ): Page<ProductOverrideWithPrice> =
+    productOverrideDao.findOverridesWithPrice(
+      managerId = managerId,
+      agentId = agentId,
+      includeManagerOverrides = includeManagerOverrides,
+      includeAgentOverrides = includeAgentOverrides,
+      productId = productId,
+      customerId = customerId,
+      pageable = pageable,
+    ).map { it.toProductOverrideWithPrice() }
 }
-

@@ -162,7 +162,7 @@ class ProductService(
     // Customer exists - get customer and overrides
     val customer = customerRepository.findByManagerIdAndId(order.managerId, order.customerId)
 
-    val overrides = productOverrideRepository.findByManagerIdAndCustomerId(
+    val overrides = productOverrideRepository.getAllForManagerIdAndCustomerId(
       managerId = order.managerId,
       customerId = order.customerId
     )

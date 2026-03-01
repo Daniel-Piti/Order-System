@@ -73,26 +73,18 @@ class ProductOverrideService(
       pageable = pageable,
     )
 
-    return overridesPage.map { it.toProductOverrideWithPriceDto() }
+    return overridesPage.map { it.toDto() }
   }
 
-  fun getProductOverrideById(managerId: String, overrideId: Long, agentId: String? = null): ProductOverrideDto {
-    val override = getValidOverride(managerId, overrideId, agentId)
-    return override.toDto()
-  }
+  fun getProductOverrideById(managerId: String, agentId: String?, overrideId: Long): ProductOverrideDto =
+    getValidOverride(managerId, agentId, overrideId).toDto()
 
-  fun getProductOverridesForProductId(managerId: String, productId: String, agentId: String? = null): List<ProductOverrideDto> {
+  fun getProductOverridesForProductId(managerId: String, agentId: String?, productId: String): List<ProductOverrideDto> =
+    productOverrideRepository.findByManagerIdAndAgentIdAndProductId(managerId, agentId, productId).map { it.toDto() }
+
+  fun getProductOverridesByCustomerId(managerId: String, agentId: String?, customerId: String): List<ProductOverrideDto> {
     val overrides = if (agentId == null) {
-      productOverrideRepository.findByManagerIdAndProductId(managerId, productId)
-    } else {
-      productOverrideRepository.findByManagerIdAndAgentIdAndProductId(managerId, agentId, productId)
-    }
-    return overrides.map { it.toDto() }
-  }
-
-  fun getProductOverridesByCustomerId(managerId: String, customerId: String, agentId: String? = null): List<ProductOverrideDto> {
-    val overrides = if (agentId == null) {
-      productOverrideRepository.findByManagerIdAndCustomerId(managerId, customerId)
+      productOverrideRepository.getAllForManagerIdAndCustomerId(managerId, customerId)
     } else {
       productOverrideRepository.findByManagerIdAndAgentIdAndCustomerId(managerId, agentId, customerId)
     }
@@ -100,7 +92,7 @@ class ProductOverrideService(
   }
 
   @Transactional
-  fun createProductOverride(managerId: String, request: CreateProductOverrideRequest, agentId: String? = null): ProductOverrideDto {
+  fun createProductOverride(managerId: String, agentId: String?, request: CreateProductOverrideRequest): ProductOverrideDto {
     FieldValidators.validatePrice(request.overridePrice)
 
     val product = productRepository.findByManagerIdAndId(managerId, request.productId)
@@ -123,20 +115,12 @@ class ProductOverrideService(
     if (agentId == null) customerRepository.findByManagerIdAndId(managerId, request.customerId)
     else customerRepository.findByManagerIdAndAgentIdAndId(managerId, agentId, request.customerId)
 
-    // Check if override already exists
-    val existingOverride = if (agentId == null) {
-      productOverrideRepository.findByManagerIdAndAgentIdIsNullAndProductIdAndCustomerId(managerId, request.productId, request.customerId)
-    } else {
-      productOverrideRepository.findByManagerIdAndAgentIdAndProductIdAndCustomerId(managerId, agentId, request.productId, request.customerId)
-    }
-    if (existingOverride != null) {
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = ProductOverrideFailureReason.PRODUCT_OVERRIDE_ALREADY_EXISTS.message,
-        technicalMessage = "Product override already exists for product ${request.productId} and customer ${request.customerId}",
-        severity = SeverityLevel.WARN
-      )
-    }
+    productOverrideRepository.validateOverrideNotExists(
+      managerId = managerId,
+      agentId = agentId,
+      productId = request.productId,
+      customerId = request.customerId,
+    )
 
     val productOverride = ProductOverrideDbEntity(
       productId = request.productId,
@@ -153,10 +137,15 @@ class ProductOverrideService(
   }
 
   @Transactional
-  fun updateProductOverride(managerId: String, overrideId: Long, request: UpdateProductOverrideRequest, agentId: String? = null): ProductOverrideDto {
+  fun updateProductOverride(
+    managerId: String,
+    overrideId: Long,
+    request: UpdateProductOverrideRequest,
+    agentId: String? = null
+  ): ProductOverrideDto {
     FieldValidators.validatePrice(request.overridePrice)
-    
-    val override = getValidOverride(managerId, overrideId, agentId)
+
+    val override = getValidOverride(managerId, agentId, overrideId)
 
     val product = productRepository.findByManagerIdAndId(managerId, override.productId)
       ?: throw ServiceException(
@@ -175,23 +164,23 @@ class ProductOverrideService(
       )
     }
 
-    val updatedOverride = override.copy(
+    val updatedEntity = override.toEntity(
       overridePrice = request.overridePrice,
       updatedAt = LocalDateTime.now()
     )
 
-    val savedOverride = productOverrideRepository.save(updatedOverride)
+    val savedOverride = productOverrideRepository.save(updatedEntity)
     return savedOverride.toDto()
   }
 
-  fun deleteProductOverride(managerId: String, overrideId: Long, agentId: String? = null) {
-    val override = getValidOverride(managerId, overrideId, agentId)
-    productOverrideRepository.delete(override)
+  fun deleteProductOverride(managerId: String, agentId: String?, overrideId: Long) {
+    val override = getValidOverride(managerId, agentId, overrideId)
+    productOverrideRepository.delete(override.id)
   }
 
   @Transactional
   fun deleteAllOverridesForProduct(managerId: String, productId: String) {
-    val overrides = productOverrideRepository.findByManagerIdAndProductId(managerId, productId)
+    val overrides = productOverrideRepository.getAllForManagerIdAndProductId(managerId, productId)
     productOverrideRepository.deleteAll(overrides)
   }
 
@@ -207,27 +196,11 @@ class ProductOverrideService(
       managerId = managerId,
       productId = productId,
       newMinimumPrice = newMinimumPrice,
-      updatedAt = LocalDateTime.now()
     )
   }
 
-  private fun ProductOverrideDbEntity.toDto() = ProductOverrideDto(
-    id = id,
-    productId = productId,
-    managerId = managerId,
-    agentId = agentId,
-    customerId = customerId,
-    overridePrice = overridePrice,
-  )
-
-  private fun getValidOverride(managerId: String, overrideId: Long, agentId: String?): ProductOverrideDbEntity {
+  private fun getValidOverride(managerId: String, agentId: String?, overrideId: Long): ProductOverride {
     val override = productOverrideRepository.findByManagerIdAndId(managerId, overrideId)
-      ?: throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = ProductOverrideFailureReason.PRODUCT_OVERRIDE_NOT_FOUND.message,
-        technicalMessage = "Product override with id $overrideId not found for manager $managerId",
-        severity = SeverityLevel.WARN
-      )
 
     if (agentId != null && override.agentId != agentId) {
       throw ServiceException(
