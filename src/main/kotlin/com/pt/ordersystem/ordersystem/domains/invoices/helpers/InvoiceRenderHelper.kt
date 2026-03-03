@@ -192,7 +192,6 @@ object InvoiceRenderHelper {
         FONT_SIZE_REGULAR,
         theme.textColor
       )
-      currentY -= 20f
     }
 
     // Business details (left side) - with modern styling
@@ -784,8 +783,7 @@ object InvoiceRenderHelper {
   ): Triple<Float, Int, PDPageContentStream> {
     val footerLines = listOf(
       "תודה על העסקה שלך!",
-      "מסמך זה מהווה חשבונית מס־קבלה ממוחשבת.",
-      "המסמך הופק לאחר קבלת התשלום ואינו דורש חתימה."
+      "מסמך זה מהווה חשבונית מס־קבלה ממוחשבת והופק לאחר קבלת תשלום."
     )
 
     val estimatedHeight = 10f + (footerLines.size * 14f) + 20f
@@ -809,8 +807,7 @@ object InvoiceRenderHelper {
     var currentY = y
     val footerLines = listOf(
       "תודה על העסקה שלך!",
-      "מסמך זה מהווה חשבונית מס־קבלה ממוחשבת.",
-      "המסמך הופק לאחר קבלת התשלום ואינו דורש חתימה."
+      "מסמך זה מהווה חשבונית מס־קבלה ממוחשבת והופק לאחר קבלת תשלום."
     )
 
     // Footer with subtle purple/lavender accent background

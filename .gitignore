@@ -46,5 +46,5 @@ out/
 ### Email Previews ###
 src/test/resources/email-previews/
 
-### SSL Certificates ###
-src/main/resources/keystore.p12
+### Invoice signing keystore (do not commit) ###
+config/invoice-signing.p12

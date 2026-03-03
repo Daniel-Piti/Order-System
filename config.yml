@@ -41,3 +41,10 @@ config:
     bucket-name: ${S3_BUCKET_NAME}
     region: ${S3_REGION}
     public-domain: ${S3_PUBLIC_DOMAIN}  # Required: CloudFront/public URL base (e.g. https://xxx.cloudfront.net/)
+
+  # Invoice PDF digital signature (all required - invoice creation fails if missing)
+  invoice-signing:
+    keystore-path: ${INVOICE_SIGNING_KEYSTORE_PATH}
+    keystore-password: ${INVOICE_SIGNING_KEYSTORE_PASSWORD}
+    key-alias: ${INVOICE_SIGNING_KEY_ALIAS:}  # Optional: first alias used if empty
+    key-password: ${INVOICE_SIGNING_KEY_PASSWORD:}  # Optional: keystore password used if empty

@@ -9,7 +9,16 @@ data class ApplicationConfig(
   val adminUsernameHash: String = "",
   val adminPasswordHash: String = "",
 
-  val s3: S3Properties = S3Properties()
+  val s3: S3Properties = S3Properties(),
+
+  val invoiceSigning: InvoiceSigningProperties = InvoiceSigningProperties()
+)
+
+data class InvoiceSigningProperties(
+  val keystorePath: String = "",
+  val keystorePassword: String = "",
+  val keyAlias: String = "",
+  val keyPassword: String = ""
 )
 
 data class S3Properties(

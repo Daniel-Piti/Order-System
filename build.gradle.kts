@@ -33,6 +33,8 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-mail")
 	implementation("org.apache.pdfbox:pdfbox:3.0.3")
+	// Bouncy Castle for PDF digital signature (PKCS#7/CMS)
+	implementation("org.bouncycastle:bcpkix-jdk18on:1.79")
 	
 	// AWS SDK for S3
 	implementation("software.amazon.awssdk:s3:2.29.45")

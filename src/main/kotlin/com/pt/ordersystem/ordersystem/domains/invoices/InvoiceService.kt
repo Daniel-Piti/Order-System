@@ -4,6 +4,7 @@ import com.pt.ordersystem.ordersystem.domains.business.BusinessService
 import com.pt.ordersystem.ordersystem.domains.invoices.helpers.InvoiceHelper
 import com.pt.ordersystem.ordersystem.domains.invoices.helpers.InvoiceRenderHelper
 import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceRequest
+import com.pt.ordersystem.ordersystem.domains.invoices.signing.InvoicePdfSigner
 import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceResponse
 import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceDbEntity
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerRepository
@@ -24,6 +25,7 @@ class InvoiceService(
   private val s3StorageService: S3StorageService,
   private val managerRepository: ManagerRepository,
   private val businessService: BusinessService,
+  private val invoicePdfSigner: InvoicePdfSigner,
 ) {
 
   companion object {
@@ -55,7 +57,7 @@ class InvoiceService(
     val business = businessService.getBusinessByManagerId(order.managerId)
 
     // Generate PDF (invoiceNumber is formatted inside renderPdf)
-    val pdfBytes = InvoiceRenderHelper.renderPdf(
+    val unsignedPdfBytes = InvoiceRenderHelper.renderPdf(
       business = business,
       order = order,
       invoiceSequenceNumber = invoiceSequenceNumber,
@@ -63,6 +65,7 @@ class InvoiceService(
       paymentProof = createInvoiceRequest.paymentProof,
       allocationNumber = allocationNumber
     )
+    val pdfBytes = invoicePdfSigner.sign(unsignedPdfBytes, business.name)
 
     val uploadData = uploadInvoice(
       manager.id,
