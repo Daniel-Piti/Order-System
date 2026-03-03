@@ -54,12 +54,6 @@ class ProductOverrideService(
     FieldValidators.validatePriceRange(request.overridePrice)
 
     val product = productRepository.findByManagerIdAndId(managerId, request.productId)
-      ?: throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = ProductOverrideFailureReason.PRODUCT_NOT_FOUND.message,
-        technicalMessage = "Product with id ${request.productId} not found for manager $managerId",
-        severity = SeverityLevel.WARN
-      )
 
     if (request.overridePrice < product.minimumPrice) {
       throw ServiceException(
@@ -109,12 +103,6 @@ class ProductOverrideService(
     val override = productOverrideRepository.getProductOverride(managerId, agentId, overrideId)
 
     val product = productRepository.findByManagerIdAndId(managerId, override.productId)
-      ?: throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = ProductOverrideFailureReason.PRODUCT_NOT_FOUND.message,
-        technicalMessage = "Product with id ${override.productId} not found for manager $managerId",
-        severity = SeverityLevel.WARN
-      )
 
     if (request.overridePrice < product.minimumPrice) {
       throw ServiceException(

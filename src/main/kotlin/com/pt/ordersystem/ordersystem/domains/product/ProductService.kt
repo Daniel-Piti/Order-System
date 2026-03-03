@@ -2,16 +2,13 @@ package com.pt.ordersystem.ordersystem.domains.product
 
 import com.pt.ordersystem.ordersystem.domains.brand.BrandRepository
 import com.pt.ordersystem.ordersystem.domains.category.CategoryRepository
-import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.domains.product.models.*
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerRepository
-import com.pt.ordersystem.ordersystem.exception.SeverityLevel
-import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.domains.order.OrderService
+import com.pt.ordersystem.ordersystem.domains.product.helpers.ProductValidators
 import com.pt.ordersystem.ordersystem.domains.productImage.ProductImageRepository
+import com.pt.ordersystem.ordersystem.domains.productImage.helpers.ProductImageValidators
 import com.pt.ordersystem.ordersystem.domains.productImage.models.ProductImageDbEntity
-import com.pt.ordersystem.ordersystem.domains.productImage.models.ProductImageDto
-import com.pt.ordersystem.ordersystem.domains.productImage.models.toDto
 import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideRepository
 import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideService
 import com.pt.ordersystem.ordersystem.storage.S3StorageService
@@ -22,7 +19,6 @@ import com.pt.ordersystem.ordersystem.utils.PaginationUtils
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -44,19 +40,6 @@ class ProductService(
 
   companion object {
     private val logger = LoggerFactory.getLogger(ProductService::class.java)
-    const val MAXIMUM_PRODUCTS_FOR_CUSTOMER = 1000
-    private const val MAX_IMAGES_PER_PRODUCT = 5
-  }
-
-  private fun validateMaxImagesForProduct(imagesCount: Int) {
-    if (imagesCount > MAX_IMAGES_PER_PRODUCT) {
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = "Maximum $MAX_IMAGES_PER_PRODUCT images allowed per product",
-        technicalMessage = "Attempting to add=$imagesCount, max allowed=$MAX_IMAGES_PER_PRODUCT",
-        severity = SeverityLevel.WARN
-      )
-    }
   }
 
   fun removeCategoryFromProducts(managerId: String, categoryId: Long) =
@@ -76,22 +59,18 @@ class ProductService(
 
     // Fetch products based on filters
     val productPage = when {
-      categoryId != null && brandId != null -> {
+      categoryId != null && brandId != null ->
         // Filter by both category and brand
         productRepository.findByManagerIdAndCategoryIdAndBrandId(managerId, categoryId, brandId, pageRequest)
-      }
-      categoryId != null -> {
+      categoryId != null ->
         // Filter by category only
         productRepository.findByManagerIdAndCategoryId(managerId, categoryId, pageRequest)
-      }
-      brandId != null -> {
+      brandId != null ->
         // Filter by brand only
         productRepository.findByManagerIdAndBrandId(managerId, brandId, pageRequest)
-      }
-      else -> {
+      else ->
         // No filter - return all products
         productRepository.findAllByManagerId(managerId, pageRequest)
-      }
     }
 
     // Early return if no products
@@ -102,22 +81,22 @@ class ProductService(
     // Enrich with brand names and category names
     val brands = brandRepository.findByManagerId(managerId)
     val brandMap = brands.associate { it.id to it.name }
-    
+
     val categories = categoryRepository.findByManagerId(managerId)
     val categoryMap = categories.associate { it.id to it.category }
-    
+
     val enrichedContent = productPage.content.map { product ->
       val brandName = product.brandId?.let { brandMap[it] }
       if (product.brandId != null && brandName == null) {
         logger.warn("Brand with ID=${product.brandId} not found for manager $managerId")
       }
-      
+
       val categoryName = product.categoryId?.let { categoryMap[it] }
       if (product.categoryId != null && categoryName == null) {
         logger.warn("Category with ID=${product.categoryId} not found for manager $managerId")
       }
-      
-      product.toDto(brandName = brandName, categoryName = categoryName)
+
+      product.toDto(brandName, categoryName)
     }
 
     return PageImpl(enrichedContent, pageRequest, productPage.totalElements)
@@ -132,7 +111,7 @@ class ProductService(
     // Fetch brands and categories for enrichment
     val brands = brandRepository.findByManagerId(order.managerId)
     val brandMap = brands.associate { it.id to it.name }
-    
+
     val categories = categoryRepository.findByManagerId(order.managerId)
     val categoryMap = categories.associate { it.id to it.category }
 
@@ -141,17 +120,14 @@ class ProductService(
       return products.map { product ->
         val brandName = product.brandId?.let { brandMap[it] }
         val categoryName = product.categoryId?.let { categoryMap[it] }
-        product.toDto(brandName = brandName, categoryName = categoryName)
+        product.toDto(brandName, categoryName)
       }
     }
 
     // Customer exists - get customer and overrides
     val customer = customerRepository.findByManagerIdAndId(order.managerId, order.customerId)
 
-    val overrides = productOverrideRepository.getAllForManagerIdAndCustomerId(
-      managerId = order.managerId,
-      customerId = order.customerId
-    )
+    val overrides = productOverrideRepository.getAllForManagerIdAndCustomerId(order.managerId, order.customerId)
 
     // Create a map of productId -> override price for quick lookup
     val overrideMap = overrides.associate { it.productId to it.overridePrice }
@@ -160,61 +136,35 @@ class ProductService(
     return products.map { product ->
       // Step 1: Start with override price if exists, otherwise default price
       var priceAfterOverride = overrideMap[product.id] ?: product.price
-      
+
       // Step 2: Apply discount percentage if customer has one
       if (customer.discountPercentage > 0) {
         val discountMultiplier = BigDecimal(100 - customer.discountPercentage).divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
         priceAfterOverride = priceAfterOverride.multiply(discountMultiplier).setScale(2, RoundingMode.HALF_UP)
       }
-      
+
       // Step 3: Ensure price is not below minimum price
       val finalPrice = priceAfterOverride.max(product.minimumPrice)
-      
+
       val brandName = product.brandId?.let { brandMap[it] }
       val categoryName = product.categoryId?.let { categoryMap[it] }
       product.toDto(brandName = brandName, categoryName = categoryName, price = finalPrice)
     }
+
   }
 
   fun getProductById(managerId: String, productId: String): ProductDto {
-    val product = getProduct(managerId, productId)
+    val product = productRepository.findByManagerIdAndId(managerId, productId)
 
-    val brandName = product.brandId?.let {
-      try {
-        brandRepository.findByManagerIdAndId(managerId, it).name
-      } catch (e: Exception) {
-        logger.warn("Brand with ID=${product.brandId} not found | $e")
-        null
-      }
-    }
-
-    val categoryName = product.categoryId?.let {
-      try {
-        categoryRepository.findByManagerIdAndId(managerId, it).category
-      } catch (e: Exception) {
-        logger.warn("category with ID=${product.categoryId} not found | $e")
-        null
-      }
-    }
-
+    val brandName = product.brandId?.let { brandRepository.findByManagerIdAndId(managerId, it).name }
+    val categoryName = product.categoryId?.let { categoryRepository.findByManagerIdAndId(managerId, it).category }
     return product.toDto(brandName = brandName, categoryName = categoryName)
   }
 
   private fun validateProductInfo(managerId: String, productInfo: ProductInfo) {
     with(productInfo) {
-      FieldValidators.validateNonEmpty(name, "'name'")
-      FieldValidators.validatePriceRange(minimumPrice)
-      FieldValidators.validatePriceRange(price)
-
-      // Validate that price is not lower than minimum price
-      if (price < minimumPrice) {
-        throw ServiceException(
-          status = HttpStatus.BAD_REQUEST,
-          userMessage = "Price cannot be lower than minimum price",
-          technicalMessage = "price=$price < minimumPrice=$minimumPrice",
-          severity = SeverityLevel.WARN
-        )
-      }
+      ProductValidators.validateProductInfo(productInfo)
+      ProductValidators.validatePriceHigherOrEqualToMinPrice(price, minimumPrice)
 
       // Validate brandId belongs to manager (if provided)
       brandId?.let { brandRepository.findByManagerIdAndId(managerId, it) }
@@ -223,9 +173,6 @@ class ProductService(
       categoryId?.let { categoryRepository.findByManagerIdAndId(managerId, it) }
     }
   }
-
-  fun getImagesForProduct(productId: String): List<ProductImageDto> =
-    productImageRepository.findByProductId(productId).map { it.toDto() }
 
   @Transactional
   fun createProduct(
@@ -237,18 +184,11 @@ class ProductService(
     validateProductInfo(managerId, productInfo)
 
     // Check product limit
-    val numberOfProducts = productRepository.countByManagerId(managerId)
-    if (numberOfProducts >= MAXIMUM_PRODUCTS_FOR_CUSTOMER) {
-      throw ServiceException(
-        status = HttpStatus.CONFLICT,
-        userMessage = "You have reached the product limit ($MAXIMUM_PRODUCTS_FOR_CUSTOMER)",
-        technicalMessage = "Manager ($managerId) has reached $MAXIMUM_PRODUCTS_FOR_CUSTOMER products",
-        severity = SeverityLevel.WARN
-      )
-    }
+    val productCount = productRepository.countByManagerId(managerId)
+    ProductValidators.validateMaxProductPerCustomer(productCount, managerId)
 
     // Image validations
-    validateMaxImagesForProduct(imagesMetadata.size)
+    ProductImageValidators.validateMaxImagesForProduct(imagesMetadata.size)
     imagesMetadata.forEach { s3StorageService.validateImageMetadata(it) }
 
     val now = LocalDateTime.now()
@@ -283,7 +223,7 @@ class ProductService(
   ): String {
     validateProductInfo(managerId, productInfo)
 
-    val product = getProduct(managerId, productId)
+    val product = productRepository.findByManagerIdAndId(managerId, productId)
 
     // If minimum price is being increased, update any invalid overrides
     if (productInfo.minimumPrice > product.minimumPrice) {
@@ -305,8 +245,8 @@ class ProductService(
 
   @Transactional
   fun deleteProduct(managerId: String, productId: String) {
-    val product = getProduct(managerId, productId)
-    
+    val product = productRepository.findByManagerIdAndId(managerId, productId)
+
     // Delete all product overrides
     productOverrideService.deleteAllOverridesForProduct(product.managerId, productId)
     // Delete product's images from s3
@@ -324,13 +264,13 @@ class ProductService(
     imagesMetadataList: List<ImageMetadata>
   ): List<String> {
     // Verify product exists and belongs to manager
-    getProduct(managerId, productId)
+    productRepository.findByManagerIdAndId(managerId, productId)
 
     // Validate images upfront (fail fast if any invalid)
     val existingImages = productImageRepository.findByProductId(productId)
     val totalImagesAfterUpload = existingImages.size + imagesMetadataList.size
 
-    validateMaxImagesForProduct(totalImagesAfterUpload)
+    ProductImageValidators.validateMaxImagesForProduct(totalImagesAfterUpload)
     imagesMetadataList.forEach { metadata -> s3StorageService.validateImageMetadata(metadata) }
 
     return generatePreSignedUrlsAndSaveProductImage(managerId, productId, imagesMetadataList)
@@ -341,23 +281,17 @@ class ProductService(
     if (imageIds.isEmpty()) return
 
     // Fetch all images and validate they belong to the manager
-    val images = productImageRepository.findAllById(imageIds)
-      .filter { it.managerId == managerId }
+    val images = productImageRepository.findAllById(imageIds).filter { it.managerId == managerId }
 
     if (images.size != imageIds.size) {
       val foundIds = images.map { it.id }.toSet()
       val missingIds = imageIds.filter { it !in foundIds }
-      throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = "Some images were not found",
-        technicalMessage = "Images not found or don't belong to manager: $missingIds",
-        severity = SeverityLevel.WARN
-      )
+      logger.warn("Not all requested images were found or belong to manager; deleting only found ones. missingIds=$missingIds, managerId=$managerId")
     }
 
     // Delete all images from S3
     images.forEach { image -> s3StorageService.deleteFile(image.s3Key) }
-    
+
     // Delete all images from database
     productImageRepository.deleteAll(images)
   }
@@ -388,15 +322,6 @@ class ProductService(
 
       preSignedUrlResult.preSignedUrl
     }
-  }
-
-  private fun getProduct(managerId: String, productId: String): ProductDbEntity {
-    return productRepository.findByManagerIdAndId(managerId = managerId, id = productId) ?: throw ServiceException(
-      status = HttpStatus.NOT_FOUND,
-      userMessage = ProductFailureReason.NOT_FOUND.userMessage,
-      technicalMessage = ProductFailureReason.NOT_FOUND.technical + "productId=$productId, managerId=$managerId",
-      severity = SeverityLevel.WARN
-    )
   }
 
 }

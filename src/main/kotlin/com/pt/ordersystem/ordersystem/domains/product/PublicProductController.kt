@@ -3,6 +3,8 @@ package com.pt.ordersystem.ordersystem.domains.product
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductDto
 import com.pt.ordersystem.ordersystem.domains.productImage.models.ProductImageDto
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
+import com.pt.ordersystem.ordersystem.domains.productImage.ProductImageRepository
+import com.pt.ordersystem.ordersystem.domains.productImage.models.toDto
 import com.pt.ordersystem.ordersystem.utils.PageRequestBaseExternal
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
@@ -14,7 +16,8 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/public/products")
 class PublicProductController(
   private val productService: ProductService,
-  private val managerService: ManagerService
+  private val managerService: ManagerService,
+  private val productImageRepository: ProductImageRepository,
 ) {
 
   @GetMapping("/manager/{managerId}/product/{productId}")
@@ -59,10 +62,8 @@ class PublicProductController(
     @PathVariable managerId: String,
     @PathVariable productId: String
   ): ResponseEntity<List<ProductImageDto>> {
-    // Validate product belongs to manager (this also implicitly validates manager exists)
-    productService.getProductById(managerId, productId)
-    
-    val images = productService.getImagesForProduct(productId)
+    val product = productService.getProductById(managerId, productId)
+    val images = productImageRepository.findByProductId(product.id).map { it.toDto() }
     return ResponseEntity.ok(images)
   }
 
