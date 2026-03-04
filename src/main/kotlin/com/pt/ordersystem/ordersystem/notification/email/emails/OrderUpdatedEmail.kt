@@ -1,6 +1,6 @@
 package com.pt.ordersystem.ordersystem.notification.email.emails
 
-import com.pt.ordersystem.ordersystem.domains.order.models.OrderDto
+import com.pt.ordersystem.ordersystem.domains.order.models.Order
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderStatus
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.exception.ServiceException
@@ -10,9 +10,9 @@ import org.springframework.http.HttpStatus
 object OrderUpdatedEmail {
   private const val TEMPLATE_NAME = "order-updated.html"
 
-  fun buildSubject(order: OrderDto): String = "Order Updated - Order #${order.id}"
+  fun buildSubject(order: Order): String = "Order Updated - Order #${order.id}"
 
-  fun validate(order: OrderDto) {
+  fun validate(order: Order) {
     // Updated orders should still be in PLACED status
     if (order.status != OrderStatus.PLACED) {
       throw ServiceException(
@@ -24,7 +24,7 @@ object OrderUpdatedEmail {
     }
   }
 
-  fun buildHtml(order: OrderDto): String {
+  fun buildHtml(order: Order): String {
     val template = EmailTemplateHelper.loadTemplate(TEMPLATE_NAME)
     val placedAtRow = order.placedAt?.let {
       val formatted = EmailTemplateHelper.formatDateTime(it)

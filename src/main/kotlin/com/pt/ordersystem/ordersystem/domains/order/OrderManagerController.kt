@@ -7,6 +7,7 @@ import com.pt.ordersystem.ordersystem.domains.order.models.OrderDto
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderSource
 import com.pt.ordersystem.ordersystem.domains.order.models.UpdateDiscountRequest
 import com.pt.ordersystem.ordersystem.domains.order.models.UpdateOrderRequest
+import com.pt.ordersystem.ordersystem.domains.order.models.toDto
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
@@ -43,7 +44,7 @@ class OrderManagerController(
         managerId = manager.id,
         customerId = customerId,
         page = page,
-        size = size,
+        pageSize = size,
         sortBy = sortBy,
         sortDirection = sortDirection,
         status = status,
@@ -53,7 +54,7 @@ class OrderManagerController(
       orderService.getOrders(
         managerId = manager.id,
         page = page,
-        size = size,
+        pageSize = size,
         sortBy = sortBy,
         sortDirection = sortDirection,
         status = status,
@@ -61,15 +62,17 @@ class OrderManagerController(
         agentId = agentId
       )
     }
-    return ResponseEntity.ok(orders)
+    return ResponseEntity.ok(orders.map { it.toDto() })
   }
 
   @GetMapping("/{orderId}")
   fun getOrderById(
     @PathVariable orderId: String,
     @AuthenticationPrincipal manager: AuthUser
-  ): ResponseEntity<OrderDto> =
-    ResponseEntity.ok(orderService.getOrderById(orderId = orderId, managerId = manager.id, agentId = null))
+  ): ResponseEntity<OrderDto> {
+    val order = orderService.getOrderById(orderId = orderId, managerId = manager.id, agentId = null)
+    return ResponseEntity.ok(order.toDto())
+  }
 
   @PostMapping
   fun createOrder(

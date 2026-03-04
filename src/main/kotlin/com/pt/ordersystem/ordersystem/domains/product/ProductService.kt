@@ -103,7 +103,7 @@ class ProductService(
   }
 
   fun getAllProductsForOrder(orderId: String): List<ProductDto> {
-    val order = orderService.getOrderByIdInternal(orderId)
+    val order = orderService.getOrderById(orderId)
 
     // Fetch all products for the manager
     val products = productRepository.findAllByManagerId(order.managerId)

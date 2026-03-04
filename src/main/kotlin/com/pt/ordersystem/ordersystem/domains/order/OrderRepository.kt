@@ -1,149 +1,117 @@
 package com.pt.ordersystem.ordersystem.domains.order
 
+import com.pt.ordersystem.ordersystem.domains.order.models.Order
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDbEntity
+import com.pt.ordersystem.ordersystem.domains.order.models.OrderFailureReason
+import com.pt.ordersystem.ordersystem.domains.order.models.toModel
+import com.pt.ordersystem.ordersystem.exception.ServiceException
+import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
-import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.data.jpa.repository.Modifying
-import org.springframework.data.jpa.repository.Query
-import org.springframework.data.repository.query.Param
+import org.springframework.http.HttpStatus
+import org.springframework.stereotype.Repository
 import java.math.BigDecimal
 import java.time.LocalDateTime
 
-interface OrderRepository : JpaRepository<OrderDbEntity, String> {
-  fun findAllByManagerId(managerId: String, pageable: Pageable): Page<OrderDbEntity>
-  fun findAllByManagerIdAndStatus(managerId: String, status: String, pageable: Pageable): Page<OrderDbEntity>
-  fun findAllByManagerIdAndAgentId(managerId: String, agentId: String, pageable: Pageable): Page<OrderDbEntity>
-  fun findAllByManagerIdAndAgentIdAndStatus(managerId: String, agentId: String, status: String, pageable: Pageable): Page<OrderDbEntity>
-  fun findAllByManagerIdAndAgentIdIsNull(managerId: String, pageable: Pageable): Page<OrderDbEntity>
-  fun findAllByManagerIdAndAgentIdIsNullAndStatus(managerId: String, status: String, pageable: Pageable): Page<OrderDbEntity>
-  fun findByIdAndManagerId(id: String, managerId: String): OrderDbEntity?
-  fun findByIdAndManagerIdAndAgentId(id: String, managerId: String, agentId: String): OrderDbEntity?
+@Repository
+class OrderRepository(
+  private val orderDao: OrderDao,
+) {
 
-  fun findAllByManagerIdAndCustomerId(managerId: String, customerId: String, pageable: Pageable): Page<OrderDbEntity>
-  fun findAllByManagerIdAndCustomerIdAndStatus(managerId: String, customerId: String, status: String, pageable: Pageable): Page<OrderDbEntity>
-  fun findAllByManagerIdAndAgentIdAndCustomerId(managerId: String, agentId: String, customerId: String, pageable: Pageable): Page<OrderDbEntity>
-  fun findAllByManagerIdAndAgentIdAndCustomerIdAndStatus(managerId: String, agentId: String, customerId: String, status: String, pageable: Pageable): Page<OrderDbEntity>
+  fun findAllByManagerId(managerId: String, pageable: Pageable): Page<Order> =
+    orderDao.findAllByManagerId(managerId, pageable).map { it.toModel() }
 
-  @Modifying(clearAutomatically = true, flushAutomatically = true)
-  @Query(
-    value = """
-      UPDATE orders
-      SET status = 'EXPIRED',
-          updated_at = :updatedAt
-      WHERE status = 'EMPTY'
-        AND link_expires_at < :currentTime
-    """,
-    nativeQuery = true
-  )
-  fun bulkExpireEmptyOrders(
-    currentTime: LocalDateTime,
-    updatedAt: LocalDateTime,
-  ): Int
+  fun findAllByManagerIdAndStatus(managerId: String, status: String, pageable: Pageable): Page<Order> =
+    orderDao.findAllByManagerIdAndStatus(managerId, status, pageable).map { it.toModel() }
 
-  // Count manager links created this month (agentId IS NULL)
-  @Query(
-    value = """
-      SELECT COUNT(*) FROM orders
-      WHERE manager_id = :managerId
-        AND agent_id IS NULL
-        AND YEAR(created_at) = YEAR(:startOfMonth)
-        AND MONTH(created_at) = MONTH(:startOfMonth)
-    """,
-    nativeQuery = true
-  )
-  fun countManagerLinksCreatedThisMonth(
-    @Param("managerId") managerId: String,
-    @Param("startOfMonth") startOfMonth: LocalDateTime
-  ): Long
+  fun findAllByManagerIdAndAgentId(managerId: String, agentId: String, pageable: Pageable): Page<Order> =
+    orderDao.findAllByManagerIdAndAgentId(managerId, agentId, pageable).map { it.toModel() }
 
-  // Count agent links created this month (agentId IS NOT NULL)
-  @Query(
-    value = """
-      SELECT COUNT(*) FROM orders
-      WHERE manager_id = :managerId
-        AND agent_id IS NOT NULL
-        AND YEAR(created_at) = YEAR(:startOfMonth)
-        AND MONTH(created_at) = MONTH(:startOfMonth)
-    """,
-    nativeQuery = true
-  )
-  fun countAgentLinksCreatedThisMonth(
-    @Param("managerId") managerId: String,
-    @Param("startOfMonth") startOfMonth: LocalDateTime
-  ): Long
+  fun findAllByManagerIdAndAgentIdAndStatus(
+    managerId: String,
+    agentId: String,
+    status: String,
+    pageable: Pageable,
+  ): Page<Order> =
+    orderDao.findAllByManagerIdAndAgentIdAndStatus(managerId, agentId, status, pageable).map { it.toModel() }
 
-  // Count links per agent created this month
-  @Query(
-    value = """
-      SELECT agent_id as agentId, COUNT(*) as count
-      FROM orders
-      WHERE manager_id = :managerId
-        AND agent_id IS NOT NULL
-        AND YEAR(created_at) = YEAR(:startOfMonth)
-        AND MONTH(created_at) = MONTH(:startOfMonth)
-      GROUP BY agent_id
-    """,
-    nativeQuery = true
-  )
-  fun countLinksPerAgentThisMonth(
-    @Param("managerId") managerId: String,
-    @Param("startOfMonth") startOfMonth: LocalDateTime
-  ): List<Map<String, Any>>
+  fun findAllByManagerIdAndAgentIdIsNull(managerId: String, pageable: Pageable): Page<Order> =
+    orderDao.findAllByManagerIdAndAgentIdIsNull(managerId, pageable).map { it.toModel() }
 
-  // Count completed orders done this month
-  @Query(
-    value = """
-      SELECT COUNT(*) FROM orders
-      WHERE manager_id = :managerId
-        AND status = 'DONE'
-        AND done_at IS NOT NULL
-        AND YEAR(done_at) = YEAR(:startOfMonth)
-        AND MONTH(done_at) = MONTH(:startOfMonth)
-    """,
-    nativeQuery = true
-  )
-  fun countCompletedOrdersThisMonth(
-    @Param("managerId") managerId: String,
-    @Param("startOfMonth") startOfMonth: LocalDateTime
-  ): Long
+  fun findAllByManagerIdAndAgentIdIsNullAndStatus(managerId: String, status: String, pageable: Pageable): Page<Order> =
+    orderDao.findAllByManagerIdAndAgentIdIsNullAndStatus(managerId, status, pageable).map { it.toModel() }
 
-  // Sum total price of orders done this month
-  @Query(
-    value = """
-      SELECT COALESCE(SUM(total_price), 0) FROM orders
-      WHERE manager_id = :managerId
-        AND status = 'DONE'
-        AND done_at IS NOT NULL
-        AND YEAR(done_at) = YEAR(:startOfMonth)
-        AND MONTH(done_at) = MONTH(:startOfMonth)
-    """,
-    nativeQuery = true
-  )
-  fun sumMonthlyIncome(
-    @Param("managerId") managerId: String,
-    @Param("startOfMonth") startOfMonth: LocalDateTime
-  ): BigDecimal
+  fun findByIdAndManagerIdAndAgentId(orderId: String, managerId: String, agentId: String?): Order =
+    orderDao.findByIdAndManagerIdAndAgentId(orderId, managerId, agentId)?.toModel() ?: throw ServiceException(
+      status = HttpStatus.NOT_FOUND,
+      userMessage = OrderFailureReason.NOT_FOUND.userMessage,
+      technicalMessage = OrderFailureReason.NOT_FOUND.technical +
+              "orderId=$orderId, managerId=$managerId${if (agentId != null) ", agentId=$agentId" else ""}",
+      severity = SeverityLevel.WARN
+    )
 
-  // Get monthly revenue and completed orders for a year
-  @Query(
-    value = """
-      SELECT 
-        MONTH(done_at) as month,
-        COALESCE(SUM(total_price), 0) as revenue,
-        COUNT(*) as completed_orders
-      FROM orders
-      WHERE manager_id = :managerId
-        AND status = 'DONE'
-        AND done_at IS NOT NULL
-        AND YEAR(done_at) = :year
-      GROUP BY MONTH(done_at)
-      ORDER BY month
-    """,
-    nativeQuery = true
-  )
-  fun getYearlyRevenueAndOrders(
-    @Param("managerId") managerId: String,
-    @Param("year") year: Int
-  ): List<Map<String, Any>>
+  fun findAllByManagerIdAndCustomerId(managerId: String, customerId: String, pageable: Pageable): Page<Order> =
+    orderDao.findAllByManagerIdAndCustomerId(managerId, customerId, pageable).map { it.toModel() }
+
+  fun findAllByManagerIdAndCustomerIdAndStatus(
+    managerId: String,
+    customerId: String,
+    status: String,
+    pageable: Pageable,
+  ): Page<Order> =
+    orderDao.findAllByManagerIdAndCustomerIdAndStatus(managerId, customerId, status, pageable).map { it.toModel() }
+
+  fun findAllByManagerIdAndAgentIdAndCustomerId(
+    managerId: String,
+    agentId: String,
+    customerId: String,
+    pageable: Pageable,
+  ): Page<Order> =
+    orderDao.findAllByManagerIdAndAgentIdAndCustomerId(managerId, agentId, customerId, pageable).map { it.toModel() }
+
+  fun findAllByManagerIdAndAgentIdAndCustomerIdAndStatus(
+    managerId: String,
+    agentId: String,
+    customerId: String,
+    status: String,
+    pageable: Pageable,
+  ): Page<Order> =
+    orderDao.findAllByManagerIdAndAgentIdAndCustomerIdAndStatus(
+      managerId,
+      agentId,
+      customerId,
+      status,
+      pageable,
+    ).map { it.toModel() }
+
+  fun findById(orderId: String): Order =
+    orderDao.findById(orderId).orElse(null)?.toModel() ?: throw ServiceException(
+      status = HttpStatus.NOT_FOUND,
+      userMessage = OrderFailureReason.NOT_FOUND.userMessage,
+      technicalMessage = OrderFailureReason.NOT_FOUND.technical + "orderId=$orderId",
+      severity = SeverityLevel.WARN
+    )
+
+  fun save(entity: OrderDbEntity): Order = orderDao.save(entity).toModel()
+
+  fun bulkExpireEmptyOrders(currentTime: LocalDateTime, updatedAt: LocalDateTime): Int =
+    orderDao.bulkExpireEmptyOrders(currentTime, updatedAt)
+
+  fun countManagerLinksCreatedThisMonth(managerId: String, startOfMonth: LocalDateTime): Long =
+    orderDao.countManagerLinksCreatedThisMonth(managerId, startOfMonth)
+
+  fun countAgentLinksCreatedThisMonth(managerId: String, startOfMonth: LocalDateTime): Long =
+    orderDao.countAgentLinksCreatedThisMonth(managerId, startOfMonth)
+
+  fun countLinksPerAgentThisMonth(managerId: String, startOfMonth: LocalDateTime): List<Map<String, Any>> =
+    orderDao.countLinksPerAgentThisMonth(managerId, startOfMonth)
+
+  fun countCompletedOrdersThisMonth(managerId: String, startOfMonth: LocalDateTime): Long =
+    orderDao.countCompletedOrdersThisMonth(managerId, startOfMonth)
+
+  fun sumMonthlyIncome(managerId: String, startOfMonth: LocalDateTime): BigDecimal =
+    orderDao.sumMonthlyIncome(managerId, startOfMonth)
+
+  fun getYearlyRevenueAndOrders(managerId: String, year: Int): List<Map<String, Any>> =
+    orderDao.getYearlyRevenueAndOrders(managerId, year)
 }

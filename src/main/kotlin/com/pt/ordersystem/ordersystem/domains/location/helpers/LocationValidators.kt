@@ -12,6 +12,17 @@ object LocationValidators {
 
     private const val MAXIMUM_LOCATIONS = 10
 
+    fun validateMinLocationCount(locationCount: Long, managerId: String) {
+        if (locationCount == 0L) {
+            throw ServiceException(
+                status = HttpStatus.BAD_REQUEST,
+                userMessage = LocationFailureReason.NO_LOCATIONS.userMessage,
+                technicalMessage = LocationFailureReason.NO_LOCATIONS.technical + "managerId=$managerId",
+                severity = SeverityLevel.INFO
+            )
+        }
+    }
+
     fun validateMaxLocationCount(locationsCount: Long, managerId: String) {
         if (locationsCount >= MAXIMUM_LOCATIONS) {
             throw ServiceException(

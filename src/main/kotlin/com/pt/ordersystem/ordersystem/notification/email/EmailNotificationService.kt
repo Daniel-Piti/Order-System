@@ -16,14 +16,6 @@ import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Service
 
-/**
- * Service for sending email notifications.
- * 
- * To create a new email:
- * 1. Create an object in emails/ with buildSubject(data) and buildHtml(data) methods
- * 2. Add HTML template in resources/templates/notification/
- * 3. Add service method here that calls: emailObject.validate(data), emailObject.buildSubject(data), emailObject.buildHtml(data), sendEmail(...)
- */
 @Service
 class EmailNotificationService(
   private val orderService: OrderService,
@@ -35,7 +27,7 @@ class EmailNotificationService(
   private val logger = LoggerFactory.getLogger(EmailNotificationService::class.java)
 
   fun sendOrderPlacedNotification(request: EmailOrderPlacedNotificationRequest) {
-    val order = orderService.getOrderByIdInternal(request.orderId)
+    val order = orderService.getOrderById(request.orderId)
     OrderPlacedEmail.validate(order)
     val subject = OrderPlacedEmail.buildSubject(order)
     val htmlBody = OrderPlacedEmail.buildHtml(order)
@@ -43,7 +35,7 @@ class EmailNotificationService(
   }
 
   fun sendOrderDoneNotification(request: EmailOrderDoneNotificationRequest) {
-    val order = orderService.getOrderByIdInternal(request.orderId)
+    val order = orderService.getOrderById(request.orderId)
     OrderDoneEmail.validate(order)
     val subject = OrderDoneEmail.buildSubject(order)
     val htmlBody = OrderDoneEmail.buildHtml(order)
@@ -51,7 +43,7 @@ class EmailNotificationService(
   }
 
   fun sendOrderCancelledNotification(request: EmailOrderCancelledNotificationRequest) {
-    val order = orderService.getOrderByIdInternal(request.orderId)
+    val order = orderService.getOrderById(request.orderId)
     OrderCancelledEmail.validate(order)
     val subject = OrderCancelledEmail.buildSubject(order)
     val htmlBody = OrderCancelledEmail.buildHtml(order)
@@ -59,17 +51,13 @@ class EmailNotificationService(
   }
 
   fun sendOrderUpdatedNotification(request: EmailOrderUpdatedNotificationRequest) {
-    val order = orderService.getOrderByIdInternal(request.orderId)
+    val order = orderService.getOrderById(request.orderId)
     OrderUpdatedEmail.validate(order)
     val subject = OrderUpdatedEmail.buildSubject(order)
     val htmlBody = OrderUpdatedEmail.buildHtml(order)
     sendEmail(subject, htmlBody, request.recipientEmail)
   }
 
-  /**
-   * Sends an email with the provided subject, HTML body, and recipient.
-   * This is the most generic email sending function.
-   */
   private fun sendEmail(subject: String, htmlBody: String, to: String) {
     try {
       val message: MimeMessage = mailSender.createMimeMessage()

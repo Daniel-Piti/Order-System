@@ -2,6 +2,7 @@ package com.pt.ordersystem.ordersystem.domains.order
 
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderPublicDto
 import com.pt.ordersystem.ordersystem.domains.order.models.PlaceOrderRequest
+import com.pt.ordersystem.ordersystem.domains.order.models.toPublicDto
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -16,7 +17,7 @@ class PublicOrderController(
 
   @GetMapping("/{orderId}")
   fun getOrderById(@PathVariable orderId: String): ResponseEntity<OrderPublicDto> =
-    ResponseEntity.ok(orderService.getOrderByIdPublic(orderId))
+    ResponseEntity.ok(orderService.getOrderById(orderId).toPublicDto())
 
   @PutMapping("/{orderId}/place")
   fun placeOrder(

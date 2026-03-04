@@ -1,6 +1,6 @@
 package com.pt.ordersystem.ordersystem.notification.email.emails
 
-import com.pt.ordersystem.ordersystem.domains.order.models.OrderDto
+import com.pt.ordersystem.ordersystem.domains.order.models.Order
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderStatus
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.exception.ServiceException
@@ -10,9 +10,9 @@ import org.springframework.http.HttpStatus
 object OrderCancelledEmail {
   private const val TEMPLATE_NAME = "order-cancelled.html"
 
-  fun buildSubject(order: OrderDto): String = "Order Cancelled - Order #${order.id}"
+  fun buildSubject(order: Order): String = "Order Cancelled - Order #${order.id}"
 
-  fun validate(order: OrderDto) {
+  fun validate(order: Order) {
     if (order.status != OrderStatus.CANCELLED) {
       throw ServiceException(
         status = HttpStatus.BAD_REQUEST,
@@ -23,7 +23,7 @@ object OrderCancelledEmail {
     }
   }
 
-  fun buildHtml(order: OrderDto): String {
+  fun buildHtml(order: Order): String {
     val template = EmailTemplateHelper.loadTemplate(TEMPLATE_NAME)
     val data = mapOf(
       "customerName" to EmailTemplateHelper.escapeHtml(EmailTemplateHelper.getCustomerName(order)),

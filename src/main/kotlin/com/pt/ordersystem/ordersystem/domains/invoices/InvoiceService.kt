@@ -9,7 +9,8 @@ import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceRespo
 import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceDbEntity
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerRepository
 import com.pt.ordersystem.ordersystem.domains.order.OrderRepository
-import com.pt.ordersystem.ordersystem.domains.order.models.OrderDbEntity
+import com.pt.ordersystem.ordersystem.domains.order.models.Order
+import com.pt.ordersystem.ordersystem.domains.order.models.toEntity
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.storage.S3StorageService
@@ -34,19 +35,11 @@ class InvoiceService(
 
   @Transactional
   fun createInvoice(createInvoiceRequest: CreateInvoiceRequest): CreateInvoiceResponse {
-    // Validate order exists and belongs to manager
-    val order = orderRepository.findByIdAndManagerId(createInvoiceRequest.orderId, createInvoiceRequest.managerId)
-      ?: throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = "Order not found",
-        technicalMessage = "Order ${createInvoiceRequest.orderId} not found for manager ${createInvoiceRequest.managerId}",
-        severity = SeverityLevel.WARN
-      )
-
+    // Validate order exists and belongs to manager (repository throws if not found)
+    val order = orderRepository.findByIdAndManagerIdAndAgentId(createInvoiceRequest.orderId, createInvoiceRequest.managerId, null)
     validateInvoiceRequest(order, createInvoiceRequest)
 
-    // Validate allocation number if required
-    val allocationNumber = InvoiceHelper.validateAndPrepareAllocationNumber(order, createInvoiceRequest.allocationNumber)
+    val allocationNumber = InvoiceHelper.validateAndPrepareAllocationNumber(order.toEntity(), createInvoiceRequest.allocationNumber)
 
     // Generate next invoice sequence number for manager (with proper locking for race condition)
     // Using SELECT FOR UPDATE through transaction isolation to prevent race conditions
@@ -56,10 +49,9 @@ class InvoiceService(
     val manager = managerRepository.findById(order.managerId)
     val business = businessService.getBusinessByManagerId(order.managerId)
 
-    // Generate PDF (invoiceNumber is formatted inside renderPdf)
     val unsignedPdfBytes = InvoiceRenderHelper.renderPdf(
       business = business,
-      order = order,
+      order = order.toEntity(),
       invoiceSequenceNumber = invoiceSequenceNumber,
       paymentMethod = createInvoiceRequest.paymentMethod,
       paymentProof = createInvoiceRequest.paymentProof,
@@ -131,8 +123,8 @@ class InvoiceService(
     )
   }
 
-  private fun validateInvoiceRequest(order: OrderDbEntity, createInvoiceRequest: CreateInvoiceRequest) {
-    InvoiceHelper.validateOrderEligibilityForInvoice(order)
+  private fun validateInvoiceRequest(order: Order, createInvoiceRequest: CreateInvoiceRequest) {
+    InvoiceHelper.validateOrderEligibilityForInvoice(order.toEntity())
 
     // Check if invoice already exists for this order (UNIQUE constraint will also catch this, but better to fail fast)
     if (invoiceRepository.findByOrderId(order.id) != null) {

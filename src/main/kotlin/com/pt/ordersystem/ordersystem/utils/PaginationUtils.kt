@@ -7,18 +7,33 @@ object PaginationUtils {
 
     const val MAX_PAGE_SIZE = 1000
 
-    private fun validateMaxPageSize(pageSize: Int) {
-        if (pageSize > MAX_PAGE_SIZE)
-            throw IllegalArgumentException("Max page size is $MAX_PAGE_SIZE")
+    private fun validateMaxPageSize(pageSize: Int, maxPageSize: Int = MAX_PAGE_SIZE) {
+        if (pageSize > maxPageSize)
+            throw IllegalArgumentException("Max page size is $maxPageSize")
     }
 
-    fun getValidatedPageRequest(pageRequestBase: PageRequestBase): PageRequest {
+    /**
+     * Builds a validated [PageRequest] from [PageRequestBase].
+     * Optionally restricts [sortBy] to [allowedSortFields] (falls back to [defaultSortBy]) and uses [maxPageSize] for validation.
+     */
+    fun getValidatedPageRequest(
+        pageRequestBase: PageRequestBase,
+        allowedSortFields: Set<String>? = null,
+        defaultSortBy: String? = null,
+        maxPageSize: Int = MAX_PAGE_SIZE,
+    ): PageRequest {
         with(pageRequestBase) {
-            validateMaxPageSize(pageSize)
+            validateMaxPageSize(pageSize, maxPageSize)
+
+            val safeSortBy = when {
+                allowedSortFields != null && defaultSortBy != null ->
+                    if (sortBy in allowedSortFields) sortBy else defaultSortBy
+                else -> sortBy
+            }
 
             val sort = when (sortOrder) {
-                SortOrder.ASC -> Sort.by(sortBy).ascending()
-                SortOrder.DESC -> Sort.by(sortBy).descending()
+                SortOrder.ASC -> Sort.by(safeSortBy).ascending()
+                SortOrder.DESC -> Sort.by(safeSortBy).descending()
             }
 
             return PageRequest.of(pageNumber, pageSize, sort)

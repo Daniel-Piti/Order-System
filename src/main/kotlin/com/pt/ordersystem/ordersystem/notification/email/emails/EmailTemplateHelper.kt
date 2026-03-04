@@ -1,6 +1,6 @@
 package com.pt.ordersystem.ordersystem.notification.email.emails
 
-import com.pt.ordersystem.ordersystem.domains.order.models.OrderDto
+import com.pt.ordersystem.ordersystem.domains.order.models.Order
 import org.slf4j.LoggerFactory
 import org.springframework.core.io.ClassPathResource
 import java.io.InputStream
@@ -8,9 +8,6 @@ import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-/**
- * Shared utilities for email template building.
- */
 object EmailTemplateHelper {
 
   private val logger = LoggerFactory.getLogger(EmailTemplateHelper::class.java)
@@ -25,7 +22,7 @@ object EmailTemplateHelper {
     return dateTime.format(dateFormatter)
   }
 
-  fun buildProductList(order: OrderDto, accentColor: String = "#4338ca", borderColor: String = "#c7d2fe"): String {
+  fun buildProductList(order: Order, accentColor: String = "#4338ca", borderColor: String = "#c7d2fe"): String {
     if (order.products.isEmpty()) {
       return """
         <div class="products-empty">
@@ -66,13 +63,10 @@ object EmailTemplateHelper {
       .replace("'", "&#39;")
   }
 
-  fun getCustomerName(order: OrderDto): String {
+  fun getCustomerName(order: Order): String {
     return order.customerName ?: "Customer"
   }
 
-  /**
-   * Loads an HTML template from resources.
-   */
   fun loadTemplate(templateName: String): String {
     return templateCache.getOrPut(templateName) {
       try {
@@ -87,9 +81,6 @@ object EmailTemplateHelper {
     }
   }
 
-  /**
-   * Replaces placeholders in a template with provided data.
-   */
   fun replacePlaceholders(template: String, replacements: Map<String, String>): String {
     var result = template
     replacements.forEach { (key, value) ->

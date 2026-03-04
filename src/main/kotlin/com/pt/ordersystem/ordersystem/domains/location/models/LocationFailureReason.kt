@@ -5,6 +5,10 @@ enum class LocationFailureReason(val userMessage: String, val technical: String)
         userMessage = "Location not found",
         technical = "Location not found | "
     ),
+    NO_LOCATIONS(
+        userMessage = "You have minimum one locations",
+        technical = "Need minimum on location | "
+    ),
     TOO_MANY_LOCATIONS(
         userMessage = "You have reached maximum locations capacity",
         technical = "Reached maximum locations | "
