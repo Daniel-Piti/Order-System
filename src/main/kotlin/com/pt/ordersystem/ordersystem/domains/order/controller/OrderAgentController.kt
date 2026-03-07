@@ -46,28 +46,28 @@ class OrderAgentController(
       @RequestParam(required = false) status: String?,
       @RequestParam(required = false) customerId: String?
   ): ResponseEntity<Page<OrderDto>> {
-    val agent = agentService.getAgent(agent.id)
+    val loadedAgent = agentService.getAgent(agent.id)
     val orders = if (customerId != null) {
       orderService.getOrdersByCustomerId(
-        managerId = agent.managerId,
+        managerId = loadedAgent.managerId,
         customerId = customerId,
         page = page,
         pageSize = size,
         sortBy = sortBy,
         sortDirection = sortDirection,
         status = status,
-        agentId = agent.id
+        agentId = loadedAgent.id
       )
     } else {
       orderService.getOrders(
-        managerId = agent.managerId,
+        managerId = loadedAgent.managerId,
         page = page,
         pageSize = size,
         sortBy = sortBy,
         sortDirection = sortDirection,
         status = status,
         filterAgent = true,
-        agentId = agent.id
+        agentId = loadedAgent.id
       )
     }
     return ResponseEntity.ok(orders.map { it.toDto() })
@@ -87,25 +87,25 @@ class OrderAgentController(
   fun createOrder(
       @RequestBody request: CreateOrderRequest,
       @AuthenticationPrincipal agent: AuthUser
-  ): ResponseEntity<String> {
-    val agent = agentService.getAgent(agent.id)
-    val newOrderId = orderService.createOrder(
-      managerId = agent.managerId,
-      agentId = agent.id,
+  ): ResponseEntity<OrderDto> {
+    val loadedAgent = agentService.getAgent(agent.id)
+    val newOrder = orderService.createOrder(
+      managerId = loadedAgent.managerId,
+      agentId = loadedAgent.id,
       orderSource = OrderSource.AGENT,
       request = request,
     )
-    return ResponseEntity.status(HttpStatus.CREATED).body(newOrderId)
+    return ResponseEntity.status(HttpStatus.CREATED).body(newOrder.toDto())
   }
 
   @PutMapping("/{orderId}/status/cancelled")
   fun cancelOrder(
       @PathVariable orderId: String,
       @AuthenticationPrincipal agent: AuthUser
-  ): ResponseEntity<Void> {
-    val agent = agentService.getAgent(agent.id)
-    orderService.cancelOrder(orderId, agent.managerId, agent.id)
-    return ResponseEntity.noContent().build()
+  ): ResponseEntity<OrderDto> {
+    val loadedAgent = agentService.getAgent(agent.id)
+    val canceledOrder = orderService.cancelOrder(orderId, loadedAgent.managerId, loadedAgent.id)
+    return ResponseEntity.status(HttpStatus.OK).body(canceledOrder.toDto())
   }
 
   @PutMapping("/{orderId}")
@@ -113,15 +113,15 @@ class OrderAgentController(
       @PathVariable orderId: String,
       @RequestBody request: UpdateOrderRequest,
       @AuthenticationPrincipal agent: AuthUser
-  ): ResponseEntity<Void> {
-    val agent = agentService.getAgent(agent.id)
-    orderService.updateOrder(
+  ): ResponseEntity<OrderDto> {
+    val loadedAgent = agentService.getAgent(agent.id)
+    val updatedOrder = orderService.updateOrder(
       orderId = orderId,
-      managerId = agent.managerId,
-      agentId = agent.id,
-      request = request
+      managerId = loadedAgent.managerId,
+      agentId = loadedAgent.id,
+      updateOrderRequest = request
     )
-    return ResponseEntity.noContent().build()
+    return ResponseEntity.status(HttpStatus.OK).body(updatedOrder.toDto())
   }
 
   @PutMapping("/{orderId}/discount")
@@ -129,15 +129,15 @@ class OrderAgentController(
       @PathVariable orderId: String,
       @RequestBody request: UpdateDiscountRequest,
       @AuthenticationPrincipal agent: AuthUser
-  ): ResponseEntity<Void> {
-    val agent = agentService.getAgent(agent.id)
-    orderService.updateOrderDiscount(
+  ): ResponseEntity<OrderDto> {
+    val loadedAgent = agentService.getAgent(agent.id)
+    val updatedOrder = orderService.updateOrderDiscount(
       orderId = orderId,
-      managerId = agent.managerId,
-      agentId = agent.id,
+      managerId = loadedAgent.managerId,
+      agentId = loadedAgent.id,
       request = request
     )
-    return ResponseEntity.noContent().build()
+    return ResponseEntity.status(HttpStatus.OK).body(updatedOrder.toDto())
   }
 
 }

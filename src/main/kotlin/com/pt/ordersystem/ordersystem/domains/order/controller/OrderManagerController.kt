@@ -85,15 +85,15 @@ class OrderManagerController(
   fun createOrder(
       @RequestBody request: CreateOrderRequest,
       @AuthenticationPrincipal manager: AuthUser
-  ): ResponseEntity<String> {
+  ): ResponseEntity<OrderDto> {
     // Manager creates order - agentId is null (comes from auth, not request body)
-    val newOrderId = orderService.createOrder(
+    val newOrder = orderService.createOrder(
       managerId = manager.id,
       agentId = null,
       orderSource = OrderSource.MANAGER,
       request = request
     )
-    return ResponseEntity.status(HttpStatus.CREATED).body(newOrderId)
+    return ResponseEntity.status(HttpStatus.CREATED).body(newOrder.toDto())
   }
 
   @PutMapping("/{orderId}/status/done")
@@ -119,9 +119,14 @@ class OrderManagerController(
       @PathVariable orderId: String,
       @RequestBody request: UpdateOrderRequest,
       @AuthenticationPrincipal manager: AuthUser
-  ): ResponseEntity<Void> {
-    orderService.updateOrder(orderId = orderId, managerId = manager.id, agentId = null, request = request)
-    return ResponseEntity.noContent().build()
+  ): ResponseEntity<OrderDto> {
+    val updatedOrder = orderService.updateOrder(
+        orderId = orderId,
+        managerId = manager.id,
+        agentId = null,
+        updateOrderRequest = request
+    )
+    return ResponseEntity.status(HttpStatus.OK).body(updatedOrder.toDto())
   }
 
   @PutMapping("/{orderId}/discount")
@@ -129,9 +134,14 @@ class OrderManagerController(
       @PathVariable orderId: String,
       @RequestBody request: UpdateDiscountRequest,
       @AuthenticationPrincipal manager: AuthUser
-  ): ResponseEntity<Void> {
-    orderService.updateOrderDiscount(orderId = orderId, managerId = manager.id, agentId = null, request = request)
-    return ResponseEntity.noContent().build()
+  ): ResponseEntity<OrderDto> {
+    val updatedOrder = orderService.updateOrderDiscount(
+        orderId = orderId,
+        managerId = manager.id,
+        agentId = null,
+        request = request
+    )
+    return ResponseEntity.status(HttpStatus.OK).body(updatedOrder.toDto())
   }
 
 }

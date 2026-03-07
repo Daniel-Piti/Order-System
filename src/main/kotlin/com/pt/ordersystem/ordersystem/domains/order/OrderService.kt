@@ -122,7 +122,7 @@ class OrderService(
   fun getOrderById(orderId: String): Order = orderRepository.findById(orderId)
 
   @Transactional
-  fun createOrder(managerId: String, agentId: String?, orderSource: OrderSource, request: CreateOrderRequest): String {
+  fun createOrder(managerId: String, agentId: String?, orderSource: OrderSource, request: CreateOrderRequest): Order {
     
     // Validate manager has at least one location
     val locationCount = locationRepository.countByManagerId(managerId)
@@ -171,7 +171,7 @@ class OrderService(
       updatedAt = now,
     )
 
-    return orderRepository.save(order).id
+    return orderRepository.save(order)
   }
 
   @Transactional
@@ -293,17 +293,17 @@ class OrderService(
   }
 
   @Transactional
-  fun updateOrder(orderId: String, managerId: String, agentId: String?, request: UpdateOrderRequest) {
+  fun updateOrder(orderId: String, managerId: String, agentId: String?, updateOrderRequest: UpdateOrderRequest): Order {
     val order = orderRepository.findByIdAndManagerIdAndAgentId(orderId, managerId, agentId)
 
     OrderValidators.validateOrderStatus(order.status, OrderStatus.PLACED, orderId)
-    OrderValidators.validateOrderProductsNotEmpty(request.products, orderId)
-    validateProductPrices(request.products, managerId)
+    OrderValidators.validateOrderProductsNotEmpty(updateOrderRequest.products, orderId)
+    validateProductPrices(updateOrderRequest.products, managerId)
 
     // Validate and fetch pickup location (will throw exception if location doesn't exist or doesn't belong to manager)
-    val selectedLocation = locationRepository.findByManagerIdAndId(managerId, request.pickupLocationId)
+    val selectedLocation = locationRepository.findByManagerIdAndId(managerId, updateOrderRequest.pickupLocationId)
 
-    val productsTotal = request.products.fold(BigDecimal.ZERO) { sum, product ->
+    val productsTotal = updateOrderRequest.products.fold(BigDecimal.ZERO) { sum, product ->
       sum + (product.pricePerUnit.multiply(BigDecimal.valueOf(product.quantity.toLong())))
     }
     val totalPrice = productsTotal.subtract(order.discount).max(BigDecimal.ZERO)
@@ -313,17 +313,17 @@ class OrderService(
       storeStreetAddress = selectedLocation.streetAddress,
       storeCity = selectedLocation.city,
       storePhoneNumber = selectedLocation.phoneNumber,
-      products = request.products,
+      products = updateOrderRequest.products,
       totalPrice = totalPrice,
-      notes = request.notes,
+      notes = updateOrderRequest.notes,
       updatedAt = now
     )
 
-    orderRepository.save(updatedEntity)
+    return orderRepository.save(updatedEntity)
   }
 
   @Transactional
-  fun cancelOrder(orderId: String, managerId: String, agentId: String? = null) {
+  fun cancelOrder(orderId: String, managerId: String, agentId: String? = null): Order {
     val order = orderRepository.findByIdAndManagerIdAndAgentId(orderId, managerId, agentId)
 
     OrderValidators.validateOrderStatusIn(
@@ -338,11 +338,11 @@ class OrderService(
       updatedAt = LocalDateTime.now()
     )
 
-    orderRepository.save(updatedEntity)
+    return orderRepository.save(updatedEntity)
   }
 
   @Transactional
-  fun updateOrderDiscount(orderId: String, managerId: String, agentId: String?, request: UpdateDiscountRequest) {
+  fun updateOrderDiscount(orderId: String, managerId: String, agentId: String?, request: UpdateDiscountRequest): Order {
     val order = orderRepository.findByIdAndManagerIdAndAgentId(orderId, managerId, agentId)
 
     OrderValidators.validateOrderStatus(order.status, OrderStatus.PLACED, orderId)
@@ -368,7 +368,7 @@ class OrderService(
       updatedAt = now
     )
 
-    orderRepository.save(updatedEntity)
+    return orderRepository.save(updatedEntity)
   }
 
   private fun validateProductPrices(products: List<ProductDataForOrder>, managerId: String) {
