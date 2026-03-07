@@ -1,7 +1,8 @@
-package com.pt.ordersystem.ordersystem.domains.order
+package com.pt.ordersystem.ordersystem.domains.order.controller
 
-import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
+import com.pt.ordersystem.ordersystem.auth.AuthRole
 import com.pt.ordersystem.ordersystem.auth.AuthUser
+import com.pt.ordersystem.ordersystem.domains.order.OrderService
 import com.pt.ordersystem.ordersystem.domains.order.models.CreateOrderRequest
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDto
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderSource
@@ -15,29 +16,35 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.web.bind.annotation.*
-
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 
 @Tag(name = "Orders", description = "Order management API")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/orders")
-@PreAuthorize(AUTH_MANAGER)
+@PreAuthorize(AuthRole.AUTH_MANAGER)
 class OrderManagerController(
   private val orderService: OrderService
 ) {
 
   @GetMapping
   fun getAllOrders(
-    @AuthenticationPrincipal manager: AuthUser,
-    @RequestParam(defaultValue = "0") page: Int,
-    @RequestParam(defaultValue = "20") size: Int,
-    @RequestParam(defaultValue = "createdAt") sortBy: String,
-    @RequestParam(defaultValue = "DESC") sortDirection: String,
-    @RequestParam(required = false) status: String?,
-    @RequestParam(defaultValue = "false") filterAgent: Boolean,
-    @RequestParam(required = false) agentId: String?,
-    @RequestParam(required = false) customerId: String?,
+      @AuthenticationPrincipal manager: AuthUser,
+      @RequestParam(defaultValue = "0") page: Int,
+      @RequestParam(defaultValue = "20") size: Int,
+      @RequestParam(defaultValue = "createdAt") sortBy: String,
+      @RequestParam(defaultValue = "DESC") sortDirection: String,
+      @RequestParam(required = false) status: String?,
+      @RequestParam(defaultValue = "false") filterAgent: Boolean,
+      @RequestParam(required = false) agentId: String?,
+      @RequestParam(required = false) customerId: String?,
   ): ResponseEntity<Page<OrderDto>> {
     val orders = if (customerId != null) {
       orderService.getOrdersByCustomerId(
@@ -67,8 +74,8 @@ class OrderManagerController(
 
   @GetMapping("/{orderId}")
   fun getOrderById(
-    @PathVariable orderId: String,
-    @AuthenticationPrincipal manager: AuthUser
+      @PathVariable orderId: String,
+      @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<OrderDto> {
     val order = orderService.getOrderById(orderId = orderId, managerId = manager.id, agentId = null)
     return ResponseEntity.ok(order.toDto())
@@ -76,8 +83,8 @@ class OrderManagerController(
 
   @PostMapping
   fun createOrder(
-    @RequestBody request: CreateOrderRequest,
-    @AuthenticationPrincipal manager: AuthUser
+      @RequestBody request: CreateOrderRequest,
+      @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<String> {
     // Manager creates order - agentId is null (comes from auth, not request body)
     val newOrderId = orderService.createOrder(
@@ -91,8 +98,8 @@ class OrderManagerController(
 
   @PutMapping("/{orderId}/status/done")
   fun markOrderDone(
-    @PathVariable orderId: String,
-    @AuthenticationPrincipal manager: AuthUser
+      @PathVariable orderId: String,
+      @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<Void> {
     orderService.markOrderDone(orderId, manager.id)
     return ResponseEntity.noContent().build()
@@ -100,8 +107,8 @@ class OrderManagerController(
 
   @PutMapping("/{orderId}/status/cancelled")
   fun cancelOrder(
-    @PathVariable orderId: String,
-    @AuthenticationPrincipal manager: AuthUser
+      @PathVariable orderId: String,
+      @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<Void> {
     orderService.cancelOrder(orderId, manager.id)
     return ResponseEntity.noContent().build()
@@ -109,9 +116,9 @@ class OrderManagerController(
 
   @PutMapping("/{orderId}")
   fun updateOrder(
-    @PathVariable orderId: String,
-    @RequestBody request: UpdateOrderRequest,
-    @AuthenticationPrincipal manager: AuthUser
+      @PathVariable orderId: String,
+      @RequestBody request: UpdateOrderRequest,
+      @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<Void> {
     orderService.updateOrder(orderId = orderId, managerId = manager.id, agentId = null, request = request)
     return ResponseEntity.noContent().build()
@@ -119,9 +126,9 @@ class OrderManagerController(
 
   @PutMapping("/{orderId}/discount")
   fun updateOrderDiscount(
-    @PathVariable orderId: String,
-    @RequestBody request: UpdateDiscountRequest,
-    @AuthenticationPrincipal manager: AuthUser
+      @PathVariable orderId: String,
+      @RequestBody request: UpdateDiscountRequest,
+      @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<Void> {
     orderService.updateOrderDiscount(orderId = orderId, managerId = manager.id, agentId = null, request = request)
     return ResponseEntity.noContent().build()

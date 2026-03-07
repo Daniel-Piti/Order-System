@@ -1,8 +1,9 @@
-package com.pt.ordersystem.ordersystem.domains.order
+package com.pt.ordersystem.ordersystem.domains.order.controller
 
-import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_AGENT
+import com.pt.ordersystem.ordersystem.auth.AuthRole
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.agent.AgentService
+import com.pt.ordersystem.ordersystem.domains.order.OrderService
 import com.pt.ordersystem.ordersystem.domains.order.models.CreateOrderRequest
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDto
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderSource
@@ -16,27 +17,34 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 
 @Tag(name = "Agent Orders", description = "Agent order management API")
 @SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/api/agent/orders")
-@PreAuthorize(AUTH_AGENT)
+@PreAuthorize(AuthRole.AUTH_AGENT)
 class OrderAgentController(
-  private val orderService: OrderService,
-  private val agentService: AgentService,
+    private val orderService: OrderService,
+    private val agentService: AgentService,
 ) {
 
   @GetMapping
   fun getAllOrders(
-    @AuthenticationPrincipal agent: AuthUser,
-    @RequestParam(defaultValue = "0") page: Int,
-    @RequestParam(defaultValue = "20") size: Int,
-    @RequestParam(defaultValue = "createdAt") sortBy: String,
-    @RequestParam(defaultValue = "DESC") sortDirection: String,
-    @RequestParam(required = false) status: String?,
-    @RequestParam(required = false) customerId: String?
+      @AuthenticationPrincipal agent: AuthUser,
+      @RequestParam(defaultValue = "0") page: Int,
+      @RequestParam(defaultValue = "20") size: Int,
+      @RequestParam(defaultValue = "createdAt") sortBy: String,
+      @RequestParam(defaultValue = "DESC") sortDirection: String,
+      @RequestParam(required = false) status: String?,
+      @RequestParam(required = false) customerId: String?
   ): ResponseEntity<Page<OrderDto>> {
     val agent = agentService.getAgent(agent.id)
     val orders = if (customerId != null) {
@@ -67,8 +75,8 @@ class OrderAgentController(
 
   @GetMapping("/{orderId}")
   fun getOrderById(
-    @PathVariable orderId: String,
-    @AuthenticationPrincipal agent: AuthUser
+      @PathVariable orderId: String,
+      @AuthenticationPrincipal agent: AuthUser
   ): ResponseEntity<OrderDto> {
     val agent = agentService.getAgent(agent.id)
     val order = orderService.getOrderById(orderId = orderId, managerId = agent.managerId, agentId = agent.id)
@@ -77,8 +85,8 @@ class OrderAgentController(
 
   @PostMapping
   fun createOrder(
-    @RequestBody request: CreateOrderRequest,
-    @AuthenticationPrincipal agent: AuthUser
+      @RequestBody request: CreateOrderRequest,
+      @AuthenticationPrincipal agent: AuthUser
   ): ResponseEntity<String> {
     val agent = agentService.getAgent(agent.id)
     val newOrderId = orderService.createOrder(
@@ -92,8 +100,8 @@ class OrderAgentController(
 
   @PutMapping("/{orderId}/status/cancelled")
   fun cancelOrder(
-    @PathVariable orderId: String,
-    @AuthenticationPrincipal agent: AuthUser
+      @PathVariable orderId: String,
+      @AuthenticationPrincipal agent: AuthUser
   ): ResponseEntity<Void> {
     val agent = agentService.getAgent(agent.id)
     orderService.cancelOrder(orderId, agent.managerId, agent.id)
@@ -102,9 +110,9 @@ class OrderAgentController(
 
   @PutMapping("/{orderId}")
   fun updateOrder(
-    @PathVariable orderId: String,
-    @RequestBody request: UpdateOrderRequest,
-    @AuthenticationPrincipal agent: AuthUser
+      @PathVariable orderId: String,
+      @RequestBody request: UpdateOrderRequest,
+      @AuthenticationPrincipal agent: AuthUser
   ): ResponseEntity<Void> {
     val agent = agentService.getAgent(agent.id)
     orderService.updateOrder(
@@ -118,9 +126,9 @@ class OrderAgentController(
 
   @PutMapping("/{orderId}/discount")
   fun updateOrderDiscount(
-    @PathVariable orderId: String,
-    @RequestBody request: UpdateDiscountRequest,
-    @AuthenticationPrincipal agent: AuthUser
+      @PathVariable orderId: String,
+      @RequestBody request: UpdateDiscountRequest,
+      @AuthenticationPrincipal agent: AuthUser
   ): ResponseEntity<Void> {
     val agent = agentService.getAgent(agent.id)
     orderService.updateOrderDiscount(
@@ -133,4 +141,3 @@ class OrderAgentController(
   }
 
 }
-
