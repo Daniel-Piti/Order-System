@@ -1,7 +1,8 @@
-package com.pt.ordersystem.ordersystem.domains.product
+package com.pt.ordersystem.ordersystem.domains.product.controllers
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
+import com.pt.ordersystem.ordersystem.domains.product.ProductService
 import com.pt.ordersystem.ordersystem.domains.product.models.*
 import com.pt.ordersystem.ordersystem.storage.models.ImageMetadata
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
@@ -65,7 +66,7 @@ class ProductManagerController(
     @RequestBody imageIds: List<Long>,
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<String> {
-    productService.deleteImages(manager.id, imageIds)
+    productService.deleteImages(manager.id, productId, imageIds)
     return ResponseEntity.ok("Images deleted successfully")
   }
 }

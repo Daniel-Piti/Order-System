@@ -1,8 +1,9 @@
-package com.pt.ordersystem.ordersystem.domains.product
+package com.pt.ordersystem.ordersystem.domains.product.controllers
 
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductDto
 import com.pt.ordersystem.ordersystem.domains.productImage.models.ProductImageDto
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
+import com.pt.ordersystem.ordersystem.domains.product.ProductService
 import com.pt.ordersystem.ordersystem.domains.productImage.ProductImageRepository
 import com.pt.ordersystem.ordersystem.domains.productImage.models.toDto
 import com.pt.ordersystem.ordersystem.utils.PageRequestBaseExternal
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Public Products", description = "Public product API for customers")
 @RestController
 @RequestMapping("/api/public/products")
-class PublicProductController(
+class ProductPublicController(
   private val productService: ProductService,
   private val managerService: ManagerService,
   private val productImageRepository: ProductImageRepository,

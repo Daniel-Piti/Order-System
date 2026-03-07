@@ -277,22 +277,19 @@ class ProductService(
   }
 
   @Transactional
-  fun deleteImages(managerId: String, imageIds: List<Long>) {
+  fun deleteImages(managerId: String, productId: String, imageIds: List<Long>) {
     if (imageIds.isEmpty()) return
 
-    // Fetch all images and validate they belong to the manager
-    val images = productImageRepository.findAllById(imageIds).filter { it.managerId == managerId }
+    val images = productImageRepository.findAllById(imageIds)
+      .filter { it.managerId == managerId && it.productId == productId }
 
     if (images.size != imageIds.size) {
       val foundIds = images.map { it.id }.toSet()
-      val missingIds = imageIds.filter { it !in foundIds }
-      logger.warn("Not all requested images were found or belong to manager; deleting only found ones. missingIds=$missingIds, managerId=$managerId")
+      val skippedIds = imageIds.filter { it !in foundIds }
+      logger.warn("Not all requested images belong to this product; deleting only matching ones. skippedIds=$skippedIds, productId=$productId, managerId=$managerId")
     }
 
-    // Delete all images from S3
     images.forEach { image -> s3StorageService.deleteFile(image.s3Key) }
-
-    // Delete all images from database
     productImageRepository.deleteAll(images)
   }
 
