@@ -43,10 +43,10 @@ class ProductService(
   }
 
   fun removeCategoryFromProducts(managerId: String, categoryId: Long) =
-    productRepository.removeCategoryFromProducts(managerId, categoryId, LocalDateTime.now())
+    productRepository.removeCategoryFromProducts(managerId, categoryId)
 
   fun removeBrandFromProducts(managerId: String, brandId: Long) =
-    productRepository.removeBrandFromProducts(managerId, brandId, LocalDateTime.now())
+    productRepository.removeBrandFromProducts(managerId, brandId)
 
   fun getAllProductsForManager(
     managerId: String,

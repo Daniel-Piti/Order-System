@@ -41,11 +41,11 @@ class ProductRepository(
   fun findByManagerIdAndCategoryIdAndBrandId(managerId: String, categoryId: Long, brandId: Long, pageable: Pageable): Page<ProductDbEntity> =
     productDao.findByManagerIdAndCategoryIdAndBrandId(managerId, categoryId, brandId, pageable)
 
-  fun removeBrandFromProducts(managerId: String, brandId: Long, updatedAt: LocalDateTime): Int =
-    productDao.removeBrandFromProducts(managerId, brandId, updatedAt)
+  fun removeBrandFromProducts(managerId: String, brandId: Long): Int =
+    productDao.removeBrandFromProducts(managerId, brandId, LocalDateTime.now())
 
-  fun removeCategoryFromProducts(managerId: String, categoryId: Long, updatedAt: LocalDateTime): Int =
-    productDao.removeCategoryFromProducts(managerId, categoryId, updatedAt)
+  fun removeCategoryFromProducts(managerId: String, categoryId: Long): Int =
+    productDao.removeCategoryFromProducts(managerId, categoryId, LocalDateTime.now())
 
   fun save(entity: ProductDbEntity): ProductDbEntity =
     productDao.save(entity)
