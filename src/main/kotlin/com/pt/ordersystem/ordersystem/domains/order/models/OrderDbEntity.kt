@@ -33,15 +33,9 @@ data class OrderDbEntity(
   @Column(name = "customer_id")
   val customerId: String?,
 
-  // Store (pickup location) - selected by customer
-  @Column(name = "store_street_address")
-  val storeStreetAddress: String?,
-
-  @Column(name = "store_city")
-  val storeCity: String?,
-
-  @Column(name = "store_phone_number")
-  val storePhoneNumber: String?,
+  @Column(name = "selected_location", columnDefinition = "json")
+  @Convert(converter = SelectedLocationJsonConverter::class)
+  val selectedLocation: SelectedLocation?,
 
   // Customer (Buyer) data
 

@@ -1,9 +1,10 @@
 package com.pt.ordersystem.ordersystem.notification.email
 
 import com.pt.ordersystem.ordersystem.constants.TaxConstants
-import com.pt.ordersystem.ordersystem.domains.order.models.OrderDto
+import com.pt.ordersystem.ordersystem.domains.order.models.Order
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderSource
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderStatus
+import com.pt.ordersystem.ordersystem.domains.order.models.SelectedLocation
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductDataForOrder
 import com.pt.ordersystem.ordersystem.notification.email.emails.OrderCancelledEmail
 import com.pt.ordersystem.ordersystem.notification.email.emails.OrderDoneEmail
@@ -54,22 +55,26 @@ object EmailPreviewGenerator {
     generateAllPreviews()
   }
 
-  private fun createSampleOrder(): OrderDto {
+  private fun createSampleOrder(): Order {
     val now = LocalDateTime.now()
     val placedAt = now.minusHours(2)
     val doneAt = now.minusMinutes(30)
     val updatedAt = now.minusMinutes(15)
 
-    return OrderDto(
+    return Order(
       id = "ORD-2024-001234",
       referenceId = 10001L,
       orderSource = OrderSource.PUBLIC,
       managerId = "manager-123",
       agentId = "agent-456",
       customerId = "customer-789",
-      storeStreetAddress = "123 Main Street",
-      storeCity = "Tel Aviv",
-      storePhoneNumber = "+972-3-1234567",
+      selectedLocation = SelectedLocation(
+        locationId = 1L,
+        name = "Main Store",
+        streetAddress = "123 Main Street",
+        city = "Tel Aviv",
+        phoneNumber = "+972-3-1234567"
+      ),
       customerName = "John Doe",
       customerPhone = "+972-50-1234567",
       customerEmail = "john.doe@example.com",

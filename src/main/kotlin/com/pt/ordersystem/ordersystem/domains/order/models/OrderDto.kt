@@ -12,9 +12,7 @@ data class OrderDto(
   val agentId: String?,
   val customerId: String?,
 
-  val storeStreetAddress: String?,
-  val storeCity: String?,
-  val storePhoneNumber: String?,
+  val selectedLocation: SelectedLocation?,
 
   val customerName: String?,
   val customerPhone: String?,

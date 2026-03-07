@@ -4,6 +4,7 @@ import com.pt.ordersystem.ordersystem.constants.TaxConstants
 import com.pt.ordersystem.ordersystem.domains.business.models.BusinessDto
 import com.pt.ordersystem.ordersystem.domains.invoices.models.PaymentMethod
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDbEntity
+import com.pt.ordersystem.ordersystem.domains.order.models.SelectedLocation
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductDataForOrder
 import java.io.File
 import java.math.BigDecimal
@@ -94,9 +95,13 @@ object InvoiceRenderHelperPreviewGenerator {
       managerId = "manager-123",
       agentId = "agent-456",
       customerId = "customer-789",
-      storeStreetAddress = "רחוב דיזנגוף 50",
-      storeCity = "תל אביב",
-      storePhoneNumber = "+972-3-1234567",
+      selectedLocation = SelectedLocation(
+        locationId = 1L,
+        name = "חנות דיזנגוף",
+        streetAddress = "רחוב דיזנגוף 50",
+        city = "תל אביב",
+        phoneNumber = "+972-3-1234567"
+      ),
       customerName = "יוסי כהן",
       customerPhone = "+972-50-9876543",
       customerEmail = "yossi.cohen@example.com",

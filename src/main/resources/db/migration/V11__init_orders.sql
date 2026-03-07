@@ -7,10 +7,8 @@ CREATE TABLE orders (
     agent_id VARCHAR(36) NULL,
     customer_id VARCHAR(255) NULL,
     
-    -- Store (pickup location) - selected by customer
-    store_street_address VARCHAR(255) NULL,
-    store_city VARCHAR(100) NULL,
-    store_phone_number VARCHAR(20) NULL,
+    -- Selected location: { id, name, streetAddress, city, phoneNumber }
+    selected_location JSON NULL,
     
     -- Customer (Buyer) data - can be linked or standalone
     customer_name VARCHAR(255) NULL,
@@ -59,10 +57,7 @@ CREATE TABLE orders_history (
     agent_id VARCHAR(36) NULL,
     customer_id VARCHAR(255) NULL,
     
-    -- Store location snapshot
-    store_street_address VARCHAR(255) NULL,
-    store_city VARCHAR(100) NULL,
-    store_phone_number VARCHAR(20) NULL,
+    selected_location JSON NULL,
     
     -- Customer data
     customer_name VARCHAR(255) NULL,
@@ -92,7 +87,7 @@ CREATE TRIGGER trg_orders_after_insert
 AFTER INSERT ON orders FOR EACH ROW
 INSERT INTO orders_history(
     id, order_source, manager_id, agent_id, customer_id,
-    store_street_address, store_city, store_phone_number,
+    selected_location,
     customer_name, customer_phone, customer_email,
     customer_street_address, customer_city, customer_state_id,
     status, products, products_version, total_price, discount, vat, link_expires_at, notes, placed_at, done_at,
@@ -101,7 +96,7 @@ INSERT INTO orders_history(
 )
 VALUES (
     NEW.id, NEW.order_source, NEW.manager_id, NEW.agent_id, NEW.customer_id,
-    NEW.store_street_address, NEW.store_city, NEW.store_phone_number,
+    NEW.selected_location,
     NEW.customer_name, NEW.customer_phone, NEW.customer_email,
     NEW.customer_street_address, NEW.customer_city, NEW.customer_state_id,
     NEW.status, NEW.products, NEW.products_version, NEW.total_price, NEW.discount, NEW.vat, NEW.link_expires_at, NEW.notes, NEW.placed_at, NEW.done_at,
@@ -113,7 +108,7 @@ CREATE TRIGGER trg_orders_after_update
 AFTER UPDATE ON orders FOR EACH ROW
 INSERT INTO orders_history(
     id, order_source, manager_id, agent_id, customer_id,
-    store_street_address, store_city, store_phone_number,
+    selected_location,
     customer_name, customer_phone, customer_email,
     customer_street_address, customer_city, customer_state_id,
     status, products, products_version, total_price, discount, vat, link_expires_at, notes, placed_at, done_at,
@@ -122,7 +117,7 @@ INSERT INTO orders_history(
 )
 VALUES (
     NEW.id, NEW.order_source, NEW.manager_id, NEW.agent_id, NEW.customer_id,
-    NEW.store_street_address, NEW.store_city, NEW.store_phone_number,
+    NEW.selected_location,
     NEW.customer_name, NEW.customer_phone, NEW.customer_email,
     NEW.customer_street_address, NEW.customer_city, NEW.customer_state_id,
     NEW.status, NEW.products, NEW.products_version, NEW.total_price, NEW.discount, NEW.vat, NEW.link_expires_at, NEW.notes, NEW.placed_at, NEW.done_at,

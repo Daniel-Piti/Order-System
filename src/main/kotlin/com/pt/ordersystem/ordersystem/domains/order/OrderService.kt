@@ -144,10 +144,8 @@ class OrderService(
       managerId = managerId,
       agentId = agentId,
       orderSource = orderSource.name,
-      // Store location (will be filled by customer when placing order)
-      storeStreetAddress = null,
-      storeCity = null,
-      storePhoneNumber = null,
+      // Selected location
+      selectedLocation = null,
       // Customer data (pre-filled if linked, otherwise customer fills)
       customerId = customer?.id,
       customerName = customer?.name,
@@ -196,9 +194,13 @@ class OrderService(
 
     val now = LocalDateTime.now()
     val updatedEntity = order.toEntity().copy(
-      storeStreetAddress = selectedLocation.streetAddress,
-      storeCity = selectedLocation.city,
-      storePhoneNumber = selectedLocation.phoneNumber,
+      selectedLocation = SelectedLocation(
+        locationId = selectedLocation.id,
+        name = selectedLocation.name,
+        streetAddress = selectedLocation.streetAddress,
+        city = selectedLocation.city,
+        phoneNumber = selectedLocation.phoneNumber,
+      ),
       customerName = customer?.name ?: request.customerName,
       customerPhone = customer?.phoneNumber ?: request.customerPhone,
       customerEmail = customer?.email ?: request.customerEmail,
@@ -246,10 +248,14 @@ class OrderService(
       managerId = managerId,
       agentId = null, // No agent for public orders
       orderSource = OrderSource.PUBLIC.name,
-      // Store (pickup) location from selected location
-      storeStreetAddress = selectedLocation.streetAddress,
-      storeCity = selectedLocation.city,
-      storePhoneNumber = selectedLocation.phoneNumber,
+      // Selected location data
+      selectedLocation = SelectedLocation(
+        locationId = selectedLocation.id,
+        name = selectedLocation.name,
+        streetAddress = selectedLocation.streetAddress,
+        city = selectedLocation.city,
+        phoneNumber = selectedLocation.phoneNumber,
+      ),
       // Customer data (from request, no customer linked)
       customerId = null, // No customer linked for public orders
       customerName = request.customerName,
@@ -310,9 +316,13 @@ class OrderService(
 
     val now = LocalDateTime.now()
     val updatedEntity = order.toEntity().copy(
-      storeStreetAddress = selectedLocation.streetAddress,
-      storeCity = selectedLocation.city,
-      storePhoneNumber = selectedLocation.phoneNumber,
+      selectedLocation = SelectedLocation(
+        locationId = selectedLocation.id,
+        name = selectedLocation.name,
+        streetAddress = selectedLocation.streetAddress,
+        city = selectedLocation.city,
+        phoneNumber = selectedLocation.phoneNumber,
+      ),
       products = updateOrderRequest.products,
       totalPrice = totalPrice,
       notes = updateOrderRequest.notes,
