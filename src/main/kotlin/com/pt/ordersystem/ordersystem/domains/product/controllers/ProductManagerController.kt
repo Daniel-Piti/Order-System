@@ -36,9 +36,9 @@ class ProductManagerController(
     @PathVariable productId: String,
     @RequestBody productInfo: ProductInfo,
     @AuthenticationPrincipal manager: AuthUser
-  ): ResponseEntity<String> {
-    val updatedProductId = productService.updateProductInfo(manager.id, productId, productInfo)
-    return ResponseEntity.ok(updatedProductId)
+  ): ResponseEntity<ProductDto> {
+    val updatedProductDto = productService.updateProductInfo(manager.id, productId, productInfo)
+    return ResponseEntity.ok(updatedProductDto)
   }
 
   @DeleteMapping("/{productId}")

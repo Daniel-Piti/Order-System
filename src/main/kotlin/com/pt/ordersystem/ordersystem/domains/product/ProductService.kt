@@ -205,12 +205,12 @@ class ProductService(
       updatedAt = now,
     )
 
-    val productId = productRepository.save(product).id
+    val productDto = productRepository.save(product).toDto()
 
-    val imagesPreSignedUrls = generatePreSignedUrlsAndSaveProductImage(managerId, productId, imagesMetadata)
+    val imagesPreSignedUrls = generatePreSignedUrlsAndSaveProductImage(managerId, product.id, imagesMetadata)
 
     return CreateProductResponse(
-      productId = productId,
+      product = productDto,
       imagesPreSignedUrls = imagesPreSignedUrls
     )
   }
@@ -220,7 +220,7 @@ class ProductService(
     managerId: String,
     productId: String,
     productInfo: ProductInfo
-  ): String {
+  ): ProductDto {
     validateProductInfo(managerId, productInfo)
 
     val product = productRepository.findByManagerIdAndId(managerId, productId)
@@ -240,7 +240,7 @@ class ProductService(
       updatedAt = LocalDateTime.now(),
     )
 
-    return productRepository.save(updated).id
+    return productRepository.save(updated).toDto()
   }
 
   @Transactional

@@ -18,7 +18,7 @@ data class CreateProductRequest(
 )
 
 data class CreateProductResponse(
-  val productId: String,
+  val product: ProductDto,
   val imagesPreSignedUrls: List<String>,
 )
 
