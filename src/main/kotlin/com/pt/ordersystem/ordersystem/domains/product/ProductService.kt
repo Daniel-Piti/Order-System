@@ -14,11 +14,7 @@ import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideSe
 import com.pt.ordersystem.ordersystem.storage.S3StorageService
 import com.pt.ordersystem.ordersystem.storage.models.ImageMetadata
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
-import com.pt.ordersystem.ordersystem.utils.PageRequestBase
-import com.pt.ordersystem.ordersystem.utils.PaginationUtils
 import org.slf4j.LoggerFactory
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageImpl
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -48,58 +44,26 @@ class ProductService(
   fun removeBrandFromProducts(managerId: String, brandId: Long) =
     productRepository.removeBrandFromProducts(managerId, brandId)
 
-  fun getAllProductsForManager(
-    managerId: String,
-    pageRequestBase: PageRequestBase,
-    categoryId: Long?,
-    brandId: Long?
-  ): Page<ProductDto> {
+  fun getAllProductsForManager(managerId: String): List<ProductDto> {
+    // Fetch all products for manager (max 1000); FE handles sort and filter
+    val allProducts = productRepository.findAllByManagerId(managerId)
 
-    val pageRequest = PaginationUtils.getValidatedPageRequest(pageRequestBase)
-
-    // Fetch products based on filters
-    val productPage = when {
-      categoryId != null && brandId != null ->
-        // Filter by both category and brand
-        productRepository.findByManagerIdAndCategoryIdAndBrandId(managerId, categoryId, brandId, pageRequest)
-      categoryId != null ->
-        // Filter by category only
-        productRepository.findByManagerIdAndCategoryId(managerId, categoryId, pageRequest)
-      brandId != null ->
-        // Filter by brand only
-        productRepository.findByManagerIdAndBrandId(managerId, brandId, pageRequest)
-      else ->
-        // No filter - return all products
-        productRepository.findAllByManagerId(managerId, pageRequest)
-    }
-
-    // Early return if no products
-    if (productPage.content.isEmpty()) {
-      return PageImpl(emptyList(), pageRequest, productPage.totalElements)
-    }
-
-    // Enrich with brand names and category names
     val brands = brandRepository.findByManagerId(managerId)
     val brandMap = brands.associate { it.id to it.name }
-
     val categories = categoryRepository.findByManagerId(managerId)
     val categoryMap = categories.associate { it.id to it.category }
 
-    val enrichedContent = productPage.content.map { product ->
+    return allProducts.map { product ->
       val brandName = product.brandId?.let { brandMap[it] }
       if (product.brandId != null && brandName == null) {
         logger.warn("Brand with ID=${product.brandId} not found for manager $managerId")
       }
-
       val categoryName = product.categoryId?.let { categoryMap[it] }
       if (product.categoryId != null && categoryName == null) {
         logger.warn("Category with ID=${product.categoryId} not found for manager $managerId")
       }
-
       product.toDto(brandName, categoryName)
     }
-
-    return PageImpl(enrichedContent, pageRequest, productPage.totalElements)
   }
 
   fun getAllProductsForOrder(orderId: String): List<ProductDto> {

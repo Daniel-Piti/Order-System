@@ -6,9 +6,7 @@ import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
 import com.pt.ordersystem.ordersystem.domains.product.ProductService
 import com.pt.ordersystem.ordersystem.domains.productImage.ProductImageRepository
 import com.pt.ordersystem.ordersystem.domains.productImage.models.toDto
-import com.pt.ordersystem.ordersystem.utils.PageRequestBaseExternal
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.data.domain.Page
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -34,19 +32,9 @@ class ProductPublicController(
   }
 
   @GetMapping("/manager/{managerId}")
-  fun getAllManagerProducts(
-    @PathVariable managerId: String,
-    pageParams: PageRequestBaseExternal,
-    @RequestParam(required = false) categoryId: Long?,
-    @RequestParam(required = false) brandId: Long?
-  ): ResponseEntity<Page<ProductDto>> {
+  fun getAllManagerProducts(@PathVariable managerId: String): ResponseEntity<List<ProductDto>> {
     managerService.validateManagerExists(managerId)
-    val products = productService.getAllProductsForManager(
-      managerId = managerId,
-      pageRequestBase = pageParams.toPageRequestBase(),
-      categoryId = categoryId,
-      brandId = brandId
-    )
+    val products = productService.getAllProductsForManager(managerId)
     return ResponseEntity.ok(products)
   }
 
