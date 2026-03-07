@@ -1,5 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.category
 
+import com.pt.ordersystem.ordersystem.domains.category.helpers.CategoryValidators
 import com.pt.ordersystem.ordersystem.domains.category.models.Category
 import com.pt.ordersystem.ordersystem.domains.category.models.CategoryDbEntity
 import com.pt.ordersystem.ordersystem.domains.category.models.CategoryFailureReason
@@ -20,10 +21,6 @@ class CategoryService(
     private val productService: ProductService,
 ) {
 
-    companion object {
-        private const val MAX_CATEGORIES_PER_MANAGER = 1000
-    }
-
     fun getCategoryById(managerId: String, categoryId: Long): Category =
         categoryRepository.findByManagerIdAndId(managerId, categoryId)
 
@@ -33,15 +30,7 @@ class CategoryService(
     fun validateCreateCategory(categoryName: String, managerId: String) {
         FieldValidators.validateNonEmpty(categoryName, "'category'")
 
-        val existingCategoriesCount = categoryRepository.countByManagerId(managerId)
-        if (existingCategoriesCount >= MAX_CATEGORIES_PER_MANAGER) {
-            throw ServiceException(
-                status = HttpStatus.BAD_REQUEST,
-                userMessage = CategoryFailureReason.CATEGORY_LIMIT_EXCEEDED.userMessage,
-                technicalMessage = CategoryFailureReason.CATEGORY_LIMIT_EXCEEDED.technical + "managerId=$managerId, limit=$MAX_CATEGORIES_PER_MANAGER",
-                severity = SeverityLevel.WARN,
-            )
-        }
+        CategoryValidators.validateCategoriesCount(categoryRepository.countByManagerId(managerId), managerId)
 
         if (categoryRepository.existsByManagerIdAndCategory(managerId, categoryName)) {
             throw ServiceException(
