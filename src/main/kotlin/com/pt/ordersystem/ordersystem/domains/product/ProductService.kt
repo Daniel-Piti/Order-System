@@ -250,9 +250,9 @@ class ProductService(
     // Delete all product overrides
     productOverrideService.deleteAllOverridesForProduct(product.managerId, productId)
     // Delete product's images from s3
-    productImageRepository.findByProductId(productId).forEach { image -> s3StorageService.deleteFile(image.s3Key) }
+    productImageRepository.findByManagerIdAndProductId(managerId, productId).forEach { image -> s3StorageService.deleteFile(image.s3Key) }
     // Delete product's images
-    productImageRepository.deleteByProductId(productId)
+    productImageRepository.deleteByManagerIdAndProductId(managerId, productId)
     // Delete product
     productRepository.delete(product)
   }
@@ -267,7 +267,7 @@ class ProductService(
     productRepository.findByManagerIdAndId(managerId, productId)
 
     // Validate images upfront (fail fast if any invalid)
-    val existingImages = productImageRepository.findByProductId(productId)
+    val existingImages = productImageRepository.findByManagerIdAndProductId(managerId, productId)
     val totalImagesAfterUpload = existingImages.size + imagesMetadataList.size
 
     ProductImageValidators.validateMaxImagesForProduct(totalImagesAfterUpload)

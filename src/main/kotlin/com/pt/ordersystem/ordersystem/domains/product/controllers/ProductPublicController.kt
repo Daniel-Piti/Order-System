@@ -64,8 +64,8 @@ class ProductPublicController(
     @PathVariable productId: String
   ): ResponseEntity<List<ProductImageDto>> {
     val product = productService.getProductById(managerId, productId)
-    val images = productImageRepository.findByProductId(product.id).map { it.toDto() }
-    return ResponseEntity.ok(images)
+    val productImages = productImageRepository.findByManagerIdAndProductId(managerId, product.id)
+    return ResponseEntity.ok(productImages.map { it.toDto() })
   }
 
 }
