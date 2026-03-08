@@ -6,7 +6,7 @@ import com.pt.ordersystem.ordersystem.storage.S3Helper
 
 private val objectMapper = jacksonObjectMapper()
 
-private data class ProductImageRow(val s3Key: String, val mimeType: String)
+private data class ProductImageRow(val id: Long, val s3Key: String, val mimeType: String)
 
 fun parseProductImagesJson(json: String?): List<ProductImageData> {
   if (json.isNullOrBlank()) return emptyList()
@@ -14,7 +14,7 @@ fun parseProductImagesJson(json: String?): List<ProductImageData> {
     val rows: List<ProductImageRow> = objectMapper.readValue(json)
     rows.mapNotNull { row ->
       S3Helper.getPublicUrl(row.s3Key)?.let { url ->
-        ProductImageData(mimeType = row.mimeType, url = url)
+        ProductImageData(id = row.id, mimeType = row.mimeType, url = url)
       }
     }
   } catch (_: Exception) {
@@ -23,6 +23,7 @@ fun parseProductImagesJson(json: String?): List<ProductImageData> {
 }
 
 data class ProductImageData(
+  val id: Long,
   val mimeType: String,
   val url: String,
 )

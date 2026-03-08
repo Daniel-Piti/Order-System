@@ -18,7 +18,7 @@ interface ProductDao : JpaRepository<ProductDbEntity, String> {
              p.brand_id AS brandId, b.name AS brandName,
              p.category_id AS categoryId, c.category AS categoryName,
              p.minimum_price AS minimumPrice, p.price AS price, p.description AS description,
-             (SELECT JSON_ARRAYAGG(JSON_OBJECT('s3Key', pi.s3_key, 'mimeType', pi.mime_type))
+             (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', pi.id, 's3Key', pi.s3_key, 'mimeType', pi.mime_type))
               FROM product_images pi WHERE pi.product_id = p.id AND pi.manager_id = p.manager_id) AS imagesJson
       FROM products p
       LEFT JOIN brands b ON p.brand_id = b.id AND p.manager_id = b.manager_id
@@ -35,7 +35,7 @@ interface ProductDao : JpaRepository<ProductDbEntity, String> {
              p.brand_id AS brandId, b.name AS brandName,
              p.category_id AS categoryId, c.category AS categoryName,
              p.minimum_price AS minimumPrice, p.price AS price, p.description AS description,
-             (SELECT JSON_ARRAYAGG(JSON_OBJECT('s3Key', pi.s3_key, 'mimeType', pi.mime_type))
+             (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', pi.id, 's3Key', pi.s3_key, 'mimeType', pi.mime_type))
               FROM product_images pi WHERE pi.product_id = p.id AND pi.manager_id = p.manager_id) AS imagesJson
       FROM products p
       LEFT JOIN brands b ON p.brand_id = b.id AND p.manager_id = b.manager_id
