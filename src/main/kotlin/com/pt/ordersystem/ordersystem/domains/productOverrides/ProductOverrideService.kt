@@ -37,12 +37,6 @@ class ProductOverrideService(
     )
   }
 
-  fun getProductOverridesForProductId(managerId: String, agentId: String?, productId: String): List<ProductOverride> =
-    productOverrideRepository.getAllForManagerAgentAndProduct(managerId, agentId, productId)
-
-  fun getProductOverridesByCustomerId(managerId: String, agentId: String?, customerId: String): List<ProductOverride> =
-    productOverrideRepository.findByManagerIdAndAgentIdAndCustomerId(managerId, agentId, customerId)
-
   fun validateCreateProductOverride(
     managerId: String,
     agentId: String?,
