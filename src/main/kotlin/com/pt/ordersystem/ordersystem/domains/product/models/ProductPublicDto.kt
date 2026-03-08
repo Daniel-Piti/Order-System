@@ -12,4 +12,5 @@ data class ProductPublicDto(
   val categoryName: String?,
   val price: BigDecimal,
   val description: String,
+  val images: List<ProductImageData> = emptyList(),
 )

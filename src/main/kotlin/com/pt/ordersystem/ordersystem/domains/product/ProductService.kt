@@ -68,12 +68,8 @@ class ProductService(
     }
   }
 
-  fun getProductById(managerId: String, productId: String): Product {
-    val entity = productRepository.findByManagerIdAndId(managerId, productId)
-
-    val brandName = entity.brandId?.let { brandRepository.findByManagerIdAndId(managerId, it).name }
-    val categoryName = entity.categoryId?.let { categoryRepository.findByManagerIdAndId(managerId, it).category }
-    return entity.toProduct(brandName = brandName, categoryName = categoryName)
+  fun validateProductExistsForManager(managerId: String, productId: String) {
+    productRepository.getProductEntityByManagerIdAndId(managerId, productId)
   }
 
   private fun validateProductInfo(managerId: String, productInfo: ProductInfo) {
@@ -122,14 +118,11 @@ class ProductService(
 
     val saved = productRepository.save(product)
 
-    val brandName = saved.brandId?.let { brandRepository.findByManagerIdAndId(managerId, it).name }
-    val categoryName = saved.categoryId?.let { categoryRepository.findByManagerIdAndId(managerId, it).category }
-    val productModel = saved.toProduct(brandName, categoryName)
-
     val imagesPreSignedUrls = generatePreSignedUrlsAndSaveProductImage(managerId, product.id, imagesMetadata)
 
+    val productModel = productRepository.getProductByManagerIdAndId(managerId, saved.id)
     return CreateProductResponse(
-      product = productModel.toInternalDto(),
+      product = productModel.toPrivateDto(),
       imagesPreSignedUrls = imagesPreSignedUrls
     )
   }
@@ -159,10 +152,8 @@ class ProductService(
       updatedAt = LocalDateTime.now(),
     )
 
-    val saved = productRepository.save(updated)
-    val brandName = saved.brandId?.let { brandRepository.findByManagerIdAndId(managerId, it).name }
-    val categoryName = saved.categoryId?.let { categoryRepository.findByManagerIdAndId(managerId, it).category }
-    return saved.toProduct(brandName, categoryName)
+    productRepository.save(updated)
+    return productRepository.getProductByManagerIdAndId(managerId, productId)
   }
 
   @Transactional
@@ -185,17 +176,16 @@ class ProductService(
     productId: String,
     imagesMetadataList: List<ImageMetadata>
   ): List<String> {
-    // Verify product exists and belongs to manager
-    productRepository.findByManagerIdAndId(managerId, productId)
+    val product = productRepository.findByManagerIdAndId(managerId, productId)
 
     // Validate images upfront (fail fast if any invalid)
-    val existingImages = productImageRepository.findByManagerIdAndProductId(managerId, productId)
+    val existingImages = productImageRepository.findByManagerIdAndProductId(managerId, product.id)
     val totalImagesAfterUpload = existingImages.size + imagesMetadataList.size
 
     ProductImageValidators.validateMaxImagesForProduct(totalImagesAfterUpload)
     imagesMetadataList.forEach { metadata -> s3StorageService.validateImageMetadata(metadata) }
 
-    return generatePreSignedUrlsAndSaveProductImage(managerId, productId, imagesMetadataList)
+    return generatePreSignedUrlsAndSaveProductImage(managerId, product.id, imagesMetadataList)
   }
 
   @Transactional

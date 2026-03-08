@@ -19,16 +19,6 @@ class ProductPublicController(
   private val productImageRepository: ProductImageRepository,
 ) {
 
-  @GetMapping("/manager/{managerId}/product/{productId}")
-  fun getProduct(
-    @PathVariable managerId: String,
-    @PathVariable productId: String
-  ): ResponseEntity<ProductPublicDto> {
-    managerService.validateManagerExists(managerId)
-    val product = productService.getProductById(managerId = managerId, productId = productId)
-    return ResponseEntity.ok(product.toPublicDto())
-  }
-
   @GetMapping("/manager/{managerId}")
   fun getAllManagerProducts(@PathVariable managerId: String): ResponseEntity<List<ProductPublicDto>> {
     managerService.validateManagerExists(managerId)
@@ -47,8 +37,8 @@ class ProductPublicController(
     @PathVariable managerId: String,
     @PathVariable productId: String
   ): ResponseEntity<List<ProductImageDto>> {
-    val product = productService.getProductById(managerId, productId)
-    val productImages = productImageRepository.findByManagerIdAndProductId(managerId, product.id)
+    productService.validateProductExistsForManager(managerId, productId)
+    val productImages = productImageRepository.findByManagerIdAndProductId(managerId, productId)
     return ResponseEntity.ok(productImages.map { it.toDto() })
   }
 

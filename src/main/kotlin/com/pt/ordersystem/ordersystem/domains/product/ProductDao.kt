@@ -17,7 +17,9 @@ interface ProductDao : JpaRepository<ProductDbEntity, String> {
       SELECT p.id AS id, p.manager_id AS managerId, p.name AS name,
              p.brand_id AS brandId, b.name AS brandName,
              p.category_id AS categoryId, c.category AS categoryName,
-             p.minimum_price AS minimumPrice, p.price AS price, p.description AS description
+             p.minimum_price AS minimumPrice, p.price AS price, p.description AS description,
+             (SELECT JSON_ARRAYAGG(JSON_OBJECT('s3Key', pi.s3_key, 'mimeType', pi.mime_type))
+              FROM product_images pi WHERE pi.product_id = p.id AND pi.manager_id = p.manager_id) AS imagesJson
       FROM products p
       LEFT JOIN brands b ON p.brand_id = b.id AND p.manager_id = b.manager_id
       LEFT JOIN categories c ON p.category_id = c.id AND p.manager_id = c.manager_id
@@ -26,6 +28,23 @@ interface ProductDao : JpaRepository<ProductDbEntity, String> {
     nativeQuery = true
   )
   fun findAllProductsByManagerId(@Param("managerId") managerId: String): List<ProductMapper>
+
+  @Query(
+    value = """
+      SELECT p.id AS id, p.manager_id AS managerId, p.name AS name,
+             p.brand_id AS brandId, b.name AS brandName,
+             p.category_id AS categoryId, c.category AS categoryName,
+             p.minimum_price AS minimumPrice, p.price AS price, p.description AS description,
+             (SELECT JSON_ARRAYAGG(JSON_OBJECT('s3Key', pi.s3_key, 'mimeType', pi.mime_type))
+              FROM product_images pi WHERE pi.product_id = p.id AND pi.manager_id = p.manager_id) AS imagesJson
+      FROM products p
+      LEFT JOIN brands b ON p.brand_id = b.id AND p.manager_id = b.manager_id
+      LEFT JOIN categories c ON p.category_id = c.id AND p.manager_id = c.manager_id
+      WHERE p.manager_id = :managerId AND p.id = :productId
+    """,
+    nativeQuery = true
+  )
+  fun findProductByManagerIdAndId(@Param("managerId") managerId: String, @Param("productId") productId: String): ProductMapper?
 
   fun countByManagerId(managerId: String): Long
   fun findByManagerIdAndId(managerId: String, id: String): ProductDbEntity?

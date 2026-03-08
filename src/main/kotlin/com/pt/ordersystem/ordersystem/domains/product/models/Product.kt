@@ -13,6 +13,7 @@ data class Product(
   val minimumPrice: BigDecimal,
   val price: BigDecimal,
   val description: String,
+  val images: List<ProductImageData> = emptyList(),
 ) {
   fun toPublicDto(): ProductPublicDto = ProductPublicDto(
     id = id,
@@ -24,9 +25,10 @@ data class Product(
     categoryName = categoryName,
     price = price,
     description = description,
+    images = images,
   )
 
-  fun toInternalDto(): ProductInternalDto = ProductInternalDto(
+  fun toPrivateDto(): ProductPrivateDto = ProductPrivateDto(
     id = id,
     managerId = managerId,
     name = name,
@@ -37,5 +39,6 @@ data class Product(
     minimumPrice = minimumPrice,
     price = price,
     description = description,
+    images = images,
   )
 }

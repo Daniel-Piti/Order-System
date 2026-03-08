@@ -6,7 +6,7 @@ import com.pt.ordersystem.ordersystem.domains.product.ProductService
 import com.pt.ordersystem.ordersystem.domains.product.models.CreateProductRequest
 import com.pt.ordersystem.ordersystem.domains.product.models.CreateProductResponse
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductInfo
-import com.pt.ordersystem.ordersystem.domains.product.models.ProductInternalDto
+import com.pt.ordersystem.ordersystem.domains.product.models.ProductPrivateDto
 import com.pt.ordersystem.ordersystem.domains.product.models.UploadProductImagesResponse
 import com.pt.ordersystem.ordersystem.storage.models.ImageMetadata
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
@@ -27,18 +27,9 @@ class ProductManagerController(
 ) {
 
   @GetMapping
-  fun getAllProducts(@AuthenticationPrincipal manager: AuthUser): ResponseEntity<List<ProductInternalDto>> {
+  fun getAllProducts(@AuthenticationPrincipal manager: AuthUser): ResponseEntity<List<ProductPrivateDto>> {
     val products = productService.getAllProductsForManager(manager.id)
-    return ResponseEntity.ok(products.map { it.toInternalDto() })
-  }
-
-  @GetMapping("/{productId}")
-  fun getProduct(
-    @PathVariable productId: String,
-    @AuthenticationPrincipal manager: AuthUser
-  ): ResponseEntity<ProductInternalDto> {
-    val product = productService.getProductById(manager.id, productId)
-    return ResponseEntity.ok(product.toInternalDto())
+    return ResponseEntity.ok(products.map { it.toPrivateDto() })
   }
 
   @PostMapping
@@ -55,9 +46,9 @@ class ProductManagerController(
     @PathVariable productId: String,
     @RequestBody productInfo: ProductInfo,
     @AuthenticationPrincipal manager: AuthUser
-  ): ResponseEntity<ProductInternalDto> {
+  ): ResponseEntity<ProductPrivateDto> {
     val product = productService.updateProductInfo(manager.id, productId, productInfo)
-    return ResponseEntity.ok(product.toInternalDto())
+    return ResponseEntity.ok(product.toPrivateDto())
   }
 
   @DeleteMapping("/{productId}")

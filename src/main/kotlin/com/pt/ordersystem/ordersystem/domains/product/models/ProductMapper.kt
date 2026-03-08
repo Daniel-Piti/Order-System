@@ -13,6 +13,7 @@ interface ProductMapper {
   fun getMinimumPrice(): BigDecimal
   fun getPrice(): BigDecimal
   fun getDescription(): String
+  fun getImagesJson(): String?
 }
 
 fun ProductMapper.toProduct(): Product = Product(
@@ -26,4 +27,5 @@ fun ProductMapper.toProduct(): Product = Product(
   minimumPrice = getMinimumPrice(),
   price = getPrice(),
   description = getDescription(),
+  images = parseProductImagesJson(getImagesJson()),
 )
