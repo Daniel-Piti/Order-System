@@ -39,4 +39,22 @@ data class ProductDbEntity(
 
   @Column(name = "updated_at", nullable = false)
   var updatedAt: LocalDateTime = LocalDateTime.now(),
-)
+) {
+
+  fun toProduct(
+    brandName: String? = null,
+    categoryName: String? = null,
+    priceOverride: BigDecimal? = null
+  ): Product = Product(
+    id = id,
+    managerId = managerId,
+    name = name,
+    brandId = brandId,
+    brandName = brandName,
+    categoryId = categoryId,
+    categoryName = categoryName,
+    minimumPrice = minimumPrice,
+    price = priceOverride ?: price,
+    description = description,
+  )
+}

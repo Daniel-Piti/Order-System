@@ -1,6 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.product.controllers
 
-import com.pt.ordersystem.ordersystem.domains.product.models.ProductDto
+import com.pt.ordersystem.ordersystem.domains.product.models.ProductPublicDto
 import com.pt.ordersystem.ordersystem.domains.productImage.models.ProductImageDto
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
 import com.pt.ordersystem.ordersystem.domains.product.ProductService
@@ -23,27 +23,23 @@ class ProductPublicController(
   fun getProduct(
     @PathVariable managerId: String,
     @PathVariable productId: String
-  ): ResponseEntity<ProductDto> {
-    // Validate user exists
+  ): ResponseEntity<ProductPublicDto> {
     managerService.validateManagerExists(managerId)
-    
     val product = productService.getProductById(managerId = managerId, productId = productId)
-    return ResponseEntity.ok(product)
+    return ResponseEntity.ok(product.toPublicDto())
   }
 
   @GetMapping("/manager/{managerId}")
-  fun getAllManagerProducts(@PathVariable managerId: String): ResponseEntity<List<ProductDto>> {
+  fun getAllManagerProducts(@PathVariable managerId: String): ResponseEntity<List<ProductPublicDto>> {
     managerService.validateManagerExists(managerId)
     val products = productService.getAllProductsForManager(managerId)
-    return ResponseEntity.ok(products)
+    return ResponseEntity.ok(products.map { it.toPublicDto() })
   }
 
   @GetMapping("/order/{orderId}")
-  fun getAllProductsForOrder(
-    @PathVariable orderId: String
-  ): ResponseEntity<List<ProductDto>> {
+  fun getAllProductsForOrder(@PathVariable orderId: String): ResponseEntity<List<ProductPublicDto>> {
     val products = productService.getAllProductsForOrder(orderId)
-    return ResponseEntity.ok(products)
+    return ResponseEntity.ok(products.map { it.toPublicDto() })
   }
 
   @GetMapping("/manager/{managerId}/product/{productId}/images")

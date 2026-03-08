@@ -1,11 +1,11 @@
 package com.pt.ordersystem.ordersystem.domains.product
 
+import com.pt.ordersystem.ordersystem.domains.product.models.Product
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductDbEntity
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductFailureReason
+import com.pt.ordersystem.ordersystem.domains.product.models.toProduct
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
@@ -15,11 +15,8 @@ class ProductRepository(
   private val productDao: ProductDao,
 ) {
 
-  fun findAllByManagerId(managerId: String): List<ProductDbEntity> =
-    productDao.findAllByManagerId(managerId)
-
-  fun findAllByManagerId(managerId: String, pageable: Pageable): Page<ProductDbEntity> =
-    productDao.findAllByManagerId(managerId, pageable)
+  fun getManagersProducts(managerId: String): List<Product> =
+    productDao.findAllProductsByManagerId(managerId).map { it.toProduct() }
 
   fun countByManagerId(managerId: String): Long =
     productDao.countByManagerId(managerId)
@@ -31,15 +28,6 @@ class ProductRepository(
       technicalMessage = ProductFailureReason.NOT_FOUND.technical + "productId=$productId, managerId=$managerId",
       severity = SeverityLevel.WARN
     )
-
-  fun findByManagerIdAndCategoryId(managerId: String, categoryId: Long, pageable: Pageable): Page<ProductDbEntity> =
-    productDao.findByManagerIdAndCategoryId(managerId, categoryId, pageable)
-
-  fun findByManagerIdAndBrandId(managerId: String, brandId: Long, pageable: Pageable): Page<ProductDbEntity> =
-    productDao.findByManagerIdAndBrandId(managerId, brandId, pageable)
-
-  fun findByManagerIdAndCategoryIdAndBrandId(managerId: String, categoryId: Long, brandId: Long, pageable: Pageable): Page<ProductDbEntity> =
-    productDao.findByManagerIdAndCategoryIdAndBrandId(managerId, categoryId, brandId, pageable)
 
   fun removeBrandFromProducts(managerId: String, brandId: Long): Int =
     productDao.removeBrandFromProducts(managerId, brandId, LocalDateTime.now())

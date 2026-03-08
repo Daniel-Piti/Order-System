@@ -44,85 +44,36 @@ class ProductService(
   fun removeBrandFromProducts(managerId: String, brandId: Long) =
     productRepository.removeBrandFromProducts(managerId, brandId)
 
-  fun getAllProductsForManager(managerId: String): List<ProductDto> {
-    // Fetch all products for manager (max 1000); FE handles sort and filter
-    val allProducts = productRepository.findAllByManagerId(managerId)
+  fun getAllProductsForManager(managerId: String): List<Product> =
+    productRepository.getManagersProducts(managerId)
 
-    val brands = brandRepository.findByManagerId(managerId)
-    val brandMap = brands.associate { it.id to it.name }
-    val categories = categoryRepository.findByManagerId(managerId)
-    val categoryMap = categories.associate { it.id to it.category }
-
-    return allProducts.map { product ->
-      val brandName = product.brandId?.let { brandMap[it] }
-      if (product.brandId != null && brandName == null) {
-        logger.warn("Brand with ID=${product.brandId} not found for manager $managerId")
-      }
-      val categoryName = product.categoryId?.let { categoryMap[it] }
-      if (product.categoryId != null && categoryName == null) {
-        logger.warn("Category with ID=${product.categoryId} not found for manager $managerId")
-      }
-      product.toDto(brandName, categoryName)
-    }
-  }
-
-  fun getAllProductsForOrder(orderId: String): List<ProductDto> {
+  fun getAllProductsForOrder(orderId: String): List<Product> {
     val order = orderService.getOrderById(orderId)
+    val products = productRepository.getManagersProducts(order.managerId)
 
-    // Fetch all products for the manager
-    val products = productRepository.findAllByManagerId(order.managerId)
+    if (order.customerId == null) return products
 
-    // Fetch brands and categories for enrichment
-    val brands = brandRepository.findByManagerId(order.managerId)
-    val brandMap = brands.associate { it.id to it.name }
-
-    val categories = categoryRepository.findByManagerId(order.managerId)
-    val categoryMap = categories.associate { it.id to it.category }
-
-    // If no customer assigned, return products with default prices
-    if (order.customerId == null) {
-      return products.map { product ->
-        val brandName = product.brandId?.let { brandMap[it] }
-        val categoryName = product.categoryId?.let { categoryMap[it] }
-        product.toDto(brandName, categoryName)
-      }
-    }
-
-    // Customer exists - get customer and overrides
     val customer = customerRepository.findByManagerIdAndId(order.managerId, order.customerId)
+    val overrideMap = productOverrideRepository.getAllForManagerIdAndCustomerId(order.managerId, order.customerId)
+      .associate { it.productId to it.overridePrice }
 
-    val overrides = productOverrideRepository.getAllForManagerIdAndCustomerId(order.managerId, order.customerId)
-
-    // Create a map of productId -> override price for quick lookup
-    val overrideMap = overrides.associate { it.productId to it.overridePrice }
-
-    // Map products to DTOs, applying override, discount, and minimum price
     return products.map { product ->
-      // Step 1: Start with override price if exists, otherwise default price
       var priceAfterOverride = overrideMap[product.id] ?: product.price
-
-      // Step 2: Apply discount percentage if customer has one
       if (customer.discountPercentage > 0) {
         val discountMultiplier = BigDecimal(100 - customer.discountPercentage).divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
         priceAfterOverride = priceAfterOverride.multiply(discountMultiplier).setScale(2, RoundingMode.HALF_UP)
       }
-
-      // Step 3: Ensure price is not below minimum price
       val finalPrice = priceAfterOverride.max(product.minimumPrice)
-
-      val brandName = product.brandId?.let { brandMap[it] }
-      val categoryName = product.categoryId?.let { categoryMap[it] }
-      product.toDto(brandName = brandName, categoryName = categoryName, price = finalPrice)
+      product.copy(price = finalPrice)
     }
-
   }
 
-  fun getProductById(managerId: String, productId: String): ProductDto {
-    val product = productRepository.findByManagerIdAndId(managerId, productId)
+  fun getProductById(managerId: String, productId: String): Product {
+    val entity = productRepository.findByManagerIdAndId(managerId, productId)
 
-    val brandName = product.brandId?.let { brandRepository.findByManagerIdAndId(managerId, it).name }
-    val categoryName = product.categoryId?.let { categoryRepository.findByManagerIdAndId(managerId, it).category }
-    return product.toDto(brandName = brandName, categoryName = categoryName)
+    val brandName = entity.brandId?.let { brandRepository.findByManagerIdAndId(managerId, it).name }
+    val categoryName = entity.categoryId?.let { categoryRepository.findByManagerIdAndId(managerId, it).category }
+    return entity.toProduct(brandName = brandName, categoryName = categoryName)
   }
 
   private fun validateProductInfo(managerId: String, productInfo: ProductInfo) {
@@ -169,12 +120,16 @@ class ProductService(
       updatedAt = now,
     )
 
-    val productDto = productRepository.save(product).toDto()
+    val saved = productRepository.save(product)
+
+    val brandName = saved.brandId?.let { brandRepository.findByManagerIdAndId(managerId, it).name }
+    val categoryName = saved.categoryId?.let { categoryRepository.findByManagerIdAndId(managerId, it).category }
+    val productModel = saved.toProduct(brandName, categoryName)
 
     val imagesPreSignedUrls = generatePreSignedUrlsAndSaveProductImage(managerId, product.id, imagesMetadata)
 
     return CreateProductResponse(
-      product = productDto,
+      product = productModel.toInternalDto(),
       imagesPreSignedUrls = imagesPreSignedUrls
     )
   }
@@ -184,17 +139,17 @@ class ProductService(
     managerId: String,
     productId: String,
     productInfo: ProductInfo
-  ): ProductDto {
+  ): Product {
     validateProductInfo(managerId, productInfo)
 
-    val product = productRepository.findByManagerIdAndId(managerId, productId)
+    val entity = productRepository.findByManagerIdAndId(managerId, productId)
 
     // If minimum price is being increased, update any invalid overrides
-    if (productInfo.minimumPrice > product.minimumPrice) {
-      productOverrideService.updateInvalidOverridesForProduct(product.managerId, productId, productInfo.minimumPrice)
+    if (productInfo.minimumPrice > entity.minimumPrice) {
+      productOverrideService.updateInvalidOverridesForProduct(entity.managerId, productId, productInfo.minimumPrice)
     }
 
-    val updated = product.copy(
+    val updated = entity.copy(
       name = productInfo.name,
       brandId = productInfo.brandId,
       categoryId = productInfo.categoryId,
@@ -204,7 +159,10 @@ class ProductService(
       updatedAt = LocalDateTime.now(),
     )
 
-    return productRepository.save(updated).toDto()
+    val saved = productRepository.save(updated)
+    val brandName = saved.brandId?.let { brandRepository.findByManagerIdAndId(managerId, it).name }
+    val categoryName = saved.categoryId?.let { categoryRepository.findByManagerIdAndId(managerId, it).category }
+    return saved.toProduct(brandName, categoryName)
   }
 
   @Transactional

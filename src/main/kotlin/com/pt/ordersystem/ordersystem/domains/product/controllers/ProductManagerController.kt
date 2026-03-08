@@ -3,7 +3,11 @@ package com.pt.ordersystem.ordersystem.domains.product.controllers
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.product.ProductService
-import com.pt.ordersystem.ordersystem.domains.product.models.*
+import com.pt.ordersystem.ordersystem.domains.product.models.CreateProductRequest
+import com.pt.ordersystem.ordersystem.domains.product.models.CreateProductResponse
+import com.pt.ordersystem.ordersystem.domains.product.models.ProductInfo
+import com.pt.ordersystem.ordersystem.domains.product.models.ProductInternalDto
+import com.pt.ordersystem.ordersystem.domains.product.models.UploadProductImagesResponse
 import com.pt.ordersystem.ordersystem.storage.models.ImageMetadata
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -22,6 +26,21 @@ class ProductManagerController(
   private val productService: ProductService
 ) {
 
+  @GetMapping
+  fun getAllProducts(@AuthenticationPrincipal manager: AuthUser): ResponseEntity<List<ProductInternalDto>> {
+    val products = productService.getAllProductsForManager(manager.id)
+    return ResponseEntity.ok(products.map { it.toInternalDto() })
+  }
+
+  @GetMapping("/{productId}")
+  fun getProduct(
+    @PathVariable productId: String,
+    @AuthenticationPrincipal manager: AuthUser
+  ): ResponseEntity<ProductInternalDto> {
+    val product = productService.getProductById(manager.id, productId)
+    return ResponseEntity.ok(product.toInternalDto())
+  }
+
   @PostMapping
   fun createProduct(
     @RequestBody request: CreateProductRequest,
@@ -36,9 +55,9 @@ class ProductManagerController(
     @PathVariable productId: String,
     @RequestBody productInfo: ProductInfo,
     @AuthenticationPrincipal manager: AuthUser
-  ): ResponseEntity<ProductDto> {
-    val updatedProductDto = productService.updateProductInfo(manager.id, productId, productInfo)
-    return ResponseEntity.ok(updatedProductDto)
+  ): ResponseEntity<ProductInternalDto> {
+    val product = productService.updateProductInfo(manager.id, productId, productInfo)
+    return ResponseEntity.ok(product.toInternalDto())
   }
 
   @DeleteMapping("/{productId}")

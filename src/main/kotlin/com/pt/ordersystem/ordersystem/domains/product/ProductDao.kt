@@ -1,8 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.product
 
 import com.pt.ordersystem.ordersystem.domains.product.models.ProductDbEntity
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.Pageable
+import com.pt.ordersystem.ordersystem.domains.product.models.ProductMapper
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
@@ -12,13 +11,24 @@ import java.time.LocalDateTime
 
 @Repository
 interface ProductDao : JpaRepository<ProductDbEntity, String> {
-  fun findAllByManagerId(managerId: String): List<ProductDbEntity>
-  fun findAllByManagerId(managerId: String, pageable: Pageable): Page<ProductDbEntity>
+
+  @Query(
+    value = """
+      SELECT p.id AS id, p.manager_id AS managerId, p.name AS name,
+             p.brand_id AS brandId, b.name AS brandName,
+             p.category_id AS categoryId, c.category AS categoryName,
+             p.minimum_price AS minimumPrice, p.price AS price, p.description AS description
+      FROM products p
+      LEFT JOIN brands b ON p.brand_id = b.id AND p.manager_id = b.manager_id
+      LEFT JOIN categories c ON p.category_id = c.id AND p.manager_id = c.manager_id
+      WHERE p.manager_id = :managerId
+    """,
+    nativeQuery = true
+  )
+  fun findAllProductsByManagerId(@Param("managerId") managerId: String): List<ProductMapper>
+
   fun countByManagerId(managerId: String): Long
   fun findByManagerIdAndId(managerId: String, id: String): ProductDbEntity?
-  fun findByManagerIdAndCategoryId(managerId: String, categoryId: Long, pageable: Pageable): Page<ProductDbEntity>
-  fun findByManagerIdAndBrandId(managerId: String, brandId: Long, pageable: Pageable): Page<ProductDbEntity>
-  fun findByManagerIdAndCategoryIdAndBrandId(managerId: String, categoryId: Long, brandId: Long, pageable: Pageable): Page<ProductDbEntity>
 
   @Modifying
   @Query("UPDATE ProductDbEntity p SET p.brandId = NULL, p.updatedAt = :updatedAt WHERE p.managerId = :managerId AND p.brandId = :brandId")
