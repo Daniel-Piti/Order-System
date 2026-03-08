@@ -43,24 +43,6 @@ class ProductOverrideManagerController(
     return ResponseEntity.ok(overrides.map { it.toDto() })
   }
 
-  @GetMapping("/override/{overrideId}")
-  fun getOverrideById(
-    @PathVariable overrideId: Long,
-    @AuthenticationPrincipal manager: AuthUser
-  ): ResponseEntity<ProductOverrideDto> {
-    val override = productOverrideService.getProductOverrideById(manager.id, null, overrideId)
-    return ResponseEntity.ok(override.toDto())
-  }
-
-  @GetMapping("/product/{productId}")
-  fun getOverridesByProduct(
-    @PathVariable productId: String,
-    @AuthenticationPrincipal manager: AuthUser
-  ): ResponseEntity<List<ProductOverrideDto>> {
-    val overrides = productOverrideService.getProductOverridesForProductId(manager.id, null, productId)
-    return ResponseEntity.ok(overrides.map { it.toDto() })
-  }
-
   @PostMapping
   fun createOverride(
     @RequestBody request: CreateProductOverrideRequest,

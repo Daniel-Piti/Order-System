@@ -46,16 +46,6 @@ class ProductOverrideAgentController(
     return ResponseEntity.ok(overrides.map { it.toDto() })
   }
 
-  @GetMapping("/override/{overrideId}")
-  fun getOverrideById(
-    @AuthenticationPrincipal agent: AuthUser,
-    @PathVariable overrideId: Long,
-  ): ResponseEntity<ProductOverrideDto> {
-    val agent = agentService.getAgent(agent.id)
-    val override = productOverrideService.getProductOverrideById(agent.managerId, agent.id, overrideId)
-    return ResponseEntity.ok(override.toDto())
-  }
-
   @GetMapping("/product/{productId}")
   fun getOverridesByProduct(
     @AuthenticationPrincipal agent: AuthUser,

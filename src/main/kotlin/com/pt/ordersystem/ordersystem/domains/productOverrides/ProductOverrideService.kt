@@ -37,9 +37,6 @@ class ProductOverrideService(
     )
   }
 
-  fun getProductOverrideById(managerId: String, agentId: String?, overrideId: Long): ProductOverride =
-    productOverrideRepository.getProductOverride(managerId, agentId, overrideId)
-
   fun getProductOverridesForProductId(managerId: String, agentId: String?, productId: String): List<ProductOverride> =
     productOverrideRepository.getAllForManagerAgentAndProduct(managerId, agentId, productId)
 

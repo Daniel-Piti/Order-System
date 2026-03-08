@@ -21,9 +21,6 @@ class CategoryService(
     private val productService: ProductService,
 ) {
 
-    fun getCategoryById(managerId: String, categoryId: Long): Category =
-        categoryRepository.findByManagerIdAndId(managerId, categoryId)
-
     fun getManagerCategories(managerId: String): List<Category> =
         categoryRepository.findByManagerId(managerId)
 

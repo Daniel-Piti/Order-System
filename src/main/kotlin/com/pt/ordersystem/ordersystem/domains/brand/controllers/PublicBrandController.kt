@@ -22,15 +22,5 @@ class PublicBrandController(
         val brands = brandService.getManagerBrands(managerId)
         return ResponseEntity.ok(brands.map { it.toDto() })
     }
-
-    @GetMapping("/manager/{managerId}/brand/{brandId}")
-    fun getBrandById(
-        @PathVariable managerId: String,
-        @PathVariable brandId: Long
-    ): ResponseEntity<BrandDto> {
-        managerService.validateManagerExists(managerId)
-        val brand = brandService.getBrandById(managerId, brandId)
-        return ResponseEntity.ok(brand.toDto())
-    }
 }
 

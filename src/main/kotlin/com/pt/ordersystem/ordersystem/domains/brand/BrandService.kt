@@ -16,9 +16,6 @@ class BrandService(
     private val s3StorageService: S3StorageService
 ) {
 
-    fun getBrandById(managerId: String, brandId: Long): Brand =
-        brandRepository.findByManagerIdAndId(managerId, brandId)
-
     fun getManagerBrands(managerId: String): List<Brand> =
         brandRepository.findByManagerId(managerId)
 
