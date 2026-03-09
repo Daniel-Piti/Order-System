@@ -32,6 +32,15 @@ class ProductManagerController(
     return ResponseEntity.ok(products.map { it.toPrivateDto() })
   }
 
+  @GetMapping("/{productId}")
+  fun getProduct(
+    @PathVariable productId: String,
+    @AuthenticationPrincipal manager: AuthUser
+  ): ResponseEntity<ProductPrivateDto> {
+    val product = productService.getProductByManagerIdAndId(manager.id, productId)
+    return ResponseEntity.ok(product.toPrivateDto())
+  }
+
   @PostMapping
   fun createProduct(
     @RequestBody request: CreateProductRequest,

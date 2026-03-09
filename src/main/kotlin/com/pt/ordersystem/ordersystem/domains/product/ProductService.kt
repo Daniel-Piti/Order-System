@@ -68,9 +68,8 @@ class ProductService(
     }
   }
 
-  fun validateProductExistsForManager(managerId: String, productId: String) {
-    productRepository.getProductEntityByManagerIdAndId(managerId, productId)
-  }
+  fun getProductByManagerIdAndId(managerId: String, productId: String): Product =
+    productRepository.getProductByManagerIdAndId(managerId, productId)
 
   private fun validateProductInfo(managerId: String, productInfo: ProductInfo) {
     with(productInfo) {
