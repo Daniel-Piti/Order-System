@@ -6,6 +6,7 @@ import com.pt.ordersystem.ordersystem.domains.product.models.*
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerRepository
 import com.pt.ordersystem.ordersystem.domains.order.OrderService
 import com.pt.ordersystem.ordersystem.domains.product.helpers.ProductValidators
+import com.pt.ordersystem.ordersystem.domains.product.helpers.ProductsHelper
 import com.pt.ordersystem.ordersystem.domains.productImage.ProductImageRepository
 import com.pt.ordersystem.ordersystem.domains.productImage.helpers.ProductImageValidators
 import com.pt.ordersystem.ordersystem.domains.productImage.models.ProductImageDbEntity
@@ -17,8 +18,6 @@ import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.math.BigDecimal
-import java.math.RoundingMode
 import java.time.LocalDateTime
 
 @Service
@@ -57,15 +56,8 @@ class ProductService(
     val overrideMap = productOverrideRepository.getAllForManagerIdAndCustomerId(order.managerId, order.customerId)
       .associate { it.productId to it.overridePrice }
 
-    return products.map { product ->
-      var priceAfterOverride = overrideMap[product.id] ?: product.price
-      if (customer.discountPercentage > 0) {
-        val discountMultiplier = BigDecimal(100 - customer.discountPercentage).divide(BigDecimal(100), 2, RoundingMode.HALF_UP)
-        priceAfterOverride = priceAfterOverride.multiply(discountMultiplier).setScale(2, RoundingMode.HALF_UP)
-      }
-      val finalPrice = priceAfterOverride.max(product.minimumPrice)
-      product.copy(price = finalPrice)
-    }
+    val productsAfterOverridesAndDiscount = ProductsHelper.applyOverridesPrice(products, overrideMap, customer.discountPercentage)
+    return productsAfterOverridesAndDiscount
   }
 
   fun getProductByManagerIdAndId(managerId: String, productId: String): Product =
