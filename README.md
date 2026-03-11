@@ -26,20 +26,12 @@ Order management system built with Spring Boot and Kotlin.
    - `S3_BUCKET_NAME` - AWS S3 bucket name (default: ordersystem-uploads)
    - `S3_REGION` - AWS region (default: il-central-1)
    - `S3_PUBLIC_DOMAIN` - Optional: CloudFront domain for public URLs
-   - `INVOICE_SIGNING_KEYSTORE_PATH` - Path to PKCS12 keystore for signing invoice PDFs (required)
+   - `INVOICE_SIGNING_KEYSTORE_BASE64` - Base64-encoded PKCS12 keystore for signing invoice PDFs (required)
    - `INVOICE_SIGNING_KEYSTORE_PASSWORD` - Keystore password
    - `INVOICE_SIGNING_KEY_ALIAS` - (Optional) Key alias; if empty, first alias is used
    - `INVOICE_SIGNING_KEY_PASSWORD` - (Optional) Key password; if empty, keystore password is used
 
-   **Create a keystore for local dev (invoice signing):**  
-   From the project root (`Order-System/`), run:
-   ```bash
-   mkdir -p config
-   keytool -genkeypair -storepass changeit -storetype pkcs12 -alias invoice -validity 365 -v -keyalg RSA -keystore config/invoice-signing.p12 -dname "CN=My Business, OU=Invoices, O=MyCo, L=Tel Aviv, ST=Israel, C=IL"
-   ```
-   This creates `config/invoice-signing.p12` (already in `.gitignore` — do not commit it). In `.env` set:
-   - `INVOICE_SIGNING_KEYSTORE_PATH=config/invoice-signing.p12` (or an absolute path to that file)
-   - `INVOICE_SIGNING_KEYSTORE_PASSWORD=changeit` (or whatever password you used above)
+   **Invoice signing (local or AWS):** Use the base64 of your PKCS12 keystore. In ECS, inject `INVOICE_SIGNING_KEYSTORE_BASE64` from Secrets Manager. For local dev, base64 your `.p12` and set it in `.env`.
 
    Note: `config.yml` is already in git (only placeholders, no secrets). Spring Boot will resolve placeholders from your `.env` file.
 

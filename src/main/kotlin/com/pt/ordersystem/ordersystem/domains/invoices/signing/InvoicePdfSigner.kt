@@ -41,8 +41,8 @@ import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
 import jakarta.annotation.PostConstruct
-import java.io.FileInputStream
 import java.security.PrivateKey
+import java.util.Base64
 
 @Component
 class InvoicePdfSigner(
@@ -64,8 +64,8 @@ class InvoicePdfSigner(
 
   @PostConstruct
   fun init() {
-    require(signingConfig.keystorePath.isNotBlank()) {
-      "Invoice signing is required: INVOICE_SIGNING_KEYSTORE_PATH must be set"
+    require(signingConfig.keystoreBase64.isNotBlank()) {
+      "Invoice signing is required: INVOICE_SIGNING_KEYSTORE_BASE64 must be set"
     }
     require(signingConfig.keystorePassword.isNotBlank()) {
       "Invoice signing is required: INVOICE_SIGNING_KEYSTORE_PASSWORD must be set"
@@ -78,12 +78,13 @@ class InvoicePdfSigner(
 
   private fun loadKeystore() {
     val keyStore = KeyStore.getInstance("PKCS12")
-    FileInputStream(signingConfig.keystorePath).use { fis ->
+    val bytes = Base64.getDecoder().decode(signingConfig.keystoreBase64)
+    ByteArrayInputStream(bytes).use { fis ->
       keyStore.load(fis, signingConfig.keystorePassword.toCharArray())
     }
     val alias = signingConfig.keyAlias.ifBlank {
       keyStore.aliases().toList().firstOrNull()
-        ?: throw IllegalStateException("Keystore has no aliases: ${signingConfig.keystorePath}")
+        ?: throw IllegalStateException("Keystore has no aliases")
     }
     val keyPassword = if (signingConfig.keyPassword.isNotBlank()) signingConfig.keyPassword.toCharArray()
     else signingConfig.keystorePassword.toCharArray()

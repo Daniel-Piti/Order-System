@@ -15,7 +15,8 @@ data class ApplicationConfig(
 )
 
 data class InvoiceSigningProperties(
-  val keystorePath: String = "",
+  /** Base64-encoded PKCS12 keystore (e.g. from AWS Secrets Manager or .env). */
+  val keystoreBase64: String = "",
   val keystorePassword: String = "",
   val keyAlias: String = "",
   val keyPassword: String = ""
