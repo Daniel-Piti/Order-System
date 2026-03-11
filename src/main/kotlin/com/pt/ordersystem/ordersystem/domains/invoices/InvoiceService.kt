@@ -1,6 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.invoices
 
 import com.pt.ordersystem.ordersystem.domains.business.BusinessService
+import com.pt.ordersystem.ordersystem.domains.invoices.helpers.InvoiceAggregatorHelper
 import com.pt.ordersystem.ordersystem.domains.invoices.helpers.InvoiceHelper
 import com.pt.ordersystem.ordersystem.domains.invoices.helpers.InvoiceRenderHelper
 import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceRequest
@@ -17,7 +18,10 @@ import com.pt.ordersystem.ordersystem.storage.S3StorageService
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 @Service
 class InvoiceService(
@@ -160,6 +164,34 @@ class InvoiceService(
     return invoices.mapNotNull { invoice ->
         s3StorageService.getPublicUrl(invoice.s3Key)?.let { invoice.orderId to it }
       }.toMap()
+  }
+
+  @Transactional(readOnly = true)
+  fun getInvoiceLinksDocument(managerId: String, fromDate: LocalDate, toDate: LocalDate): ByteArray {
+    if (toDate.isBefore(fromDate)) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Date range invalid: 'to' must be on or after 'from'",
+        technicalMessage = "getInvoiceLinksDocument: toDate=$toDate is before fromDate=$fromDate",
+        severity = SeverityLevel.WARN
+      )
+    }
+    val from = fromDate.atStartOfDay()
+    val to = toDate.atTime(LocalTime.MAX)
+    val invoices = invoiceRepository.findByManagerIdAndCreatedAtBetween(managerId, from, to)
+    if (invoices.isEmpty()) {
+      return InvoiceAggregatorHelper.buildInvoiceLinksXlsx(fromDate, toDate, emptyList(), BigDecimal.ZERO)
+    }
+    val orderIds = invoices.map { it.orderId }.distinct()
+    val ordersById = orderRepository.findByIdIn(orderIds).associateBy { it.id }
+    val entries = invoices.mapNotNull { invoice ->
+      val url = s3StorageService.getPublicUrl(invoice.s3Key) ?: return@mapNotNull null
+      val order = ordersById[invoice.orderId] ?: return@mapNotNull null
+      val displayName = invoice.fileName ?: "invoice-${invoice.invoiceSequenceNumber}.pdf"
+      InvoiceAggregatorHelper.InvoiceLinkEntry(invoice.orderId, url, displayName, order.totalPrice)
+    }
+    val totalAmount = entries.fold(BigDecimal.ZERO) { acc, e -> acc.add(e.totalPrice) }
+    return InvoiceAggregatorHelper.buildInvoiceLinksXlsx(fromDate, toDate, entries, totalAmount)
   }
 
 }

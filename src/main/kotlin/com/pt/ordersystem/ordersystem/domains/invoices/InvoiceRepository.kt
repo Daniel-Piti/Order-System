@@ -6,11 +6,17 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import java.time.LocalDateTime
 
 interface InvoiceRepository : JpaRepository<InvoiceDbEntity, Long> {
   fun findByManagerId(managerId: String): List<InvoiceDbEntity>
   fun findByOrderId(orderId: String): InvoiceDbEntity?
   fun findByOrderIdInAndManagerId(orderIds: List<String>, managerId: String): List<InvoiceDbEntity>
+  fun findByManagerIdAndCreatedAtBetween(
+    managerId: String,
+    from: LocalDateTime,
+    to: LocalDateTime
+  ): List<InvoiceDbEntity>
   
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("SELECT COALESCE(MAX(i.invoiceSequenceNumber), 0) FROM InvoiceDbEntity i WHERE i.managerId = :managerId")

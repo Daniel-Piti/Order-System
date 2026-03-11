@@ -17,6 +17,8 @@ CREATE TABLE invoices (
     INDEX idx_invoices_manager_id (manager_id),
     INDEX idx_invoices_order_id (order_id),
     INDEX idx_invoices_manager_sequence (manager_id, invoice_sequence_number),
+    INDEX idx_invoices_manager_created_at (manager_id, created_at),
+    INDEX idx_invoices_manager_updated_at (manager_id, updated_at),
     UNIQUE KEY uk_invoices_order_id (order_id)
 ) AUTO_INCREMENT = 1000;
 

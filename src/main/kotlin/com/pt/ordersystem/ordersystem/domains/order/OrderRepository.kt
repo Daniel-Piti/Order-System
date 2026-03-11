@@ -92,6 +92,9 @@ class OrderRepository(
       severity = SeverityLevel.WARN
     )
 
+  fun findByIdIn(orderIds: List<String>): List<Order> =
+    orderDao.findAllById(orderIds).map { it.toModel() }
+
   fun save(entity: OrderDbEntity): Order = orderDao.save(entity).toModel()
 
   fun bulkExpireEmptyOrders(currentTime: LocalDateTime, updatedAt: LocalDateTime): Int =

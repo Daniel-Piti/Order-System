@@ -33,6 +33,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-security")
 	implementation("org.springframework.boot:spring-boot-starter-mail")
 	implementation("org.apache.pdfbox:pdfbox:3.0.3")
+	implementation("org.apache.poi:poi-ooxml:5.2.5")
 	// Bouncy Castle for PDF digital signature (PKCS#7/CMS)
 	implementation("org.bouncycastle:bcpkix-jdk18on:1.79")
 	

@@ -7,13 +7,17 @@ import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceRespo
 import com.pt.ordersystem.ordersystem.domains.invoices.models.ManagerCreateInvoiceRequest
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.time.LocalDate
 
 @Tag(name = "Invoices", description = "Manager invoice management API")
 @SecurityRequirement(name = "bearerAuth")
@@ -47,5 +51,26 @@ class ManagerInvoiceController(
   ): ResponseEntity<Map<String, String>> {
     val invoiceMap = invoiceService.getInvoicesByOrderIds(manager.id, orderIds)
     return ResponseEntity.ok(invoiceMap)
+  }
+
+  /**
+   * Returns an Excel (.xlsx) file with clickable invoice links (e.g. "invoice-1.pdf") and order totals
+   * for the given date range (by invoice creation date).
+   * Query params: from (yyyy-MM-dd), to (yyyy-MM-dd).
+   */
+  @GetMapping(value = ["/document"], produces = ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"])
+  fun getInvoiceLinksDocument(
+    @AuthenticationPrincipal manager: AuthUser,
+    @RequestParam from: String,
+    @RequestParam to: String
+  ): ResponseEntity<ByteArray> {
+    val fromDate = LocalDate.parse(from)
+    val toDate = LocalDate.parse(to)
+    val xlsx = invoiceService.getInvoiceLinksDocument(manager.id, fromDate, toDate)
+    val filename = "invoice-links-${from}-${to}.xlsx"
+    return ResponseEntity.ok()
+      .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+      .header("Content-Disposition", "attachment; filename=\"$filename\"")
+      .body(xlsx)
   }
 }
