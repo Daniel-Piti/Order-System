@@ -18,8 +18,8 @@ spring:
   
   # Email configuration (Spring Mail)
   mail:
-    host: ${SMTP_HOST:smtp.gmail.com}
-    port: ${SMTP_PORT:587}
+    host: ${SMTP_HOST}
+    port: ${SMTP_PORT}
     username: ${SMTP_USERNAME}
     password: ${SMTP_PASSWORD}
     properties:
@@ -33,8 +33,8 @@ spring:
 
 config:
   jwt: ${APP_SECRETS_JWT}
-  admin-username-hash: ${ADMIN_USERNAME_HASH:}
-  admin-password-hash: ${ADMIN_PASSWORD_HASH:}
+  admin-username-hash: ${ADMIN_USERNAME_HASH}
+  admin-password-hash: ${ADMIN_PASSWORD_HASH}
   
   # AWS S3 configuration (all required - app fails to start if missing)
   s3:
@@ -46,5 +46,5 @@ config:
   invoice-signing:
     keystore-base64: ${INVOICE_SIGNING_KEYSTORE_BASE64}
     keystore-password: ${INVOICE_SIGNING_KEYSTORE_PASSWORD}
-    key-alias: ${INVOICE_SIGNING_KEY_ALIAS:}  # Optional: first alias used if empty
-    key-password: ${INVOICE_SIGNING_KEY_PASSWORD:}  # Optional: keystore password used if empty
+    key-alias: ${INVOICE_SIGNING_KEY_ALIAS}
+    key-password: ${INVOICE_SIGNING_KEY_PASSWORD}
