@@ -39,7 +39,7 @@ class AgentSelfController(
     @AuthenticationPrincipal agent: AuthUser,
     @RequestBody request: UpdateAgentRequest,
   ): ResponseEntity<AgentDto> {
-    val normalizedRequest = request.normalize()
+    val normalizedRequest = request.validateAndNormalize()
     AgentValidators.validateUpdateAgentRequest(normalizedRequest)
     return ResponseEntity.ok(agentService.updateAgent(agent.id, normalizedRequest).toDto())
   }

@@ -38,8 +38,6 @@ class AgentService(
     agentRepository.findEntityByEmail(email)
 
   fun validateCreateAgent(request: NewAgentRequest, managerId: String) {
-    AgentValidators.validateNewAgentRequest(request)
-
     val agentCount = agentRepository.countByManagerId(managerId)
     AgentValidators.validateMaxAgentsNumber(agentCount, managerId)
 
