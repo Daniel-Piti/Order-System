@@ -3,7 +3,6 @@ package com.pt.ordersystem.ordersystem.domains.agent.controllers
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_AGENT
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.agent.AgentService
-import com.pt.ordersystem.ordersystem.domains.agent.helpers.AgentValidators
 import com.pt.ordersystem.ordersystem.domains.agent.models.AgentDto
 import com.pt.ordersystem.ordersystem.domains.agent.models.UpdateAgentRequest
 import com.pt.ordersystem.ordersystem.domains.agent.models.toDto
@@ -40,7 +39,6 @@ class AgentSelfController(
     @RequestBody request: UpdateAgentRequest,
   ): ResponseEntity<AgentDto> {
     val normalizedRequest = request.validateAndNormalize()
-    AgentValidators.validateUpdateAgentRequest(normalizedRequest)
     return ResponseEntity.ok(agentService.updateAgent(agent.id, normalizedRequest).toDto())
   }
 
