@@ -3,11 +3,11 @@ package com.pt.ordersystem.ordersystem.domains.brand.controllers
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.brand.BrandService
+import com.pt.ordersystem.ordersystem.domains.brand.models.BrandDto
 import com.pt.ordersystem.ordersystem.domains.brand.models.CreateBrandRequest
 import com.pt.ordersystem.ordersystem.domains.brand.models.UpdateBrandRequest
 import com.pt.ordersystem.ordersystem.domains.brand.models.CreateBrandResponse
 import com.pt.ordersystem.ordersystem.domains.brand.models.UpdateBrandImageResponse
-import com.pt.ordersystem.ordersystem.domains.brand.models.UpdateBrandNameResponse
 import com.pt.ordersystem.ordersystem.domains.brand.models.toDto
 import com.pt.ordersystem.ordersystem.storage.models.ImageMetadata
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
@@ -32,7 +32,7 @@ class BrandManagerController(
         @RequestBody request: CreateBrandRequest,
         @AuthenticationPrincipal manager: AuthUser
     ): ResponseEntity<CreateBrandResponse> {
-        val normalizedRequest = request.normalize()
+        val normalizedRequest = request.validateAndNormalize()
         val createBrandResponse = brandService.createBrand(manager.id, normalizedRequest)
         return ResponseEntity.status(HttpStatus.CREATED).body(createBrandResponse)
     }
@@ -42,11 +42,10 @@ class BrandManagerController(
         @PathVariable brandId: Long,
         @RequestBody request: UpdateBrandRequest,
         @AuthenticationPrincipal manager: AuthUser
-    ): ResponseEntity<UpdateBrandNameResponse> {
-        val normalizedRequest = request.normalize()
+    ): ResponseEntity<BrandDto> {
+        val normalizedRequest = request.validateAndNormalize()
         val updatedBrand = brandService.updateBrandName(manager.id, brandId, normalizedRequest)
-        val updateBrandNameResponse = UpdateBrandNameResponse(updatedBrand.toDto())
-        return ResponseEntity.ok(updateBrandNameResponse)
+        return ResponseEntity.ok(updatedBrand.toDto())
     }
 
     @PostMapping("/{brandId}/image")

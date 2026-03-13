@@ -22,6 +22,14 @@ class BrandRepository(
             severity = SeverityLevel.WARN
         )
 
+    fun findEntityByManagerIdAndId(managerId: String, id: Long): BrandDbEntity =
+        brandDao.findByManagerIdAndId(managerId, id) ?: throw ServiceException(
+            status = HttpStatus.NOT_FOUND,
+            userMessage = BrandFailureReason.NOT_FOUND.userMessage,
+            technicalMessage = BrandFailureReason.NOT_FOUND.technical + "brandId=$id",
+            severity = SeverityLevel.WARN
+        )
+
     fun findByManagerId(managerId: String): List<Brand> =
         brandDao.findByManagerId(managerId).map { it.toModel() }
 
@@ -29,9 +37,6 @@ class BrandRepository(
 
     fun existsByManagerIdAndName(managerId: String, name: String): Boolean =
         brandDao.existsByManagerIdAndName(managerId, name)
-
-    fun hasDuplicateName(managerId: String, name: String, id: Long): Boolean =
-        brandDao.existsByManagerIdAndNameAndIdNot(managerId, name, id)
 
     fun save(brandDbEntity: BrandDbEntity): Brand = brandDao.save(brandDbEntity).toModel()
 

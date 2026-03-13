@@ -1,6 +1,5 @@
 package com.pt.ordersystem.ordersystem.domains.brand
 
-import com.pt.ordersystem.ordersystem.domains.brand.helpers.BrandValidators
 import com.pt.ordersystem.ordersystem.domains.brand.models.*
 import com.pt.ordersystem.ordersystem.domains.product.ProductService
 import com.pt.ordersystem.ordersystem.storage.S3StorageService
@@ -12,24 +11,17 @@ import java.time.LocalDateTime
 @Service
 class BrandService(
     private val brandRepository: BrandRepository,
+    private val brandValidationService: BrandValidationService,
     private val productService: ProductService,
     private val s3StorageService: S3StorageService
 ) {
 
-    fun getManagerBrands(managerId: String): List<Brand> =
-        brandRepository.findByManagerId(managerId)
+    fun getManagerBrands(managerId: String): List<Brand> = brandRepository.findByManagerId(managerId)
 
     @Transactional
     fun createBrand(managerId: String, request: CreateBrandRequest): CreateBrandResponse {
-        val count = brandRepository.countByManagerId(managerId)
-        val brandAlreadyExists = brandRepository.existsByManagerIdAndName(managerId, request.name)
 
-        BrandValidators.validateCreateBrand(
-            brandName = request.name,
-            managerId = managerId,
-            brandsCount = count,
-            brandAlreadyExists = brandAlreadyExists,
-        )
+        brandValidationService.validateCreateBrand(managerId, request)
 
         // Handle image: generate presigned URL if image metadata provided
         val preSignedUrlResult = request.imageMetadata?.let { imageMetadata ->
@@ -57,25 +49,12 @@ class BrandService(
 
     @Transactional
     fun updateBrandName(managerId: String, brandId: Long, request: UpdateBrandRequest): Brand {
-        val brand = brandRepository.findByManagerIdAndId(managerId, brandId)
+        val storedBrandEntity = brandRepository.findEntityByManagerIdAndId(managerId, brandId)
 
-        val brandAlreadyExists = brandRepository.hasDuplicateName(managerId, request.name, brandId)
+        brandValidationService.validateUpdateBrand(managerId, request, storedBrandEntity.name)
 
-        BrandValidators.validateUpdateBrand(
-            brandName = request.name,
-            managerId = managerId,
-            brandAlreadyExists = brandAlreadyExists,
-        )
-
-        val updatedEntity = BrandDbEntity(
-            id = brand.id,
-            managerId = brand.managerId,
+        val updatedEntity = storedBrandEntity.copy(
             name = request.name,
-            s3Key = brand.s3Key,
-            fileName = brand.fileName,
-            fileSizeBytes = brand.fileSizeBytes,
-            mimeType = brand.mimeType,
-            createdAt = brand.createdAt,
             updatedAt = LocalDateTime.now(),
         )
 
@@ -84,19 +63,15 @@ class BrandService(
 
     @Transactional
     fun removeBrandImage(managerId: String, brandId: Long) {
-        val brand = brandRepository.findByManagerIdAndId(managerId, brandId)
+        val storedBrandEntity = brandRepository.findEntityByManagerIdAndId(managerId, brandId)
 
-        s3StorageService.deleteImageIfExists(brand.s3Key)
+        s3StorageService.deleteImageIfExists(storedBrandEntity.s3Key)
 
-        val updatedEntity = BrandDbEntity(
-            id = brand.id,
-            managerId = brand.managerId,
-            name = brand.name,
+        val updatedEntity = storedBrandEntity.copy(
             s3Key = null,
             fileName = null,
             fileSizeBytes = null,
             mimeType = null,
-            createdAt = brand.createdAt,
             updatedAt = LocalDateTime.now(),
         )
 
@@ -105,24 +80,20 @@ class BrandService(
 
     @Transactional
     fun setBrandImage(managerId: String, brandId: Long, imageMetadata: ImageMetadata): UpdateBrandImageResponse {
-        val brand = brandRepository.findByManagerIdAndId(managerId, brandId)
+        val storedBrandEntity = brandRepository.findEntityByManagerIdAndId(managerId, brandId)
 
-        brand.s3Key?.let { s3StorageService.deleteImageIfExists(brand.s3Key) }
+        storedBrandEntity.s3Key?.let { s3StorageService.deleteImageIfExists(storedBrandEntity.s3Key) }
 
         val preSignedUrlResult = s3StorageService.generatePreSignedUploadUrl(
             basePath = "managers/$managerId/brands",
             imageMetadata = imageMetadata,
         )
 
-        val updatedEntity = BrandDbEntity(
-            id = brand.id,
-            managerId = brand.managerId,
-            name = brand.name,
+        val updatedEntity = storedBrandEntity.copy(
             s3Key = preSignedUrlResult.s3Key,
             fileName = imageMetadata.fileName,
             fileSizeBytes = imageMetadata.fileSizeBytes,
             mimeType = imageMetadata.contentType,
-            createdAt = brand.createdAt,
             updatedAt = LocalDateTime.now(),
         )
 
@@ -132,10 +103,10 @@ class BrandService(
 
     @Transactional
     fun deleteBrand(managerId: String, brandId: Long) {
-        val entity = brandRepository.findByManagerIdAndId(managerId, brandId)
+        val storedBrandEntity = brandRepository.findByManagerIdAndId(managerId, brandId)
 
         // Delete image from S3 if exists
-        entity.s3Key.let { s3StorageService.deleteImageIfExists(entity.s3Key) }
+        storedBrandEntity.s3Key.let { s3StorageService.deleteImageIfExists(storedBrandEntity.s3Key) }
 
         // Remove brand from all products that use this brand
         productService.removeBrandFromProducts(managerId, brandId)
