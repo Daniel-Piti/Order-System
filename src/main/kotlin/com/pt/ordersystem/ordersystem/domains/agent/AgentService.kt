@@ -1,20 +1,14 @@
 package com.pt.ordersystem.ordersystem.domains.agent
 
-import com.pt.ordersystem.ordersystem.domains.agent.helpers.AgentValidators
 import com.pt.ordersystem.ordersystem.domains.agent.models.Agent
 import com.pt.ordersystem.ordersystem.domains.agent.models.AgentDto
 import com.pt.ordersystem.ordersystem.domains.agent.models.AgentDbEntity
-import com.pt.ordersystem.ordersystem.domains.agent.models.AgentFailureReason
 import com.pt.ordersystem.ordersystem.domains.agent.models.NewAgentRequest
 import com.pt.ordersystem.ordersystem.domains.agent.models.UpdateAgentRequest
 import com.pt.ordersystem.ordersystem.domains.agent.models.toDto
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerService
 import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideService
-import com.pt.ordersystem.ordersystem.exception.ServiceException
-import com.pt.ordersystem.ordersystem.exception.SeverityLevel
-import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
-import org.springframework.http.HttpStatus
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -26,6 +20,7 @@ class AgentService(
   private val passwordEncoder: BCryptPasswordEncoder,
   private val productOverrideService: ProductOverrideService,
   private val customerService: CustomerService,
+  private val agentValidationService: AgentValidationService,
 ) {
 
   fun getAgentsForManager(managerId: String): List<AgentDto> =
@@ -36,20 +31,6 @@ class AgentService(
 
   fun getAgentByEmail(email: String): AgentDbEntity =
     agentRepository.findEntityByEmail(email)
-
-  fun validateCreateAgent(request: NewAgentRequest, managerId: String) {
-    val agentCount = agentRepository.countByManagerId(managerId)
-    AgentValidators.validateMaxAgentsNumber(agentCount, managerId)
-
-    if (agentRepository.existsByEmail(request.email)) {
-      throw ServiceException(
-        status = HttpStatus.CONFLICT,
-        userMessage = AgentFailureReason.EMAIL_ALREADY_EXISTS.userMessage,
-        technicalMessage = AgentFailureReason.EMAIL_ALREADY_EXISTS.technical + "email=${request.email}",
-        severity = SeverityLevel.INFO,
-      )
-    }
-  }
 
   fun createAgent(managerId: String, request: NewAgentRequest): Agent {
 
@@ -72,18 +53,6 @@ class AgentService(
     return agentRepository.save(agent)
   }
 
-  fun validateAgentOfManager(agentId: String, managerId: String) {
-    val existing = agentRepository.findEntityById(agentId)
-    if (existing.managerId != managerId) {
-      throw ServiceException(
-        status = HttpStatus.NOT_FOUND,
-        userMessage = AgentFailureReason.NOT_FOUND.userMessage,
-        technicalMessage = AgentFailureReason.NOT_FOUND.technical + "managerId=$managerId, agentId=$agentId",
-        severity = SeverityLevel.WARN,
-      )
-    }
-  }
-
   fun updateAgent(agentId: String, request: UpdateAgentRequest): Agent {
     val existing = agentRepository.findEntityById(agentId)
 
@@ -99,26 +68,6 @@ class AgentService(
     return agentRepository.save(updated)
   }
 
-  fun validateUpdatePassword(
-    agent: AgentDbEntity,
-    oldPassword: String,
-    newPassword: String,
-    newPasswordConfirmation: String
-  ) {
-    FieldValidators.validateNewPasswordEqualConfirmationPassword(newPassword, newPasswordConfirmation)
-    FieldValidators.validateNewPasswordNotEqualOldPassword(oldPassword, newPassword)
-    FieldValidators.validateStrongPassword(newPassword)
-
-    if (!passwordEncoder.matches(oldPassword, agent.password)) {
-      throw ServiceException(
-        status = HttpStatus.UNAUTHORIZED,
-        userMessage = "Old password is incorrect",
-        technicalMessage = "Password mismatch for agent with id=${agent.id}",
-        severity = SeverityLevel.WARN
-      )
-    }
-  }
-
   @Transactional
   fun updatePassword(
     agentId: String,
@@ -128,7 +77,7 @@ class AgentService(
   ) {
     val agent = agentRepository.findEntityById(agentId)
 
-    validateUpdatePassword(agent, oldPassword, newPassword, newPasswordConfirmation)
+    agentValidationService.validateUpdatePassword(agent, oldPassword, newPassword, newPasswordConfirmation)
 
     val updatedAgent = agent.copy(
       password = passwordEncoder.encode(newPassword),
@@ -139,7 +88,7 @@ class AgentService(
 
   @Transactional
   fun deleteAgent(managerId: String, agentId: String) {
-    validateAgentOfManager(agentId, managerId)
+    agentValidationService.validateAgentOfManager(agentId, managerId)
 
     // Delete all product overrides associated with this agent
     productOverrideService.deleteAllOverridesForAgent(managerId, agentId)
