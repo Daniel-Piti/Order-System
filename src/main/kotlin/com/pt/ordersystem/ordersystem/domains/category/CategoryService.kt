@@ -21,12 +21,12 @@ class CategoryService(
 
     @Transactional
     fun createCategory(managerId: String, request: CreateCategoryRequest): Category {
-        categoryValidationService.validateCreateCategory(request.category, managerId)
+        categoryValidationService.validateCreateCategory(request.name, managerId)
 
         val now = LocalDateTime.now()
         val entity = CategoryDbEntity(
             managerId = managerId,
-            category = request.category,
+            name = request.name,
             createdAt = now,
             updatedAt = now,
         )
@@ -41,11 +41,11 @@ class CategoryService(
         categoryValidationService.validateUpdateCategory(
             managerId = managerId,
             categoryId = categoryId,
-            newCategoryName = request.category,
+            newCategoryName = request.name,
         )
 
         val updatedEntity = storedCategoryEntity.copy(
-            category = request.category,
+            name = request.name,
             updatedAt = LocalDateTime.now(),
         )
 

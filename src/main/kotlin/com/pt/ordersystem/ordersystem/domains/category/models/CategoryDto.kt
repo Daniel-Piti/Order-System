@@ -3,5 +3,5 @@ package com.pt.ordersystem.ordersystem.domains.category.models
 data class CategoryDto(
     val id: Long,
     val managerId: String,
-    val category: String,
+    val name: String,
 )

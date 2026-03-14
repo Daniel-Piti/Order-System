@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 data class Category(
     val id: Long,
     val managerId: String,
-    val category: String,
+    val name: String,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
 )
@@ -13,7 +13,7 @@ data class Category(
 fun CategoryDbEntity.toModel(): Category = Category(
     id = this.id,
     managerId = this.managerId,
-    category = this.category,
+    name = this.name,
     createdAt = this.createdAt,
     updatedAt = this.updatedAt,
 )
@@ -21,5 +21,5 @@ fun CategoryDbEntity.toModel(): Category = Category(
 fun Category.toDto(): CategoryDto = CategoryDto(
     id = this.id,
     managerId = this.managerId,
-    category = this.category,
+    name = this.name,
 )

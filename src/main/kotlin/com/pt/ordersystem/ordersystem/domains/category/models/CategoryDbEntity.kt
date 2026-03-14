@@ -13,8 +13,8 @@ data class CategoryDbEntity(
     @Column(name = "manager_id", nullable = false)
     val managerId: String,
     
-    @Column(name = "category", nullable = false)
-    val category: String,
+    @Column(name = "name", nullable = false)
+    val name: String,
     
     @Column(name = "created_at", nullable = false)
     val createdAt: LocalDateTime,

@@ -12,7 +12,7 @@ class CategoryValidationService(
 
         CategoryValidatorsHelper.validateCategoriesCount(categoryRepository.countByManagerId(managerId), managerId)
 
-        val categoryExists = categoryRepository.existsByManagerIdAndCategory(managerId, categoryName)
+        val categoryExists = categoryRepository.existsByManagerIdAndName(managerId, categoryName)
 
         CategoryValidatorsHelper.validateCategoryNameExists(categoryExists, categoryName, managerId)
 

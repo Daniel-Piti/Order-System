@@ -16,7 +16,7 @@ interface ProductDao : JpaRepository<ProductDbEntity, String> {
     value = """
       SELECT p.id AS id, p.manager_id AS managerId, p.name AS name,
              p.brand_id AS brandId, b.name AS brandName,
-             p.category_id AS categoryId, c.category AS categoryName,
+             p.category_id AS categoryId, c.name AS categoryName,
              p.minimum_price AS minimumPrice, p.price AS price, p.description AS description,
              (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', pi.id, 's3Key', pi.s3_key, 'mimeType', pi.mime_type))
               FROM product_images pi WHERE pi.product_id = p.id AND pi.manager_id = p.manager_id) AS imagesJson
@@ -33,7 +33,7 @@ interface ProductDao : JpaRepository<ProductDbEntity, String> {
     value = """
       SELECT p.id AS id, p.manager_id AS managerId, p.name AS name,
              p.brand_id AS brandId, b.name AS brandName,
-             p.category_id AS categoryId, c.category AS categoryName,
+             p.category_id AS categoryId, c.name AS categoryName,
              p.minimum_price AS minimumPrice, p.price AS price, p.description AS description,
              (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', pi.id, 's3Key', pi.s3_key, 'mimeType', pi.mime_type))
               FROM product_images pi WHERE pi.product_id = p.id AND pi.manager_id = p.manager_id) AS imagesJson

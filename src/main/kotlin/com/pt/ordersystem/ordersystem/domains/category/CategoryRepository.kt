@@ -36,11 +36,11 @@ class CategoryRepository(
     fun countByManagerId(managerId: String): Long =
         categoryDao.countByManagerId(managerId)
 
-    fun existsByManagerIdAndCategory(managerId: String, category: String): Boolean =
-        categoryDao.existsByManagerIdAndCategory(managerId, category)
+    fun existsByManagerIdAndName(managerId: String, name: String): Boolean =
+        categoryDao.existsByManagerIdAndName(managerId, name)
 
-    fun hasDuplicateCategory(managerId: String, category: String, id: Long): Boolean =
-        categoryDao.existsByManagerIdAndCategoryAndIdNot(managerId, category, id)
+    fun hasDuplicateCategory(managerId: String, name: String, id: Long): Boolean =
+        categoryDao.existsByManagerIdAndNameAndIdNot(managerId, name, id)
 
     fun save(entity: CategoryDbEntity): Category = categoryDao.save(entity).toModel()
 

@@ -13,7 +13,7 @@ interface CategoryDao : JpaRepository<CategoryDbEntity, Long> {
 
     fun findByManagerIdAndId(managerId: String, id: Long): CategoryDbEntity?
 
-    fun existsByManagerIdAndCategory(managerId: String, category: String): Boolean
+    fun existsByManagerIdAndName(managerId: String, name: String): Boolean
 
-    fun existsByManagerIdAndCategoryAndIdNot(managerId: String, category: String, id: Long): Boolean
+    fun existsByManagerIdAndNameAndIdNot(managerId: String, name: String, id: Long): Boolean
 }

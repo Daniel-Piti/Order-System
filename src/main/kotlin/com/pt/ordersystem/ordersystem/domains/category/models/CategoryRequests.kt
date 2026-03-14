@@ -3,25 +3,25 @@ package com.pt.ordersystem.ordersystem.domains.category.models
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 
 data class CreateCategoryRequest(
-    val category: String,
+    val name: String,
 ) {
     fun validateAndNormalize(): CreateCategoryRequest {
-        FieldValidators.validateNonEmpty(this.category, "'category'")
+        FieldValidators.validateNonEmpty(this.name, "'name'")
 
         return this.copy(
-            category = category.trim(),
+            name = name.trim(),
         )
     }
 }
 
 data class UpdateCategoryRequest(
-    val category: String
+    val name: String
 ) {
     fun validateAndNormalize(): UpdateCategoryRequest {
-        FieldValidators.validateNonEmpty(this.category, "'category'")
+        FieldValidators.validateNonEmpty(this.name, "'name'")
 
         return this.copy(
-            category = category.trim(),
+            name = name.trim(),
         )
     }
 }
