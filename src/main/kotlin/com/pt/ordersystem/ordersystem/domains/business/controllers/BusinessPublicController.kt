@@ -1,5 +1,6 @@
-package com.pt.ordersystem.ordersystem.domains.business
+package com.pt.ordersystem.ordersystem.domains.business.controllers
 
+import com.pt.ordersystem.ordersystem.domains.business.BusinessService
 import com.pt.ordersystem.ordersystem.domains.business.models.PublicBusinessDto
 import com.pt.ordersystem.ordersystem.domains.business.models.toPublicDto
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -12,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController
 @Tag(name = "Public Business", description = "Public business API for store header")
 @RestController
 @RequestMapping("/api/public/business")
-class PublicBusinessController(
+class BusinessPublicController(
   private val businessService: BusinessService,
 ) {
 

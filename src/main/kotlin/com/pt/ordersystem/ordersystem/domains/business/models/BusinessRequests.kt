@@ -1,5 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.business.models
 
+import com.pt.ordersystem.ordersystem.domains.business.helpers.BusinessValidators
+
 data class CreateBusinessRequest(
   val managerId: String,
   val name: String,
@@ -9,8 +11,10 @@ data class CreateBusinessRequest(
   val streetAddress: String,
   val city: String,
 ) {
-  fun normalize(): CreateBusinessRequest =
-    this.copy(
+  fun validateAndNormalize(): CreateBusinessRequest {
+    BusinessValidators.validateCreateBusinessFields(this)
+
+    return this.copy(
       name = name.trim(),
       stateIdNumber = stateIdNumber.trim(),
       email = email.trim().lowercase(),
@@ -18,6 +22,7 @@ data class CreateBusinessRequest(
       streetAddress = streetAddress.trim(),
       city = city.trim(),
     )
+  }
 }
 
 data class UpdateBusinessDetailsRequest(
@@ -28,8 +33,10 @@ data class UpdateBusinessDetailsRequest(
   val streetAddress: String,
   val city: String,
 ) {
-  fun normalize(): UpdateBusinessDetailsRequest =
-    this.copy(
+  fun validateAndNormalize(): UpdateBusinessDetailsRequest {
+    BusinessValidators.validateUpdateBusinessFields(this)
+
+    return this.copy(
       name = name.trim(),
       stateIdNumber = stateIdNumber.trim(),
       email = email.trim().lowercase(),
@@ -37,6 +44,7 @@ data class UpdateBusinessDetailsRequest(
       streetAddress = streetAddress.trim(),
       city = city.trim(),
     )
+  }
 }
 
 data class UpdateBusinessDetailsResponse(

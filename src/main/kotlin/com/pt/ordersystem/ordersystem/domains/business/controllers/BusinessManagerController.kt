@@ -1,7 +1,8 @@
-package com.pt.ordersystem.ordersystem.domains.business
+package com.pt.ordersystem.ordersystem.domains.business.controllers
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
+import com.pt.ordersystem.ordersystem.domains.business.BusinessService
 import com.pt.ordersystem.ordersystem.domains.business.models.BusinessDto
 import com.pt.ordersystem.ordersystem.domains.business.models.SetBusinessImageResponse
 import com.pt.ordersystem.ordersystem.domains.business.models.UpdateBusinessDetailsResponse
@@ -26,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/businesses")
 @PreAuthorize(AUTH_MANAGER)
 class BusinessManagerController(
-  private val businessService: BusinessService,
+    private val businessService: BusinessService,
 ) {
 
   @GetMapping("/me")
@@ -42,7 +43,7 @@ class BusinessManagerController(
     @RequestBody updateRequest: UpdateBusinessDetailsRequest,
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<UpdateBusinessDetailsResponse> {
-    val normalizedRequest = updateRequest.normalize()
+    val normalizedRequest = updateRequest.validateAndNormalize()
     val businessDto = businessService.updateBusinessDetails(manager.id, normalizedRequest)
     return ResponseEntity.ok(UpdateBusinessDetailsResponse(businessDto))
   }

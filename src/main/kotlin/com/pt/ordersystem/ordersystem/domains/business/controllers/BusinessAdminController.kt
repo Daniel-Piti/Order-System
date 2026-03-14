@@ -1,6 +1,7 @@
-package com.pt.ordersystem.ordersystem.domains.business
+package com.pt.ordersystem.ordersystem.domains.business.controllers
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_ADMIN
+import com.pt.ordersystem.ordersystem.domains.business.BusinessService
 import com.pt.ordersystem.ordersystem.domains.business.models.BusinessDto
 import com.pt.ordersystem.ordersystem.domains.business.models.CreateBusinessRequest
 import com.pt.ordersystem.ordersystem.domains.business.models.toDto
@@ -20,19 +21,23 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/businesses")
 @PreAuthorize(AUTH_ADMIN)
 class BusinessAdminController(
-  private val businessService: BusinessService,
+    private val businessService: BusinessService,
 ) {
 
   @PostMapping
-  fun createBusiness(@RequestBody createBusinessRequest: CreateBusinessRequest): ResponseEntity<BusinessDto> {
-    val normalizedRequest = createBusinessRequest.normalize()
+  fun createBusiness(
+    @RequestBody createBusinessRequest: CreateBusinessRequest
+  ): ResponseEntity<BusinessDto> {
+    val normalizedRequest = createBusinessRequest.validateAndNormalize()
     val business = businessService.createBusiness(normalizedRequest)
     val businessDto = business.toDto()
     return ResponseEntity.status(HttpStatus.CREATED).body(businessDto)
   }
 
   @PostMapping("/by-managers")
-  fun getBusinessesByManagerIds(@RequestBody managerIds: List<String>): ResponseEntity<Map<String, BusinessDto>> {
+  fun getBusinessesByManagerIds(
+    @RequestBody managerIds: List<String>
+  ): ResponseEntity<Map<String, BusinessDto>> {
     val businesses = businessService.getBusinessesByManagerIds(managerIds)
     val businessesDto = businesses.associate { business ->
       business.managerId to business.toDto()
