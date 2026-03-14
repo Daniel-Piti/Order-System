@@ -3,7 +3,6 @@ package com.pt.ordersystem.ordersystem.domains.customer.controllers
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerService
-import com.pt.ordersystem.ordersystem.domains.customer.CustomerValidationService
 import com.pt.ordersystem.ordersystem.domains.customer.models.CustomerDto
 import com.pt.ordersystem.ordersystem.domains.customer.models.CustomerPayload
 import com.pt.ordersystem.ordersystem.domains.customer.models.toDto
@@ -22,7 +21,6 @@ import org.springframework.web.bind.annotation.*
 @PreAuthorize(AUTH_MANAGER)
 class CustomerManagerController(
   private val customerService: CustomerService,
-  private val customerValidationService: CustomerValidationService,
 ) {
 
   @GetMapping("/{customerId}")
@@ -57,7 +55,6 @@ class CustomerManagerController(
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<CustomerDto> {
     val normalizedPayload = payload.validateAndNormalize()
-    customerValidationService.validateManagerOwnsCustomer(manager.id, customerId)
     val customer = customerService.updateCustomer(
       managerId = manager.id,
       agentId = null,
@@ -72,7 +69,6 @@ class CustomerManagerController(
     @PathVariable customerId: String,
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<String> {
-    customerValidationService.validateManagerOwnsCustomer(manager.id, customerId)
     customerService.deleteCustomer(manager.id, null, customerId)
     return ResponseEntity.ok("Customer deleted successfully")
   }

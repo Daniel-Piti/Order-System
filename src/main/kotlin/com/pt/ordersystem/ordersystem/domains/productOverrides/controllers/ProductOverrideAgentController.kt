@@ -51,6 +51,7 @@ class ProductOverrideAgentController(
     @AuthenticationPrincipal agent: AuthUser,
     @RequestBody request: CreateProductOverrideRequest,
   ): ResponseEntity<ProductOverrideDto> {
+    request.validate()
     val agent = agentService.getAgent(agent.id)
     val override = productOverrideService.createProductOverride(agent.managerId, agent.id, request)
     return ResponseEntity.status(HttpStatus.CREATED).body(override.toDto())

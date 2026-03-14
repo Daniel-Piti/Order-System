@@ -16,10 +16,4 @@ class CustomerValidationService(
         CustomerValidators.validateCustomersCap(count, managerId, agentId)
     }
 
-    fun validateManagerOwnsCustomer(managerId: String, customerId: String) {
-        val customer = customerRepository.findByManagerIdAndId(managerId, customerId)
-
-        CustomerValidators.validateCustomerOfManager(managerId, customer)
-    }
-
 }

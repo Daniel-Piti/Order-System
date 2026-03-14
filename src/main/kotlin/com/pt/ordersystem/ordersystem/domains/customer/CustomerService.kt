@@ -75,6 +75,7 @@ class CustomerService(
 
   @Transactional
   fun deleteCustomer(managerId: String, agentId: String?, customerId: String) {
+    // validate customer ownership (agent/manager)
     customerRepository.findByManagerIdAndAgentIdAndId(managerId, agentId, customerId)
 
     val overrides = productOverrideRepository.getAllForManagerIdAndCustomerId(managerId, customerId)

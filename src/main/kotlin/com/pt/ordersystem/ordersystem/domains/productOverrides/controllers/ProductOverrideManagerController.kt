@@ -24,10 +24,9 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/product-overrides")
 @PreAuthorize(AUTH_MANAGER)
 class ProductOverrideManagerController(
-  private val productOverrideService: ProductOverrideService
+  private val productOverrideService: ProductOverrideService,
 ) {
 
-  /** All overrides for the manager, with optional filter by product. */
   @GetMapping
   fun getAllOverrides(
     @AuthenticationPrincipal manager: AuthUser,
@@ -48,6 +47,8 @@ class ProductOverrideManagerController(
     @RequestBody request: CreateProductOverrideRequest,
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<ProductOverrideDto> {
+    request.validate()
+
     val override = productOverrideService.createProductOverride(manager.id, null, request)
     return ResponseEntity.status(HttpStatus.CREATED).body(override.toDto())
   }
