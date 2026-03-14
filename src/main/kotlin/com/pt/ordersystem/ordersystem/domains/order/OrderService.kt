@@ -3,21 +3,13 @@ package com.pt.ordersystem.ordersystem.domains.order
 import com.pt.ordersystem.ordersystem.constants.TaxConstants
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerRepository
 import com.pt.ordersystem.ordersystem.domains.location.LocationRepository
-import com.pt.ordersystem.ordersystem.domains.location.helpers.LocationValidators
-import com.pt.ordersystem.ordersystem.domains.manager.ManagerRepository
 import com.pt.ordersystem.ordersystem.domains.order.helpers.OrderValidators
 import com.pt.ordersystem.ordersystem.domains.order.models.*
-import com.pt.ordersystem.ordersystem.domains.product.ProductRepository
-import com.pt.ordersystem.ordersystem.domains.product.models.ProductDataForOrder
-import com.pt.ordersystem.ordersystem.exception.SeverityLevel
-import com.pt.ordersystem.ordersystem.exception.ServiceException
-import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
 import com.pt.ordersystem.ordersystem.utils.PageRequestBase
 import com.pt.ordersystem.ordersystem.utils.PaginationUtils
 import com.pt.ordersystem.ordersystem.utils.SortOrder
 import org.springframework.data.domain.Page
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -28,8 +20,7 @@ class OrderService(
   private val orderRepository: OrderRepository,
   private val customerRepository: CustomerRepository,
   private val locationRepository: LocationRepository,
-  private val managerRepository: ManagerRepository,
-  private val productRepository: ProductRepository,
+  private val orderValidationService: OrderValidationService,
 ) {
 
   companion object {
@@ -123,15 +114,11 @@ class OrderService(
 
   @Transactional
   fun createOrder(managerId: String, agentId: String?, orderSource: OrderSource, request: CreateOrderRequest): Order {
-    
-    // Validate manager has at least one location
-    val locationCount = locationRepository.countByManagerId(managerId)
-    LocationValidators.validateMinLocationCount(locationCount, managerId)
 
-    // If customerId is provided, fetch customer data to pre-fill
+    orderValidationService.validateCreateOrder(managerId)
+
     val customer = request.customerId?.let { customerId ->
-      if (agentId == null) customerRepository.findByManagerIdAndId(managerId, customerId)
-      else customerRepository.findByManagerIdAndAgentIdAndId(managerId, agentId, customerId)
+      customerRepository.findByManagerIdAndAgentIdAndId(managerId, agentId, customerId)
     }
 
     val now = LocalDateTime.now()
@@ -176,10 +163,7 @@ class OrderService(
   fun placeOrder(orderId: String, request: PlaceOrderRequest) {
     val order = orderRepository.findById(orderId)
 
-    OrderValidators.validateOrderStatus(order.status, OrderStatus.EMPTY, orderId)
-    OrderValidators.validateOrderProductsNotEmpty(request.products, orderId)
-
-    validateProductPrices(request.products, order.managerId)
+    orderValidationService.validatePlaceOrder(order, request)
 
     val selectedLocation = locationRepository.findByManagerIdAndId(order.managerId, request.pickupLocationId)
 
@@ -188,8 +172,7 @@ class OrderService(
     }
 
     val customer = order.customerId?.let { customerId ->
-      if (order.agentId == null) customerRepository.findByManagerIdAndId(order.managerId, customerId)
-      else customerRepository.findByManagerIdAndAgentIdAndId(order.managerId, order.agentId, customerId)
+      customerRepository.findByManagerIdAndAgentIdAndId(order.managerId, order.agentId, customerId)
     }
 
     val now = LocalDateTime.now()
@@ -222,16 +205,8 @@ class OrderService(
 
   @Transactional
   fun createAndPlacePublicOrder(managerId: String, request: PlaceOrderRequest): String {
-    // Validate manager exists
-    managerRepository.findById(managerId)
+    orderValidationService.validateCreateAndPlacePublicOrder(managerId, request)
 
-    // Validate products are not empty
-    OrderValidators.validateOrderProductsNotEmpty(request.products)
-
-    // Validate that all product prices are >= minimum price
-    validateProductPrices(request.products, managerId)
-
-    // Validate and fetch pickup location (will throw exception if location doesn't exist or doesn't belong to manager)
     val selectedLocation = locationRepository.findByManagerIdAndId(managerId, request.pickupLocationId)
 
     // Calculate total price
@@ -302,11 +277,8 @@ class OrderService(
   fun updateOrder(orderId: String, managerId: String, agentId: String?, updateOrderRequest: UpdateOrderRequest): Order {
     val order = orderRepository.findByIdAndManagerIdAndAgentId(orderId, managerId, agentId)
 
-    OrderValidators.validateOrderStatus(order.status, OrderStatus.PLACED, orderId)
-    OrderValidators.validateOrderProductsNotEmpty(updateOrderRequest.products, orderId)
-    validateProductPrices(updateOrderRequest.products, managerId)
+    orderValidationService.validateUpdateOrder(managerId, order, updateOrderRequest)
 
-    // Validate and fetch pickup location (will throw exception if location doesn't exist or doesn't belong to manager)
     val selectedLocation = locationRepository.findByManagerIdAndId(managerId, updateOrderRequest.pickupLocationId)
 
     val productsTotal = updateOrderRequest.products.fold(BigDecimal.ZERO) { sum, product ->
@@ -355,11 +327,7 @@ class OrderService(
   fun updateOrderDiscount(orderId: String, managerId: String, agentId: String?, request: UpdateDiscountRequest): Order {
     val order = orderRepository.findByIdAndManagerIdAndAgentId(orderId, managerId, agentId)
 
-    OrderValidators.validateOrderStatus(order.status, OrderStatus.PLACED, orderId)
-
-    // Validate discount >= 0 and max 2 decimal places
-    FieldValidators.validateNonNegative(request.discount, "Discount")
-    FieldValidators.validatePriceDecimalPlaces(request.discount, "Discount")
+    orderValidationService.validateUpdateOrderDiscount(order, request)
 
     // Calculate products total
     val productsTotal = order.products.fold(BigDecimal.ZERO) { sum, product ->
@@ -379,29 +347,6 @@ class OrderService(
     )
 
     return orderRepository.save(updatedEntity)
-  }
-
-  private fun validateProductPrices(products: List<ProductDataForOrder>, managerId: String) {
-    if (products.isEmpty()) return
-
-    val productIds = products.map { it.productId }.distinct()
-    val productEntities = productRepository.findAllById(productIds)
-      .filter { it.managerId == managerId }
-
-    val invalidProducts = products.filter { orderProduct ->
-      val product = productEntities.find { it.id == orderProduct.productId }
-      product != null && orderProduct.pricePerUnit < product.minimumPrice
-    }
-
-    if (invalidProducts.isNotEmpty()) {
-      val productNames = invalidProducts.joinToString(", ") { it.productName }
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = "The following products have prices below their minimum price: $productNames",
-        technicalMessage = "Products below minimum price for managerId=$managerId: ${invalidProducts.map { "${it.productName} (price=${it.pricePerUnit})" }}",
-        severity = SeverityLevel.WARN
-      )
-    }
   }
 
 }

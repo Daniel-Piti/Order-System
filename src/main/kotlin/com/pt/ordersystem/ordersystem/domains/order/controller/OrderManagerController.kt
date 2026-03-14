@@ -86,7 +86,6 @@ class OrderManagerController(
       @RequestBody request: CreateOrderRequest,
       @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<OrderDto> {
-    // Manager creates order - agentId is null (comes from auth, not request body)
     val newOrder = orderService.createOrder(
       managerId = manager.id,
       agentId = null,
