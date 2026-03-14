@@ -26,18 +26,10 @@ class ProductRepository(
       severity = SeverityLevel.WARN
     )
 
-  fun getProductEntityByManagerIdAndId(managerId: String, productId: String): ProductDbEntity =
-    productDao.findByManagerIdAndId(managerId, productId) ?: throw ServiceException(
-      status = HttpStatus.NOT_FOUND,
-      userMessage = ProductFailureReason.NOT_FOUND.userMessage,
-      technicalMessage = ProductFailureReason.NOT_FOUND.technical + "productId=$productId, managerId=$managerId",
-      severity = SeverityLevel.WARN
-    )
-
   fun countByManagerId(managerId: String): Long =
     productDao.countByManagerId(managerId)
 
-  fun findByManagerIdAndId(managerId: String, productId: String): ProductDbEntity =
+  fun findEntityByManagerIdAndId(managerId: String, productId: String): ProductDbEntity =
     productDao.findByManagerIdAndId(managerId, productId) ?: throw ServiceException(
       status = HttpStatus.NOT_FOUND,
       userMessage = ProductFailureReason.NOT_FOUND.userMessage,

@@ -29,7 +29,7 @@ class ProductOverrideValidationService(
             customerRepository.findByManagerIdAndAgentIdAndId(managerId, agentId, request.customerId)
         }
 
-        val product = productRepository.findByManagerIdAndId(managerId, request.productId)
+        val product = productRepository.findEntityByManagerIdAndId(managerId, request.productId)
 
         if (request.overridePrice < product.minimumPrice) {
             throw ServiceException(
@@ -53,7 +53,7 @@ class ProductOverrideValidationService(
         productId: String,
         overridePrice: BigDecimal,
     ) {
-        val product = productRepository.findByManagerIdAndId(managerId, productId)
+        val product = productRepository.findEntityByManagerIdAndId(managerId, productId)
 
         if (overridePrice < product.minimumPrice) {
             throw ServiceException(

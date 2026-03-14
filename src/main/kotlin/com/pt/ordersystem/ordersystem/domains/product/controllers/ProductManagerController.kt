@@ -46,7 +46,8 @@ class ProductManagerController(
     @RequestBody request: CreateProductRequest,
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<CreateProductResponse> {
-    val response = productService.createProduct(manager.id, request.productInfo, request.imagesMetadata)
+    val normalized = request.validateAndNormalize()
+    val response = productService.createProduct(manager.id, normalized.productInfo, normalized.imagesMetadata)
     return ResponseEntity.status(HttpStatus.CREATED).body(response)
   }
 
@@ -56,7 +57,8 @@ class ProductManagerController(
     @RequestBody productInfo: ProductInfo,
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<ProductPrivateDto> {
-    val product = productService.updateProductInfo(manager.id, productId, productInfo)
+    val normalized = productInfo.validateAndNormalize()
+    val product = productService.updateProductInfo(manager.id, productId, normalized)
     return ResponseEntity.ok(product.toPrivateDto())
   }
 

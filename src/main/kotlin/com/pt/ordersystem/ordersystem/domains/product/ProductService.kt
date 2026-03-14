@@ -1,11 +1,8 @@
 package com.pt.ordersystem.ordersystem.domains.product
 
-import com.pt.ordersystem.ordersystem.domains.brand.BrandRepository
-import com.pt.ordersystem.ordersystem.domains.category.CategoryRepository
 import com.pt.ordersystem.ordersystem.domains.product.models.*
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerRepository
 import com.pt.ordersystem.ordersystem.domains.order.OrderService
-import com.pt.ordersystem.ordersystem.domains.product.helpers.ProductValidators
 import com.pt.ordersystem.ordersystem.domains.product.helpers.ProductsHelper
 import com.pt.ordersystem.ordersystem.domains.productImage.ProductImageRepository
 import com.pt.ordersystem.ordersystem.domains.productImage.helpers.ProductImageValidators
@@ -28,9 +25,8 @@ class ProductService(
   private val orderService: OrderService,
   private val productOverrideRepository: ProductOverrideRepository,
   private val s3StorageService: S3StorageService,
-  private val brandRepository: BrandRepository,
-  private val categoryRepository: CategoryRepository,
   private val customerRepository: CustomerRepository,
+  private val productValidationService: ProductValidationService,
 ) {
 
   companion object {
@@ -63,35 +59,13 @@ class ProductService(
   fun getProductByManagerIdAndId(managerId: String, productId: String): Product =
     productRepository.getProductByManagerIdAndId(managerId, productId)
 
-  private fun validateProductInfo(managerId: String, productInfo: ProductInfo) {
-    with(productInfo) {
-      ProductValidators.validateProductInfo(productInfo)
-      ProductValidators.validatePriceHigherOrEqualToMinPrice(price, minimumPrice)
-
-      // Validate brandId belongs to manager (if provided)
-      brandId?.let { brandRepository.findByManagerIdAndId(managerId, it) }
-
-      // Validate categoryId belongs to manager (if provided)
-      categoryId?.let { categoryRepository.findByManagerIdAndId(managerId, it) }
-    }
-  }
-
   @Transactional
   fun createProduct(
     managerId: String,
     productInfo: ProductInfo,
     imagesMetadata: List<ImageMetadata>,
   ): CreateProductResponse {
-    // Validate product info first (fail fast)
-    validateProductInfo(managerId, productInfo)
-
-    // Check product limit
-    val productCount = productRepository.countByManagerId(managerId)
-    ProductValidators.validateMaxProductPerCustomer(productCount, managerId)
-
-    // Image validations
-    ProductImageValidators.validateMaxImagesForProduct(imagesMetadata.size)
-    imagesMetadata.forEach { s3StorageService.validateImageMetadata(it) }
+    productValidationService.validateCreateProduct(managerId, productInfo, imagesMetadata)
 
     val now = LocalDateTime.now()
     val product = ProductDbEntity(
@@ -124,16 +98,16 @@ class ProductService(
     productId: String,
     productInfo: ProductInfo
   ): Product {
-    validateProductInfo(managerId, productInfo)
+    productValidationService.validateProductBrandAndCategory(productInfo.brandId, productInfo.categoryId, managerId)
 
-    val entity = productRepository.findByManagerIdAndId(managerId, productId)
+    val productEntity = productRepository.findEntityByManagerIdAndId(managerId, productId)
 
     // If minimum price is being increased, update any invalid overrides
-    if (productInfo.minimumPrice > entity.minimumPrice) {
-      productOverrideService.updateInvalidOverridesForProduct(entity.managerId, productId, productInfo.minimumPrice)
+    if (productInfo.minimumPrice > productEntity.minimumPrice) {
+      productOverrideService.updateInvalidOverridesForProduct(productEntity.managerId, productId, productInfo.minimumPrice)
     }
 
-    val updated = entity.copy(
+    val updated = productEntity.copy(
       name = productInfo.name,
       brandId = productInfo.brandId,
       categoryId = productInfo.categoryId,
@@ -144,12 +118,13 @@ class ProductService(
     )
 
     productRepository.save(updated)
+
     return productRepository.getProductByManagerIdAndId(managerId, productId)
   }
 
   @Transactional
   fun deleteProduct(managerId: String, productId: String) {
-    val product = productRepository.findByManagerIdAndId(managerId, productId)
+    val product = productRepository.findEntityByManagerIdAndId(managerId, productId)
 
     // Delete all product overrides
     productOverrideService.deleteAllOverridesForProduct(product.managerId, productId)
@@ -167,7 +142,7 @@ class ProductService(
     productId: String,
     imagesMetadataList: List<ImageMetadata>
   ): List<String> {
-    val product = productRepository.findByManagerIdAndId(managerId, productId)
+    val product = productRepository.findEntityByManagerIdAndId(managerId, productId)
 
     // Validate images upfront (fail fast if any invalid)
     val existingImages = productImageRepository.findByManagerIdAndProductId(managerId, product.id)
