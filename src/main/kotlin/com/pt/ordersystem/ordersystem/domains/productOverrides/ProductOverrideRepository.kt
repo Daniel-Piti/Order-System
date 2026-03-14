@@ -28,6 +28,14 @@ class ProductOverrideRepository(
       severity = SeverityLevel.WARN
     )
 
+  fun getProductOverrideEntity(managerId: String, agentId: String?, overrideId: Long): ProductOverrideDbEntity =
+    productOverrideDao.findByManagerIdAndAgentIdAndId(managerId, agentId, overrideId) ?: throw ServiceException(
+      status = HttpStatus.NOT_FOUND,
+      userMessage = ProductOverrideFailureReason.PRODUCT_OVERRIDE_NOT_FOUND.message,
+      technicalMessage = "Product override with id $overrideId not found for manager $managerId",
+      severity = SeverityLevel.WARN
+    )
+
   fun findByManagerIdAndId(managerId: String, overrideId: Long): ProductOverride =
     productOverrideDao.findByManagerIdAndId(managerId, overrideId)?.toModel() ?: throw ServiceException(
       status = HttpStatus.NOT_FOUND,

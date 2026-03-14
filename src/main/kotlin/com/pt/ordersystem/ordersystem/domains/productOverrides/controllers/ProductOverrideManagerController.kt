@@ -59,6 +59,7 @@ class ProductOverrideManagerController(
     @RequestBody request: UpdateProductOverrideRequest,
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<ProductOverrideDto> {
+    request.validate()
     val override = productOverrideService.updateProductOverride(manager.id, null, overrideId, request)
     return ResponseEntity.ok(override.toDto())
   }

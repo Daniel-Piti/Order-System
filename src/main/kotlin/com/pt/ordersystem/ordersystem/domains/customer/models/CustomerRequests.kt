@@ -1,6 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.customer.models
 
-import com.pt.ordersystem.ordersystem.domains.customer.validators.CustomerValidators
+import com.pt.ordersystem.ordersystem.domains.customer.validators.CustomerValidatorsHelper
 
 data class CustomerPayload(
   val name: String,
@@ -12,7 +12,7 @@ data class CustomerPayload(
   val discountPercentage: Int = 0,
 ) {
   fun validateAndNormalize(): CustomerPayload {
-    CustomerValidators.validatePayload(this)
+    CustomerValidatorsHelper.validatePayload(this)
 
     return this.copy(
       name = name.trim(),

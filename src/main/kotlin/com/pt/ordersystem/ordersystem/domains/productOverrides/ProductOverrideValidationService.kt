@@ -8,6 +8,7 @@ import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import java.math.BigDecimal
 
 @Service
 class ProductOverrideValidationService(
@@ -45,5 +46,22 @@ class ProductOverrideValidationService(
             productId = request.productId,
             customerId = request.customerId,
         )
+    }
+
+    fun validateUpdateOverride(
+        managerId: String,
+        productId: String,
+        overridePrice: BigDecimal,
+    ) {
+        val product = productRepository.findByManagerIdAndId(managerId, productId)
+
+        if (overridePrice < product.minimumPrice) {
+            throw ServiceException(
+                status = HttpStatus.BAD_REQUEST,
+                userMessage = ProductOverrideFailureReason.BELOW_MINIMUM_PRICE.message,
+                technicalMessage = "Override price $overridePrice below minimum price ${product.minimumPrice} for product $productId manager $managerId",
+                severity = SeverityLevel.WARN
+            )
+        }
     }
 }

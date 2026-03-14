@@ -1,14 +1,9 @@
 package com.pt.ordersystem.ordersystem.domains.productOverrides
 
-import com.pt.ordersystem.ordersystem.domains.product.ProductRepository
-import com.pt.ordersystem.ordersystem.exception.ServiceException
-import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.*
-import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
 import com.pt.ordersystem.ordersystem.utils.PageRequestBase
 import com.pt.ordersystem.ordersystem.utils.PaginationUtils
 import org.springframework.data.domain.Page
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -17,7 +12,6 @@ import java.time.LocalDateTime
 @Service
 class ProductOverrideService(
   private val productOverrideRepository: ProductOverrideRepository,
-  private val productRepository: ProductRepository,
   private val productOverrideValidationService: ProductOverrideValidationService,
   ) {
 
@@ -60,22 +54,11 @@ class ProductOverrideService(
     overrideId: Long,
     request: UpdateProductOverrideRequest,
   ): ProductOverride {
-    FieldValidators.validatePriceRange(request.overridePrice)
+    val overrideEntity = productOverrideRepository.getProductOverrideEntity(managerId, agentId, overrideId)
 
-    val override = productOverrideRepository.getProductOverride(managerId, agentId, overrideId)
+    productOverrideValidationService.validateUpdateOverride(managerId, overrideEntity.productId, request.overridePrice)
 
-    val product = productRepository.findByManagerIdAndId(managerId, override.productId)
-
-    if (request.overridePrice < product.minimumPrice) {
-      throw ServiceException(
-        status = HttpStatus.BAD_REQUEST,
-        userMessage = ProductOverrideFailureReason.BELOW_MINIMUM_PRICE.message,
-        technicalMessage = "Override price ${request.overridePrice} below minimum price ${product.minimumPrice} for product ${override.productId} manager $managerId agentId=$agentId overrideId=$overrideId",
-        severity = SeverityLevel.WARN
-      )
-    }
-
-    val updatedEntity = override.toEntity(
+    val updatedEntity = overrideEntity.copy(
       overridePrice = request.overridePrice,
       updatedAt = LocalDateTime.now()
     )

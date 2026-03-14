@@ -15,5 +15,9 @@ data class CreateProductOverrideRequest(
 
 data class UpdateProductOverrideRequest(
   val overridePrice: BigDecimal
-)
+) {
+  fun validate() {
+    FieldValidators.validatePriceRange(this.overridePrice)
+  }
+}
 

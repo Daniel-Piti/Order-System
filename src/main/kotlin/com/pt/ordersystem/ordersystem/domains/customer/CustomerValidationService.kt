@@ -1,7 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.customer
 
 import com.pt.ordersystem.ordersystem.domains.agent.AgentRepository
-import com.pt.ordersystem.ordersystem.domains.customer.validators.CustomerValidators
+import com.pt.ordersystem.ordersystem.domains.customer.validators.CustomerValidatorsHelper
 import org.springframework.stereotype.Service
 
 @Service
@@ -13,7 +13,7 @@ class CustomerValidationService(
     fun validateCustomerCap(managerId: String, agentId: String?) {
         agentId?.also { agentRepository.findByManagerIdAndId(managerId, it) }
         val count = customerRepository.countByManagerIdAndAgentId(managerId, agentId)
-        CustomerValidators.validateCustomersCap(count, managerId, agentId)
+        CustomerValidatorsHelper.validateCustomersCap(count, managerId, agentId)
     }
 
 }

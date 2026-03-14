@@ -63,6 +63,7 @@ class ProductOverrideAgentController(
     @PathVariable overrideId: Long,
     @RequestBody request: UpdateProductOverrideRequest,
   ): ResponseEntity<ProductOverrideDto> {
+    request.validate()
     val agent = agentService.getAgent(agent.id)
     val override = productOverrideService.updateProductOverride(agent.managerId, agent.id, overrideId, request)
     return ResponseEntity.ok(override.toDto())
