@@ -22,6 +22,14 @@ class CategoryRepository(
             severity = SeverityLevel.WARN,
         )
 
+    fun findEntityByManagerIdAndId(managerId: String, id: Long): CategoryDbEntity =
+        categoryDao.findByManagerIdAndId(managerId, id) ?: throw ServiceException(
+            status = HttpStatus.NOT_FOUND,
+            userMessage = CategoryFailureReason.NOT_FOUND.userMessage,
+            technicalMessage = CategoryFailureReason.NOT_FOUND.technical + "categoryId=$id",
+            severity = SeverityLevel.WARN,
+        )
+
     fun findByManagerId(managerId: String): List<Category> =
         categoryDao.findByManagerId(managerId).map { it.toModel() }
 

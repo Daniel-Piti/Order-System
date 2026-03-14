@@ -1,16 +1,10 @@
 package com.pt.ordersystem.ordersystem.domains.category
 
-import com.pt.ordersystem.ordersystem.domains.category.helpers.CategoryValidators
 import com.pt.ordersystem.ordersystem.domains.category.models.Category
 import com.pt.ordersystem.ordersystem.domains.category.models.CategoryDbEntity
-import com.pt.ordersystem.ordersystem.domains.category.models.CategoryFailureReason
 import com.pt.ordersystem.ordersystem.domains.category.models.CreateCategoryRequest
 import com.pt.ordersystem.ordersystem.domains.category.models.UpdateCategoryRequest
 import com.pt.ordersystem.ordersystem.domains.product.ProductService
-import com.pt.ordersystem.ordersystem.exception.ServiceException
-import com.pt.ordersystem.ordersystem.exception.SeverityLevel
-import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
-import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -19,29 +13,15 @@ import java.time.LocalDateTime
 class CategoryService(
     private val categoryRepository: CategoryRepository,
     private val productService: ProductService,
+    private val categoryValidationService: CategoryValidationService,
 ) {
 
     fun getManagerCategories(managerId: String): List<Category> =
         categoryRepository.findByManagerId(managerId)
 
-    fun validateCreateCategory(categoryName: String, managerId: String) {
-        FieldValidators.validateNonEmpty(categoryName, "'category'")
-
-        CategoryValidators.validateCategoriesCount(categoryRepository.countByManagerId(managerId), managerId)
-
-        if (categoryRepository.existsByManagerIdAndCategory(managerId, categoryName)) {
-            throw ServiceException(
-                status = HttpStatus.CONFLICT,
-                userMessage = CategoryFailureReason.ALREADY_EXISTS.userMessage,
-                technicalMessage = CategoryFailureReason.ALREADY_EXISTS.technical + "managerId=$managerId, category=$categoryName",
-                severity = SeverityLevel.INFO,
-            )
-        }
-    }
-
     @Transactional
     fun createCategory(managerId: String, request: CreateCategoryRequest): Category {
-        validateCreateCategory(request.category, managerId)
+        categoryValidationService.validateCreateCategory(request.category, managerId)
 
         val now = LocalDateTime.now()
         val entity = CategoryDbEntity(
@@ -54,38 +34,18 @@ class CategoryService(
         return categoryRepository.save(entity)
     }
 
-    fun validateUpdateCategory(
-        managerId: String,
-        categoryId: Long,
-        newCategoryName: String,
-    ) {
-        FieldValidators.validateNonEmpty(newCategoryName, "'category'")
-
-        if (categoryRepository.hasDuplicateCategory(managerId, newCategoryName, categoryId)) {
-            throw ServiceException(
-                status = HttpStatus.CONFLICT,
-                userMessage = CategoryFailureReason.ALREADY_EXISTS.userMessage,
-                technicalMessage = CategoryFailureReason.ALREADY_EXISTS.technical + "managerId=$managerId, category=$newCategoryName",
-                severity = SeverityLevel.INFO,
-            )
-        }
-    }
-
     @Transactional
     fun updateCategory(managerId: String, categoryId: Long, request: UpdateCategoryRequest): Category {
-        val category = categoryRepository.findByManagerIdAndId(managerId, categoryId)
+        val storedCategoryEntity = categoryRepository.findEntityByManagerIdAndId(managerId, categoryId)
 
-        validateUpdateCategory(
+        categoryValidationService.validateUpdateCategory(
             managerId = managerId,
             categoryId = categoryId,
             newCategoryName = request.category,
         )
 
-        val updatedEntity = CategoryDbEntity(
-            id = category.id,
-            managerId = category.managerId,
+        val updatedEntity = storedCategoryEntity.copy(
             category = request.category,
-            createdAt = category.createdAt,
             updatedAt = LocalDateTime.now(),
         )
 

@@ -29,7 +29,7 @@ class CategoryManagerController(
         @RequestBody request: CreateCategoryRequest,
         @AuthenticationPrincipal manager: AuthUser
     ): ResponseEntity<CategoryDto> {
-        val normalizedRequest = request.normalize()
+        val normalizedRequest = request.validateAndNormalize()
         val category = categoryService.createCategory(manager.id, normalizedRequest)
         return ResponseEntity.status(HttpStatus.CREATED).body(category.toDto())
     }
@@ -40,7 +40,7 @@ class CategoryManagerController(
         @RequestBody request: UpdateCategoryRequest,
         @AuthenticationPrincipal manager: AuthUser
     ): ResponseEntity<CategoryDto> {
-        val normalizedRequest = request.normalize()
+        val normalizedRequest = request.validateAndNormalize()
         val updatedCategory = categoryService.updateCategory(manager.id, categoryId, normalizedRequest)
         return ResponseEntity.ok(updatedCategory.toDto())
     }

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Public Categories", description = "Public category API for customers")
 @RestController
 @RequestMapping("/api/public/categories")
-class PublicCategoryController(
+class CategoryPublicController(
     private val categoryService: CategoryService,
     private val managerService: ManagerService,
 ) {
