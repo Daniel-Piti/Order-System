@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Public Locations", description = "Public location API for customers")
 @RestController
 @RequestMapping("/api/public/locations")
-class PublicLocationController(
+class LocationPublicController(
     private val locationService: LocationService,
     private val managerService: ManagerService,
 ) {

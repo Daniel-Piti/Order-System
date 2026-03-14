@@ -3,6 +3,7 @@ package com.pt.ordersystem.ordersystem.domains.location.controllers
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.location.LocationService
+import com.pt.ordersystem.ordersystem.domains.location.LocationValidationService
 import com.pt.ordersystem.ordersystem.domains.location.models.LocationDto
 import com.pt.ordersystem.ordersystem.domains.location.models.CreateLocationRequest
 import com.pt.ordersystem.ordersystem.domains.location.models.UpdateLocationRequest
@@ -22,14 +23,16 @@ import org.springframework.web.bind.annotation.*
 @PreAuthorize(AUTH_MANAGER)
 class LocationManagerController(
     private val locationService: LocationService,
-) {
+    private val locationValidationService: LocationValidationService,
+    ) {
 
     @PostMapping
     fun createLocation(
         @RequestBody request: CreateLocationRequest,
         @AuthenticationPrincipal manager: AuthUser,
     ): ResponseEntity<LocationDto> {
-        val normalizedRequest = request.normalize()
+        val normalizedRequest = request.validateAndNormalize()
+        locationValidationService.validateMaxLocationCount(manager.id)
         val location = locationService.createLocation(manager.id, normalizedRequest)
         return ResponseEntity.status(HttpStatus.CREATED).body(location.toDto())
     }
@@ -40,8 +43,12 @@ class LocationManagerController(
         @RequestBody request: UpdateLocationRequest,
         @AuthenticationPrincipal manager: AuthUser,
     ): ResponseEntity<LocationDto> {
-        val normalizedRequest = request.normalize()
-        val updatedLocation = locationService.updateLocation(manager.id, locationId, normalizedRequest)
+        val normalizedRequest = request.validateAndNormalize()
+        val updatedLocation = locationService.updateLocation(
+            managerId = manager.id,
+            locationId = locationId,
+            request = normalizedRequest
+        )
         return ResponseEntity.ok(updatedLocation.toDto())
     }
 
@@ -50,6 +57,7 @@ class LocationManagerController(
         @PathVariable locationId: Long,
         @AuthenticationPrincipal manager: AuthUser,
     ): ResponseEntity<String> {
+        locationValidationService.validateMinLocationCount(manager.id)
         locationService.deleteLocation(manager.id, locationId)
         return ResponseEntity.ok("Location deleted successfully")
     }

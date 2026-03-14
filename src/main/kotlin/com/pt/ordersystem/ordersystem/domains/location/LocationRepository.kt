@@ -22,6 +22,14 @@ class LocationRepository(
             severity = SeverityLevel.WARN,
         )
 
+    fun findEntityByManagerIdAndId(managerId: String, id: Long): LocationDbEntity =
+        locationDao.findByManagerIdAndId(managerId, id) ?: throw ServiceException(
+            status = HttpStatus.NOT_FOUND,
+            userMessage = LocationFailureReason.NOT_FOUND.userMessage,
+            technicalMessage = LocationFailureReason.NOT_FOUND.technical + "locationId=$id",
+            severity = SeverityLevel.WARN,
+        )
+
     fun findByManagerId(managerId: String): List<Location> =
         locationDao.findByManagerId(managerId).map { it.toModel() }
 

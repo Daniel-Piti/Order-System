@@ -10,7 +10,7 @@ import org.springframework.http.HttpStatus
 
 object LocationValidators {
 
-    private const val MAXIMUM_LOCATIONS = 10
+    private const val MAXIMUM_LOCATIONS = 5
 
     fun validateMinLocationCount(locationCount: Long, managerId: String) {
         if (locationCount == 0L) {

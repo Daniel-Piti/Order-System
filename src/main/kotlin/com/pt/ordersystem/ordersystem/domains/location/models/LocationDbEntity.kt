@@ -19,7 +19,7 @@ data class LocationDbEntity(
   @Column(name = "manager_id", nullable = false)
   val managerId: String,
 
-  @Column(nullable = false)
+  @Column(name = "name", nullable = false)
   val name: String,
 
   @Column(name = "street_address", nullable = false)
