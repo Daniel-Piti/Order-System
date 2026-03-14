@@ -28,8 +28,8 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/agent/customers")
 @PreAuthorize(AUTH_AGENT)
 class CustomerAgentController(
-    private val agentService: AgentService,
-    private val customerService: CustomerService,
+  private val agentService: AgentService,
+  private val customerService: CustomerService,
 ) {
 
   @GetMapping
@@ -46,12 +46,12 @@ class CustomerAgentController(
     @AuthenticationPrincipal agent: AuthUser,
     @RequestBody payload: CustomerPayload,
   ): ResponseEntity<CustomerDto> {
-    val normalPayload = payload.normalize()
+    val normalizedPayload = payload.validateAndNormalize()
     val agent = agentService.getAgent(agent.id)
     val customer = customerService.createCustomer(
       managerId = agent.managerId,
       agentId = agent.id,
-      customerPayload = normalPayload
+      customerPayload = normalizedPayload
     )
     return ResponseEntity.status(HttpStatus.CREATED).body(customer.toDto())
   }
@@ -62,7 +62,7 @@ class CustomerAgentController(
     @PathVariable customerId: String,
     @RequestBody payload: CustomerPayload,
   ): ResponseEntity<CustomerDto> {
-    val normalizedPayload = payload.normalize()
+    val normalizedPayload = payload.validateAndNormalize()
     val agent = agentService.getAgent(agent.id)
     val updated = customerService.updateCustomer(
       managerId = agent.managerId,

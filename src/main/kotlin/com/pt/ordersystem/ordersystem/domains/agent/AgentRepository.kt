@@ -17,11 +17,11 @@ class AgentRepository(
     fun findByManagerId(managerId: String): List<Agent> =
         agentDao.findByManagerId(managerId).map { it.toModel() }
 
-    fun findByManagerIdAndId(managerId: String, id: String): Agent =
-        agentDao.findByManagerIdAndId(managerId, id)?.toModel() ?: throw ServiceException(
+    fun findByManagerIdAndId(managerId: String, agentId: String): Agent =
+        agentDao.findByManagerIdAndId(managerId, agentId)?.toModel() ?: throw ServiceException(
             status = HttpStatus.NOT_FOUND,
             userMessage = AgentFailureReason.NOT_FOUND.userMessage,
-            technicalMessage = AgentFailureReason.NOT_FOUND.technical + "managerId=$managerId, agentId=$id",
+            technicalMessage = AgentFailureReason.NOT_FOUND.technical + "managerId=$managerId, agentId=$agentId",
             severity = SeverityLevel.WARN,
         )
 

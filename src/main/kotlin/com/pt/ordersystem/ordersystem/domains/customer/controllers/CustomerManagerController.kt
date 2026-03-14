@@ -3,6 +3,7 @@ package com.pt.ordersystem.ordersystem.domains.customer.controllers
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.customer.CustomerService
+import com.pt.ordersystem.ordersystem.domains.customer.CustomerValidationService
 import com.pt.ordersystem.ordersystem.domains.customer.models.CustomerDto
 import com.pt.ordersystem.ordersystem.domains.customer.models.CustomerPayload
 import com.pt.ordersystem.ordersystem.domains.customer.models.toDto
@@ -20,7 +21,8 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/manager/customers")
 @PreAuthorize(AUTH_MANAGER)
 class CustomerManagerController(
-  private val customerService: CustomerService
+  private val customerService: CustomerService,
+  private val customerValidationService: CustomerValidationService,
 ) {
 
   @GetMapping("/{customerId}")
@@ -43,7 +45,8 @@ class CustomerManagerController(
     @RequestBody payload: CustomerPayload,
     @AuthenticationPrincipal manager: AuthUser,
   ): ResponseEntity<CustomerDto> {
-    val customer = customerService.createCustomer(manager.id, agentId = null, customerPayload = payload)
+    val normalizedPayload = payload.validateAndNormalize()
+    val customer = customerService.createCustomer(manager.id, agentId = null, customerPayload = normalizedPayload)
     return ResponseEntity.status(HttpStatus.CREATED).body(customer.toDto())
   }
 
@@ -53,12 +56,13 @@ class CustomerManagerController(
     @RequestBody payload: CustomerPayload,
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<CustomerDto> {
-    val existing = customerService.findCustomerForManager(manager.id, customerId)
+    val normalizedPayload = payload.validateAndNormalize()
+    customerValidationService.validateManagerOwnsCustomer(manager.id, customerId)
     val customer = customerService.updateCustomer(
       managerId = manager.id,
-      agentId = existing.agentId,
+      agentId = null,
       customerId = customerId,
-      customerPayload = payload,
+      customerPayload = normalizedPayload,
     )
     return ResponseEntity.ok(customer.toDto())
   }
@@ -68,8 +72,8 @@ class CustomerManagerController(
     @PathVariable customerId: String,
     @AuthenticationPrincipal manager: AuthUser
   ): ResponseEntity<String> {
-    val existing = customerService.findCustomerForManager(manager.id, customerId)
-    customerService.deleteCustomer(manager.id, agentId = existing.agentId, customerId = customerId)
+    customerValidationService.validateManagerOwnsCustomer(manager.id, customerId)
+    customerService.deleteCustomer(manager.id, null, customerId)
     return ResponseEntity.ok("Customer deleted successfully")
   }
 }

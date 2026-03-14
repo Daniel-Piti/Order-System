@@ -9,5 +9,9 @@ enum class CustomerFailureReason(val userMessage: String, val technical: String)
     userMessage = "You have reached maximum customers capacity",
     technical = "Reached maximum customers limit | "
   ),
+  CUSTOMER_NOT_OWNED_BY_MANAGER(
+    userMessage = "Customer is not assigned to the manager",
+    technical = "Customer not owned by manager |"
+  ),
 }
 

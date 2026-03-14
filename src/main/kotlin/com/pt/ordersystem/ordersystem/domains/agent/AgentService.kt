@@ -93,8 +93,8 @@ class AgentService(
     // Delete all product overrides associated with this agent
     productOverrideService.deleteAllOverridesForAgent(managerId, agentId)
 
-    // Unassign all customers from this agent (set agentId to null)
-    customerService.unassignCustomersFromAgent(managerId, agentId)
+    // Delete all customers assigned to this agent
+    customerService.deleteAllCustomersForAgent(managerId, agentId)
 
     agentRepository.deleteById(agentId)
   }

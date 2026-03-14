@@ -20,8 +20,6 @@ interface ProductOverrideDao : JpaRepository<ProductOverrideDbEntity, Long> {
   fun findByManagerIdAndAgentIdAndProductIdAndCustomerId(managerId: String, agentId: String?, productId: String, customerId: String): ProductOverrideDbEntity?
   fun findByManagerIdAndAgentId(managerId: String, agentId: String): List<ProductOverrideDbEntity>
   fun findByManagerIdAndAgentIdAndId(managerId: String, agentId: String?, id: Long): ProductOverrideDbEntity?
-  fun findByManagerIdAndAgentIdAndProductId(managerId: String, agentId: String?, productId: String): List<ProductOverrideDbEntity>
-  fun findByManagerIdAndAgentIdAndCustomerId(managerId: String, agentId: String?, customerId: String): List<ProductOverrideDbEntity>
 
   @Modifying
   @Query("""

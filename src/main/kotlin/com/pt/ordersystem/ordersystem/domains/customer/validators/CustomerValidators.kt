@@ -1,5 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.customer.validators
 
+import com.pt.ordersystem.ordersystem.domains.customer.models.Customer
 import com.pt.ordersystem.ordersystem.domains.customer.models.CustomerFailureReason
 import com.pt.ordersystem.ordersystem.domains.customer.models.CustomerPayload
 import com.pt.ordersystem.ordersystem.exception.ServiceException
@@ -21,6 +22,17 @@ object CustomerValidators {
                 status = HttpStatus.BAD_REQUEST,
                 userMessage = CustomerFailureReason.CUSTOMER_LIMIT_EXCEEDED.userMessage,
                 technicalMessage = CustomerFailureReason.CUSTOMER_LIMIT_EXCEEDED.technical + "managerId=$managerId, agentId=$agentId",
+                severity = SeverityLevel.WARN,
+            )
+        }
+    }
+
+    fun validateCustomerOfManager(managerId: String, customer: Customer) {
+        if (customer.agentId != null) {
+            throw ServiceException(
+                status = HttpStatus.BAD_REQUEST,
+                userMessage = CustomerFailureReason.CUSTOMER_NOT_OWNED_BY_MANAGER.userMessage,
+                technicalMessage = CustomerFailureReason.CUSTOMER_NOT_OWNED_BY_MANAGER.technical + "managerId=$managerId, customerId=${customer.id}",
                 severity = SeverityLevel.WARN,
             )
         }
