@@ -35,6 +35,16 @@ class ManagerRepository(
             )
         }.toModel()
 
+    fun findEntityById(managerId: String): ManagerDbEntity =
+        managerDao.findById(managerId).orElseThrow {
+            ServiceException(
+                status = HttpStatus.NOT_FOUND,
+                userMessage = ManagerFailureReason.NOT_FOUND.userMessage,
+                technicalMessage = ManagerFailureReason.NOT_FOUND.technical + "managerId=$managerId",
+                severity = SeverityLevel.WARN,
+            )
+        }
+
     fun existsById(id: String): Boolean = managerDao.existsById(id)
 
     fun existsByEmail(email: String): Boolean = managerDao.existsByEmail(email.trim().lowercase())

@@ -1,6 +1,5 @@
 package com.pt.ordersystem.ordersystem.domains.manager
 
-import com.pt.ordersystem.ordersystem.domains.manager.helpers.ManagerValidators
 import com.pt.ordersystem.ordersystem.domains.manager.models.Manager
 import com.pt.ordersystem.ordersystem.domains.manager.models.ManagerDbEntity
 import com.pt.ordersystem.ordersystem.domains.manager.models.ManagerFailureReason
@@ -19,6 +18,7 @@ import java.time.LocalDateTime
 class ManagerService(
     private val managerRepository: ManagerRepository,
     private val passwordEncoder: BCryptPasswordEncoder,
+    private val managerValidationService: ManagerValidationService,
 ) {
 
     fun getAllManagers(): List<Manager> =
@@ -39,17 +39,6 @@ class ManagerService(
     }
 
     fun createManager(createManagerRequest: CreateManagerRequest): Manager {
-        ManagerValidators.validateCreateManagerRequestFields(createManagerRequest)
-
-        if (managerRepository.existsByEmail(createManagerRequest.email)) {
-            throw ServiceException(
-                status = HttpStatus.CONFLICT,
-                userMessage = ManagerFailureReason.EMAIL_ALREADY_EXISTS.userMessage,
-                technicalMessage = ManagerFailureReason.EMAIL_ALREADY_EXISTS.technical + "email=${createManagerRequest.email}",
-                severity = SeverityLevel.INFO,
-            )
-        }
-
         val now = LocalDateTime.now()
         val entity = ManagerDbEntity(
             id = GeneralUtils.genId(),
@@ -68,13 +57,11 @@ class ManagerService(
         return managerRepository.save(entity)
     }
 
-    fun updateManagerDetails(email: String, updateManagerDetailsRequest: UpdateManagerDetailsRequest): Manager {
-        ManagerValidators.validateUpdateManagerRequestFields(updateManagerDetailsRequest)
+    fun updateManagerDetails(managerId: String, updateManagerDetailsRequest: UpdateManagerDetailsRequest): Manager {
 
-        val normalizedEmail = email.trim().lowercase()
-        val manager = managerRepository.getManagerEntityByEmail(normalizedEmail)
+        val managerEntity = managerRepository.findEntityById(managerId)
 
-        val entity = manager.copy(
+        val updatedManager = managerEntity.copy(
             firstName = updateManagerDetailsRequest.firstName,
             lastName = updateManagerDetailsRequest.lastName,
             phoneNumber = updateManagerDetailsRequest.phoneNumber,
@@ -84,29 +71,14 @@ class ManagerService(
             updatedAt = LocalDateTime.now(),
         )
 
-        return managerRepository.save(entity)
+        return managerRepository.save(updatedManager)
     }
 
-    fun deleteManagerByIdAndEmail(id: String, email: String) {
-        val manager = managerRepository.findById(id)
-
-        val normalizedEmail = email.trim().lowercase()
-
-        if (manager.email != normalizedEmail) {
-            throw ServiceException(
-                status = HttpStatus.NOT_FOUND,
-                userMessage = ManagerFailureReason.NOT_FOUND.userMessage,
-                technicalMessage = ManagerFailureReason.NOT_FOUND.technical + "id=$id, email=$email",
-                severity = SeverityLevel.WARN,
-            )
-        }
-
-        managerRepository.deleteById(id)
-    }
+    fun deleteManagerByIdAndEmail(managerId: String) =
+        managerRepository.deleteById(managerId)
 
     fun validateMatchingPassword(email: String, password: String): Boolean {
-        val normalizedEmail = email.trim().lowercase()
-        val managerEntity = managerRepository.getManagerEntityByEmail(normalizedEmail)
+        val managerEntity = managerRepository.getManagerEntityByEmail(email)
         return passwordEncoder.matches(password, managerEntity.password)
     }
 
@@ -114,44 +86,29 @@ class ManagerService(
         email: String,
         oldPassword: String,
         newPassword: String,
-        newPasswordConfirmation: String,
     ) {
-        val normalizedEmail = email.trim().lowercase()
+        val managerEntity = managerRepository.getManagerEntityByEmail(email)
 
-        FieldValidators.validateNewPasswordEqualConfirmationPassword(newPassword, newPasswordConfirmation)
-        FieldValidators.validateNewPasswordNotEqualOldPassword(oldPassword, newPassword)
-        FieldValidators.validateStrongPassword(newPassword)
-
-        val managerEntity = managerRepository.getManagerEntityByEmail(normalizedEmail)
-
-        if (!passwordEncoder.matches(oldPassword, managerEntity.password)) {
-            throw ServiceException(
-                status = HttpStatus.UNAUTHORIZED,
-                userMessage = "Old password is incorrect",
-                technicalMessage = "Password mismatch for manager with email=$normalizedEmail",
-                severity = SeverityLevel.WARN,
-            )
-        }
+        managerValidationService.validateManagerPasswordMatches(oldPassword, managerEntity)
 
         val updated = managerEntity.copy(
             password = passwordEncoder.encode(newPassword),
             updatedAt = LocalDateTime.now(),
         )
+
         managerRepository.save(updated)
     }
 
     fun resetPassword(email: String, newPassword: String) {
-        val normalizedEmail = email.trim().lowercase()
-        val trimmedPassword = newPassword.trim()
+        FieldValidators.validateStrongPassword(newPassword)
 
-        FieldValidators.validateStrongPassword(trimmedPassword)
-
-        val managerEntity = managerRepository.getManagerEntityByEmail(normalizedEmail)
+        val managerEntity = managerRepository.getManagerEntityByEmail(email)
 
         val updated = managerEntity.copy(
-            password = passwordEncoder.encode(trimmedPassword),
+            password = passwordEncoder.encode(newPassword),
             updatedAt = LocalDateTime.now(),
         )
+
         managerRepository.save(updated)
     }
 

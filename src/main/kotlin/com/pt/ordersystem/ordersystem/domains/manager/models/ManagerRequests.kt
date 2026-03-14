@@ -1,5 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.manager.models
 
+import com.pt.ordersystem.ordersystem.domains.manager.helpers.ManagerValidators
 import java.time.LocalDate
 
 data class CreateManagerRequest(
@@ -12,14 +13,18 @@ data class CreateManagerRequest(
     val streetAddress: String,
     val city: String,
 ) {
-    fun normalize(): CreateManagerRequest = copy(
-        firstName = firstName.trim(),
-        lastName = lastName.trim(),
-        email = email.trim().lowercase(),
-        phoneNumber = phoneNumber.trim(),
-        streetAddress = streetAddress.trim(),
-        city = city.trim(),
-    )
+    fun validateAndNormalize(): CreateManagerRequest {
+        ManagerValidators.validateCreateManagerRequestFields(this)
+
+        return copy(
+            firstName = firstName.trim(),
+            lastName = lastName.trim(),
+            email = email.trim().lowercase(),
+            phoneNumber = phoneNumber.trim(),
+            streetAddress = streetAddress.trim(),
+            city = city.trim(),
+        )
+    }
 }
 
 data class UpdateManagerDetailsRequest(
@@ -30,11 +35,15 @@ data class UpdateManagerDetailsRequest(
     val streetAddress: String,
     val city: String,
 ) {
-    fun normalize(): UpdateManagerDetailsRequest = copy(
-        firstName = firstName.trim(),
-        lastName = lastName.trim(),
-        phoneNumber = phoneNumber.trim(),
-        streetAddress = streetAddress.trim(),
-        city = city.trim(),
-    )
+    fun validateAndNormalize(): UpdateManagerDetailsRequest {
+        ManagerValidators.validateUpdateManagerRequestFields(this)
+
+        return copy(
+            firstName = firstName.trim(),
+            lastName = lastName.trim(),
+            phoneNumber = phoneNumber.trim(),
+            streetAddress = streetAddress.trim(),
+            city = city.trim(),
+        )
+    }
 }

@@ -1,8 +1,13 @@
 package com.pt.ordersystem.ordersystem.domains.manager.helpers
 
 import com.pt.ordersystem.ordersystem.domains.manager.models.CreateManagerRequest
+import com.pt.ordersystem.ordersystem.domains.manager.models.Manager
+import com.pt.ordersystem.ordersystem.domains.manager.models.ManagerFailureReason
 import com.pt.ordersystem.ordersystem.domains.manager.models.UpdateManagerDetailsRequest
+import com.pt.ordersystem.ordersystem.exception.ServiceException
+import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.fieldValidators.FieldValidators
+import org.springframework.http.HttpStatus
 
 object ManagerValidators {
 
@@ -27,6 +32,28 @@ object ManagerValidators {
             FieldValidators.validateDateNotFuture(dateOfBirth)
             FieldValidators.validateNonEmpty(streetAddress, "'street address'")
             FieldValidators.validateNonEmpty(city, "'city'")
+        }
+    }
+
+    fun validateManagerExists(exists: Boolean, email: String) {
+        if (exists) {
+            throw ServiceException(
+                status = HttpStatus.CONFLICT,
+                userMessage = ManagerFailureReason.EMAIL_ALREADY_EXISTS.userMessage,
+                technicalMessage = ManagerFailureReason.EMAIL_ALREADY_EXISTS.technical + "email=$email",
+                severity = SeverityLevel.INFO,
+            )
+        }
+    }
+
+    fun validateMatchingEmail(manager: Manager, suggestedEmail: String) {
+        if (manager.email != suggestedEmail) {
+            throw ServiceException(
+                status = HttpStatus.NOT_FOUND,
+                userMessage = ManagerFailureReason.NOT_FOUND.userMessage,
+                technicalMessage = ManagerFailureReason.NOT_FOUND.technical + "managerId=${manager.id}, email=$suggestedEmail",
+                severity = SeverityLevel.WARN,
+            )
         }
     }
 }

@@ -2,6 +2,7 @@ package com.pt.ordersystem.ordersystem.domains.manager.controllers
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_ADMIN
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
+import com.pt.ordersystem.ordersystem.domains.manager.ManagerValidationService
 import com.pt.ordersystem.ordersystem.domains.manager.models.ManagerDto
 import com.pt.ordersystem.ordersystem.domains.manager.models.CreateManagerRequest
 import com.pt.ordersystem.ordersystem.domains.manager.models.toDto
@@ -19,17 +20,22 @@ import org.springframework.web.bind.annotation.*
 @PreAuthorize(AUTH_ADMIN)
 class ManagerAdminController(
     private val managerService: ManagerService,
+    private val managerValidationService: ManagerValidationService,
 ) {
 
     @GetMapping
     fun getAllManagers(): ResponseEntity<List<ManagerDto>> {
-        val managers = managerService.getAllManagers().map { it.toDto() }
-        return ResponseEntity.ok(managers)
+        val managers = managerService.getAllManagers()
+        return ResponseEntity.ok(managers.map { it.toDto() })
     }
 
     @PostMapping
-    fun createManager(@RequestBody createManagerRequest: CreateManagerRequest): ResponseEntity<ManagerDto> {
-        val normalizedRequest = createManagerRequest.normalize()
+    fun createManager(
+        @RequestBody createManagerRequest: CreateManagerRequest
+    ): ResponseEntity<ManagerDto> {
+        val normalizedRequest = createManagerRequest.validateAndNormalize()
+
+        managerValidationService.validateCreateManager(createManagerRequest.email)
         val manager = managerService.createManager(normalizedRequest)
         return ResponseEntity.status(HttpStatus.CREATED).body(manager.toDto())
     }
@@ -39,7 +45,9 @@ class ManagerAdminController(
         @RequestParam email: String,
         @RequestParam password: String,
     ): ResponseEntity<String> {
-        val isValid = managerService.validateMatchingPassword(email, password)
+        val normalizedEmail = email.trim().lowercase()
+
+        val isValid = managerService.validateMatchingPassword(normalizedEmail, password)
         return if (isValid)
             ResponseEntity.ok("Password matches")
         else
@@ -51,16 +59,22 @@ class ManagerAdminController(
         @RequestParam email: String,
         @RequestParam newPassword: String,
     ): ResponseEntity<String> {
-        managerService.resetPassword(email, newPassword)
+        val normalizedEmail = email.trim().lowercase()
+        val normalizedPassword = newPassword.trim()
+
+        managerService.resetPassword(normalizedEmail, normalizedPassword)
         return ResponseEntity.ok("Password reset successfully")
     }
 
     @DeleteMapping
     fun deleteManager(
-        @RequestParam id: String,
+        @RequestParam managerId: String,
         @RequestParam email: String,
     ): ResponseEntity<String> {
-        managerService.deleteManagerByIdAndEmail(id, email)
+        val normalizedEmail = email.trim().lowercase()
+
+        managerValidationService.validateManagerMatchEmail(managerId, normalizedEmail)
+        managerService.deleteManagerByIdAndEmail(managerId)
         return ResponseEntity.ok("Manager deleted successfully | email=$email")
     }
 }

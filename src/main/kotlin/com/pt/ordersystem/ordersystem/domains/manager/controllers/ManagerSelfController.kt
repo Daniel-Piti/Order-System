@@ -3,6 +3,7 @@ package com.pt.ordersystem.ordersystem.domains.manager.controllers
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerService
+import com.pt.ordersystem.ordersystem.domains.manager.ManagerValidationService
 import com.pt.ordersystem.ordersystem.domains.manager.models.ManagerDto
 import com.pt.ordersystem.ordersystem.domains.manager.models.UpdateManagerDetailsRequest
 import com.pt.ordersystem.ordersystem.domains.manager.models.toDto
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*
 @PreAuthorize(AUTH_MANAGER)
 class ManagerSelfController(
     private val managerService: ManagerService,
+    private val managerValidationService: ManagerValidationService,
 ) {
 
     @GetMapping
@@ -33,8 +35,9 @@ class ManagerSelfController(
         @RequestBody updatedDetails: UpdateManagerDetailsRequest,
         @AuthenticationPrincipal manager: AuthUser,
     ): ResponseEntity<ManagerDto> {
-        val normalizedRequest = updatedDetails.normalize()
-        val updatedManager = managerService.updateManagerDetails(manager.email, normalizedRequest)
+        val normalizedRequest = updatedDetails.validateAndNormalize()
+
+        val updatedManager = managerService.updateManagerDetails(manager.id, normalizedRequest)
         return ResponseEntity.ok(updatedManager.toDto())
     }
 
@@ -45,7 +48,10 @@ class ManagerSelfController(
         @RequestParam("new_password_confirmation") newPasswordConfirmation: String,
         @AuthenticationPrincipal manager: AuthUser,
     ): ResponseEntity<String> {
-        managerService.updatePassword(manager.email, oldPassword, newPassword, newPasswordConfirmation)
+        val normalizedEmail = manager.email.trim().lowercase()
+
+        managerValidationService.validateUpdateManagerPasswordFields(oldPassword, newPassword, newPasswordConfirmation)
+        managerService.updatePassword(normalizedEmail, oldPassword, newPassword)
         return ResponseEntity.ok("Password updated successfully")
     }
 }
