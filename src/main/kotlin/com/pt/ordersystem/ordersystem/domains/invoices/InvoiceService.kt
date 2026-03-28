@@ -8,6 +8,8 @@ import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceReque
 import com.pt.ordersystem.ordersystem.domains.invoices.signing.InvoicePdfSigner
 import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceResponse
 import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceDbEntity
+import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceWithOrderTotal
+import com.pt.ordersystem.ordersystem.domains.invoices.models.toModel
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerRepository
 import com.pt.ordersystem.ordersystem.domains.order.OrderRepository
 import com.pt.ordersystem.ordersystem.domains.order.models.Order
@@ -15,6 +17,9 @@ import com.pt.ordersystem.ordersystem.domains.order.models.toEntity
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.storage.S3StorageService
+import com.pt.ordersystem.ordersystem.utils.PageRequestBase
+import com.pt.ordersystem.ordersystem.utils.PaginationUtils
+import org.springframework.data.domain.Page
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -35,6 +40,7 @@ class InvoiceService(
 
   companion object {
     private const val MAX_BATCH_SIZE = 100
+    private val INVOICE_ALLOWED_SORT_FIELDS = setOf("createdAt", "invoiceSequenceNumber")
   }
 
   @Transactional
@@ -183,7 +189,7 @@ class InvoiceService(
       return InvoiceAggregatorHelper.buildInvoiceLinksXlsx(fromDate, toDate, emptyList(), BigDecimal.ZERO)
     }
     val orderIds = invoices.map { it.orderId }.distinct()
-    val ordersById = orderRepository.findByIdIn(orderIds).associateBy { it.id }
+    val ordersById = orderRepository.findByIdInAndManagerId(orderIds, managerId).associateBy { it.id }
     val entries = invoices.mapNotNull { invoice ->
       val url = s3StorageService.getPublicUrl(invoice.s3Key) ?: return@mapNotNull null
       val order = ordersById[invoice.orderId] ?: return@mapNotNull null
@@ -192,6 +198,56 @@ class InvoiceService(
     }
     val totalAmount = entries.fold(BigDecimal.ZERO) { acc, e -> acc.add(e.totalPrice) }
     return InvoiceAggregatorHelper.buildInvoiceLinksXlsx(fromDate, toDate, entries, totalAmount)
+  }
+
+  @Transactional(readOnly = true)
+  fun searchInvoices(
+    managerId: String,
+    fromDate: LocalDate,
+    toDate: LocalDate,
+    pageRequestBase: PageRequestBase,
+  ): Page<InvoiceWithOrderTotal> {
+    if (toDate.isBefore(fromDate)) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Date range invalid: 'to' must be on or after 'from'",
+        technicalMessage = "searchInvoices: toDate=$toDate is before fromDate=$fromDate",
+        severity = SeverityLevel.WARN
+      )
+    }
+
+    val from = fromDate.atStartOfDay()
+    val to = toDate.atTime(LocalTime.MAX)
+    val pageable = PaginationUtils.getValidatedPageRequest(
+      pageRequestBase = pageRequestBase,
+      allowedSortFields = INVOICE_ALLOWED_SORT_FIELDS,
+      defaultSortBy = "createdAt",
+    )
+
+    val invoicesPage = invoiceRepository.findByManagerIdAndCreatedAtBetween(managerId, from, to, pageable)
+    val invoices = invoicesPage.content
+    val orderIds = invoices.map { it.orderId }.distinct()
+    val ordersById = orderRepository.findByIdInAndManagerId(orderIds, managerId).associateBy { it.id }
+
+    return invoicesPage.map { invoice ->
+      val url = s3StorageService.getPublicUrl(invoice.s3Key) ?: ""
+
+      if(url == "") {
+        println("ERROR: Could not build url for ${invoice.s3Key}")
+      }
+
+      val order = ordersById[invoice.orderId]
+
+      if (order != null) {
+        println("ERROR: Could not find matching order | invoice=${invoice.id} order=${invoice.orderId}")
+      }
+
+      InvoiceWithOrderTotal(
+        invoice = invoice.toModel(),
+        pdfUrl = url,
+        orderTotalPrice = order?.totalPrice ?: BigDecimal.ZERO,
+      )
+    }
   }
 
 }

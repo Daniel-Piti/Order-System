@@ -24,87 +24,24 @@ class OrderService(
 ) {
 
   companion object {
-    private val ORDER_ALLOWED_SORT_FIELDS = setOf("createdAt", "updatedAt", "placedAt", "doneAt", "totalPrice", "status")
+    private val ORDER_ALLOWED_SORT_FIELDS = setOf("createdAt", "updatedAt", "placedAt", "doneAt", "totalPrice")
     private const val ORDER_DEFAULT_SORT_FIELD = "createdAt"
-    private const val ORDER_MAX_PAGE_SIZE = 100
   }
 
   fun getOrders(
     managerId: String,
-    page: Int,
-    pageSize: Int,
-    sortBy: String,
-    sortDirection: String,
-    status: String?,
-    filterAgent: Boolean,
-    agentId: String?
+    filters: OrderListFilters,
+    pageRequestBase: PageRequestBase,
   ): Page<Order> {
-    val pageable = PaginationUtils.getValidatedPageRequest(
-      PageRequestBase(page, pageSize, sortBy, SortOrder.fromString(sortDirection)),
-      allowedSortFields = ORDER_ALLOWED_SORT_FIELDS,
-      defaultSortBy = ORDER_DEFAULT_SORT_FIELD,
-      maxPageSize = ORDER_MAX_PAGE_SIZE,
-    )
-
-    // Fetch orders with optional filters
-    // filterAgent=true, agentId=null -> manager's orders (agentId IS NULL)
-    // filterAgent=true, agentId=123 -> specific agent's orders
-    // filterAgent=false -> no filter by agent (all orders)
-    return when {
-      filterAgent && !status.isNullOrBlank() -> {
-        if (agentId == null) {
-          orderRepository.findAllByManagerIdAndAgentIdIsNullAndStatus(managerId, status, pageable)
-        } else {
-          orderRepository.findAllByManagerIdAndAgentIdAndStatus(managerId, agentId, status, pageable)
-        }
-      }
-      filterAgent -> {
-        if (agentId == null) {
-          orderRepository.findAllByManagerIdAndAgentIdIsNull(managerId, pageable)
-        } else {
-          orderRepository.findAllByManagerIdAndAgentId(managerId, agentId, pageable)
-        }
-      }
-      !status.isNullOrBlank() -> {
-        orderRepository.findAllByManagerIdAndStatus(managerId, status, pageable)
-      }
-      else -> {
-        orderRepository.findAllByManagerId(managerId, pageable)
-      }
-    }
-  }
-
-  fun getOrdersByCustomerId(
-    managerId: String,
-    customerId: String,
-    page: Int,
-    pageSize: Int,
-    sortBy: String,
-    sortDirection: String,
-    status: String?,
-    agentId: String?
-  ): Page<Order> {
-    // When agent scoped, ensure customer belongs to this agent (throws if not)
-    if (agentId != null) {
-      customerRepository.findByManagerIdAndAgentIdAndId(managerId, agentId, customerId)
+    if (filters.orderSource == OrderSource.AGENT && filters.customerId != null && filters.agentId != null) {
+      customerRepository.findByManagerIdAndAgentIdAndId(managerId, filters.agentId, filters.customerId)
     }
     val pageable = PaginationUtils.getValidatedPageRequest(
-      PageRequestBase(page, pageSize, sortBy, SortOrder.fromString(sortDirection)),
+      pageRequestBase = pageRequestBase,
       allowedSortFields = ORDER_ALLOWED_SORT_FIELDS,
       defaultSortBy = ORDER_DEFAULT_SORT_FIELD,
-      maxPageSize = ORDER_MAX_PAGE_SIZE,
     )
-
-    return when {
-      agentId != null && !status.isNullOrBlank() ->
-        orderRepository.findAllByManagerIdAndAgentIdAndCustomerIdAndStatus(managerId, agentId, customerId, status, pageable)
-      agentId != null ->
-        orderRepository.findAllByManagerIdAndAgentIdAndCustomerId(managerId, agentId, customerId, pageable)
-      !status.isNullOrBlank() ->
-        orderRepository.findAllByManagerIdAndCustomerIdAndStatus(managerId, customerId, status, pageable)
-      else ->
-        orderRepository.findAllByManagerIdAndCustomerId(managerId, customerId, pageable)
-    }
+    return orderRepository.findAll(filters.toSpecification(), pageable)
   }
 
   fun getOrderById(orderId: String, managerId: String, agentId: String? = null): Order =
@@ -171,8 +108,9 @@ class OrderService(
       sum + (product.pricePerUnit.multiply(BigDecimal.valueOf(product.quantity.toLong())))
     }
 
+    // Customer is unique by (managerId, id); works for both manager's and agent's customers (e.g. manager-created order for agent's customer).
     val customer = order.customerId?.let { customerId ->
-      customerRepository.findByManagerIdAndAgentIdAndId(order.managerId, order.agentId, customerId)
+      customerRepository.findByManagerIdAndId(order.managerId, customerId)
     }
 
     val now = LocalDateTime.now()

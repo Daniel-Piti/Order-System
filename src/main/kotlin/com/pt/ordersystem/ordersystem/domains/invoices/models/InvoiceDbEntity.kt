@@ -45,5 +45,21 @@ data class InvoiceDbEntity(
 
   @Column(name = "updated_at", nullable = false)
   var updatedAt: LocalDateTime
-)
+) {
+  fun Invoice.toDto() = InvoiceDto(
+    id = id,
+    managerId = managerId,
+    orderId = orderId,
+    invoiceSequenceNumber = invoiceSequenceNumber,
+    paymentMethod = paymentMethod,
+    paymentProof = paymentProof,
+    allocationNumber = allocationNumber,
+    s3Key = s3Key,
+    fileName = fileName,
+    fileSizeBytes = fileSizeBytes,
+    mimeType = mimeType,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+  )
+}
 

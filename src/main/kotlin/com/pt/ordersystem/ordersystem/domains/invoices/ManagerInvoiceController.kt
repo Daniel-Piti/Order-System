@@ -4,9 +4,11 @@ import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceRequest
 import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceResponse
+import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceWithOrderTotal
 import com.pt.ordersystem.ordersystem.domains.invoices.models.ManagerCreateInvoiceRequest
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.data.domain.Page
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import com.pt.ordersystem.ordersystem.utils.PageRequestBaseExternal
 import java.time.LocalDate
 
 @Tag(name = "Invoices", description = "Manager invoice management API")
@@ -72,5 +75,23 @@ class ManagerInvoiceController(
       .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
       .header("Content-Disposition", "attachment; filename=\"$filename\"")
       .body(xlsx)
+  }
+
+  @GetMapping("/search")
+  fun searchInvoices(
+    @AuthenticationPrincipal manager: AuthUser,
+    @RequestParam from: String,
+    @RequestParam to: String,
+    pageParams: PageRequestBaseExternal,
+  ): ResponseEntity<Page<InvoiceWithOrderTotal>> {
+    val fromDate = LocalDate.parse(from)
+    val toDate = LocalDate.parse(to)
+    val page = invoiceService.searchInvoices(
+      managerId = manager.id,
+      fromDate = fromDate,
+      toDate = toDate,
+      pageRequestBase = pageParams.toPageRequestBase(),
+    )
+    return ResponseEntity.ok(page)
   }
 }

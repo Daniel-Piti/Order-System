@@ -3,6 +3,8 @@ package com.pt.ordersystem.ordersystem.domains.order.controller
 import com.pt.ordersystem.ordersystem.auth.AuthRole
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.agent.AgentService
+import com.pt.ordersystem.ordersystem.domains.order.OrderListFilters
+import com.pt.ordersystem.ordersystem.domains.order.OrderListFiltersExternal
 import com.pt.ordersystem.ordersystem.domains.order.OrderService
 import com.pt.ordersystem.ordersystem.domains.order.models.CreateOrderRequest
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDto
@@ -10,6 +12,7 @@ import com.pt.ordersystem.ordersystem.domains.order.models.OrderSource
 import com.pt.ordersystem.ordersystem.domains.order.models.UpdateDiscountRequest
 import com.pt.ordersystem.ordersystem.domains.order.models.UpdateOrderRequest
 import com.pt.ordersystem.ordersystem.domains.order.models.toDto
+import com.pt.ordersystem.ordersystem.utils.PageRequestBaseExternal
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
@@ -23,7 +26,6 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @Tag(name = "Agent Orders", description = "Agent order management API")
@@ -38,38 +40,23 @@ class OrderAgentController(
 
   @GetMapping
   fun getAllOrders(
-      @AuthenticationPrincipal agent: AuthUser,
-      @RequestParam(defaultValue = "0") page: Int,
-      @RequestParam(defaultValue = "20") size: Int,
-      @RequestParam(defaultValue = "createdAt") sortBy: String,
-      @RequestParam(defaultValue = "DESC") sortDirection: String,
-      @RequestParam(required = false) status: String?,
-      @RequestParam(required = false) customerId: String?
+      @AuthenticationPrincipal agentAuthUser: AuthUser,
+      filters: OrderListFiltersExternal,
+      pageParams: PageRequestBaseExternal,
   ): ResponseEntity<Page<OrderDto>> {
-    val loadedAgent = agentService.getAgent(agent.id)
-    val orders = if (customerId != null) {
-      orderService.getOrdersByCustomerId(
-        managerId = loadedAgent.managerId,
-        customerId = customerId,
-        page = page,
-        pageSize = size,
-        sortBy = sortBy,
-        sortDirection = sortDirection,
-        status = status,
-        agentId = loadedAgent.id
-      )
-    } else {
-      orderService.getOrders(
-        managerId = loadedAgent.managerId,
-        page = page,
-        pageSize = size,
-        sortBy = sortBy,
-        sortDirection = sortDirection,
-        status = status,
-        filterAgent = true,
-        agentId = loadedAgent.id
-      )
-    }
+    val agent = agentService.getAgent(agentAuthUser.id)
+    val filters = OrderListFilters(
+      managerId = agent.managerId,
+      orderSource = OrderSource.AGENT,
+      agentId = agent.id,
+      status = filters.status,
+      customerId = filters.customerId,
+    )
+    val orders = orderService.getOrders(
+      managerId = agent.managerId,
+      filters = filters,
+      pageRequestBase = pageParams.toPageRequestBase(),
+    )
     return ResponseEntity.ok(orders.map { it.toDto() })
   }
 

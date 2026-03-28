@@ -2,6 +2,8 @@ package com.pt.ordersystem.ordersystem.domains.order.controller
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole
 import com.pt.ordersystem.ordersystem.auth.AuthUser
+import com.pt.ordersystem.ordersystem.domains.order.OrderListFilters
+import com.pt.ordersystem.ordersystem.domains.order.OrderListFiltersExternal
 import com.pt.ordersystem.ordersystem.domains.order.OrderService
 import com.pt.ordersystem.ordersystem.domains.order.models.CreateOrderRequest
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDto
@@ -9,6 +11,7 @@ import com.pt.ordersystem.ordersystem.domains.order.models.OrderSource
 import com.pt.ordersystem.ordersystem.domains.order.models.UpdateDiscountRequest
 import com.pt.ordersystem.ordersystem.domains.order.models.UpdateOrderRequest
 import com.pt.ordersystem.ordersystem.domains.order.models.toDto
+import com.pt.ordersystem.ordersystem.utils.PageRequestBaseExternal
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
@@ -37,38 +40,15 @@ class OrderManagerController(
   @GetMapping
   fun getAllOrders(
       @AuthenticationPrincipal manager: AuthUser,
-      @RequestParam(defaultValue = "0") page: Int,
-      @RequestParam(defaultValue = "20") size: Int,
-      @RequestParam(defaultValue = "createdAt") sortBy: String,
-      @RequestParam(defaultValue = "DESC") sortDirection: String,
-      @RequestParam(required = false) status: String?,
-      @RequestParam(defaultValue = "false") filterAgent: Boolean,
-      @RequestParam(required = false) agentId: String?,
-      @RequestParam(required = false) customerId: String?,
+      filters: OrderListFiltersExternal,
+      pageParams: PageRequestBaseExternal,
   ): ResponseEntity<Page<OrderDto>> {
-    val orders = if (customerId != null) {
-      orderService.getOrdersByCustomerId(
-        managerId = manager.id,
-        customerId = customerId,
-        page = page,
-        pageSize = size,
-        sortBy = sortBy,
-        sortDirection = sortDirection,
-        status = status,
-        agentId = null
-      )
-    } else {
-      orderService.getOrders(
-        managerId = manager.id,
-        page = page,
-        pageSize = size,
-        sortBy = sortBy,
-        sortDirection = sortDirection,
-        status = status,
-        filterAgent = filterAgent,
-        agentId = agentId
-      )
-    }
+    val domainFilters = filters.toDomain(manager.id)
+    val orders = orderService.getOrders(
+      managerId = manager.id,
+      filters = domainFilters,
+      pageRequestBase = pageParams.toPageRequestBase(),
+    )
     return ResponseEntity.ok(orders.map { it.toDto() })
   }
 
