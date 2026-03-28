@@ -4,7 +4,7 @@ import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceRequest
 import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceResponse
-import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceWithOrderTotal
+import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceDto
 import com.pt.ordersystem.ordersystem.domains.invoices.models.ManagerCreateInvoiceRequest
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
@@ -83,7 +83,7 @@ class ManagerInvoiceController(
     @RequestParam from: String,
     @RequestParam to: String,
     pageParams: PageRequestBaseExternal,
-  ): ResponseEntity<Page<InvoiceWithOrderTotal>> {
+  ): ResponseEntity<Page<InvoiceDto>> {
     val fromDate = LocalDate.parse(from)
     val toDate = LocalDate.parse(to)
     val page = invoiceService.searchInvoices(

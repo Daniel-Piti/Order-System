@@ -1,5 +1,6 @@
 package com.pt.ordersystem.ordersystem.domains.invoices.models
 
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 /**
@@ -9,6 +10,8 @@ data class Invoice(
   val id: Long,
   val managerId: String,
   val orderId: String,
+  val customerId: String?,
+  val orderTotalPrice: BigDecimal,
   val invoiceSequenceNumber: Int,
   val paymentMethod: PaymentMethod,
   val paymentProof: String,
@@ -25,6 +28,8 @@ fun InvoiceDbEntity.toModel(): Invoice = Invoice(
   id = id,
   managerId = managerId,
   orderId = orderId,
+  customerId = customerId,
+  orderTotalPrice = orderTotalPrice,
   invoiceSequenceNumber = invoiceSequenceNumber,
   paymentMethod = PaymentMethod.valueOf(paymentMethod),
   paymentProof = paymentProof,
@@ -36,3 +41,4 @@ fun InvoiceDbEntity.toModel(): Invoice = Invoice(
   createdAt = createdAt,
   updatedAt = updatedAt,
 )
+

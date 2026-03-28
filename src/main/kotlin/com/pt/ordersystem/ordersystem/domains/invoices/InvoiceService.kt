@@ -8,7 +8,8 @@ import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceReque
 import com.pt.ordersystem.ordersystem.domains.invoices.signing.InvoicePdfSigner
 import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceResponse
 import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceDbEntity
-import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceWithOrderTotal
+import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceDto
+import com.pt.ordersystem.ordersystem.domains.invoices.models.toDto
 import com.pt.ordersystem.ordersystem.domains.invoices.models.toModel
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerRepository
 import com.pt.ordersystem.ordersystem.domains.order.OrderRepository
@@ -70,13 +71,15 @@ class InvoiceService(
     val pdfBytes = invoicePdfSigner.sign(unsignedPdfBytes, business.name)
 
     val uploadData = uploadInvoice(
-      manager.id,
-      order.id,
-      invoiceSequenceNumber,
-      createInvoiceRequest.paymentMethod.name,
-      createInvoiceRequest.paymentProof,
-      allocationNumber,
-      pdfBytes,
+      managerId = manager.id,
+      orderId = order.id,
+      customerId = order.customerId,
+      orderTotalPrice = order.totalPrice,
+      invoiceSequenceNumber = invoiceSequenceNumber,
+      paymentMethod = createInvoiceRequest.paymentMethod.name,
+      paymentProof = createInvoiceRequest.paymentProof,
+      allocationNumber = allocationNumber,
+      pdfBytes = pdfBytes,
     )
 
     return uploadData
@@ -85,11 +88,13 @@ class InvoiceService(
   private fun uploadInvoice(
     managerId: String,
     orderId: String,
+    customerId: String?,
+    orderTotalPrice: BigDecimal,
     invoiceSequenceNumber: Int,
     paymentMethod: String,
     paymentProof: String,
     allocationNumber: String?,
-    pdfBytes: ByteArray
+    pdfBytes: ByteArray,
   ): CreateInvoiceResponse {
     // Build S3 key using generateS3Key (includes UUID prefix for uniqueness and sanitization)
     val fileName = "invoice-$invoiceSequenceNumber.pdf"
@@ -112,6 +117,8 @@ class InvoiceService(
     val invoice = InvoiceDbEntity(
       managerId = managerId,
       orderId = orderId,
+      customerId = customerId,
+      orderTotalPrice = orderTotalPrice,
       invoiceSequenceNumber = invoiceSequenceNumber,
       paymentMethod = paymentMethod,
       paymentProof = paymentProof,
@@ -121,7 +128,7 @@ class InvoiceService(
       fileSizeBytes = pdfBytes.size.toLong(),
       mimeType = "application/pdf",
       createdAt = now,
-      updatedAt = now
+      updatedAt = now,
     )
 
     val savedInvoice = invoiceRepository.save(invoice)
@@ -188,13 +195,10 @@ class InvoiceService(
     if (invoices.isEmpty()) {
       return InvoiceAggregatorHelper.buildInvoiceLinksXlsx(fromDate, toDate, emptyList(), BigDecimal.ZERO)
     }
-    val orderIds = invoices.map { it.orderId }.distinct()
-    val ordersById = orderRepository.findByIdInAndManagerId(orderIds, managerId).associateBy { it.id }
     val entries = invoices.mapNotNull { invoice ->
       val url = s3StorageService.getPublicUrl(invoice.s3Key) ?: return@mapNotNull null
-      val order = ordersById[invoice.orderId] ?: return@mapNotNull null
       val displayName = invoice.fileName ?: "invoice-${invoice.invoiceSequenceNumber}.pdf"
-      InvoiceAggregatorHelper.InvoiceLinkEntry(invoice.orderId, url, displayName, order.totalPrice)
+      InvoiceAggregatorHelper.InvoiceLinkEntry(invoice.orderId, url, displayName, invoice.orderTotalPrice)
     }
     val totalAmount = entries.fold(BigDecimal.ZERO) { acc, e -> acc.add(e.totalPrice) }
     return InvoiceAggregatorHelper.buildInvoiceLinksXlsx(fromDate, toDate, entries, totalAmount)
@@ -206,7 +210,7 @@ class InvoiceService(
     fromDate: LocalDate,
     toDate: LocalDate,
     pageParams: PageRequestBaseExternal,
-  ): Page<InvoiceWithOrderTotal> {
+  ): Page<InvoiceDto> {
     if (toDate.isBefore(fromDate)) {
       throw ServiceException(
         status = HttpStatus.BAD_REQUEST,
@@ -224,29 +228,8 @@ class InvoiceService(
     )
 
     val invoicesPage = invoiceRepository.findByManagerIdAndCreatedAtBetween(managerId, from, to, pageable)
-    val invoices = invoicesPage.content
-    val orderIds = invoices.map { it.orderId }.distinct()
-    val ordersById = orderRepository.findByIdInAndManagerId(orderIds, managerId).associateBy { it.id }
 
-    return invoicesPage.map { invoice ->
-      val url = s3StorageService.getPublicUrl(invoice.s3Key) ?: ""
-
-      if(url == "") {
-        println("ERROR: Could not build url for ${invoice.s3Key}")
-      }
-
-      val order = ordersById[invoice.orderId]
-
-      if (order != null) {
-        println("ERROR: Could not find matching order | invoice=${invoice.id} order=${invoice.orderId}")
-      }
-
-      InvoiceWithOrderTotal(
-        invoice = invoice.toModel(),
-        pdfUrl = url,
-        orderTotalPrice = order?.totalPrice ?: BigDecimal.ZERO,
-      )
-    }
+    return invoicesPage.map { entity -> entity.toModel().toDto() }
   }
 
 }

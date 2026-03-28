@@ -1,6 +1,7 @@
 package com.pt.ordersystem.ordersystem.domains.invoices.models
 
 import jakarta.persistence.*
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 @Entity
@@ -15,6 +16,12 @@ data class InvoiceDbEntity(
 
   @Column(name = "order_id", nullable = false, length = 255)
   val orderId: String,
+
+  @Column(name = "customer_id", length = 255)
+  val customerId: String? = null,
+
+  @Column(name = "order_total_price", nullable = false, precision = 10, scale = 2)
+  val orderTotalPrice: BigDecimal,
 
   @Column(name = "invoice_sequence_number", nullable = false)
   val invoiceSequenceNumber: Int,
@@ -44,22 +51,5 @@ data class InvoiceDbEntity(
   val createdAt: LocalDateTime,
 
   @Column(name = "updated_at", nullable = false)
-  var updatedAt: LocalDateTime
-) {
-  fun Invoice.toDto() = InvoiceDto(
-    id = id,
-    managerId = managerId,
-    orderId = orderId,
-    invoiceSequenceNumber = invoiceSequenceNumber,
-    paymentMethod = paymentMethod,
-    paymentProof = paymentProof,
-    allocationNumber = allocationNumber,
-    s3Key = s3Key,
-    fileName = fileName,
-    fileSizeBytes = fileSizeBytes,
-    mimeType = mimeType,
-    createdAt = createdAt,
-    updatedAt = updatedAt,
-  )
-}
-
+  var updatedAt: LocalDateTime,
+)
