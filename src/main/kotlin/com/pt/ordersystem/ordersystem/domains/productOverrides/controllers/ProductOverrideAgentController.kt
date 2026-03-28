@@ -40,9 +40,10 @@ class ProductOverrideAgentController(
     val overrides = productOverrideService.getOverrides(
       managerId = agent.managerId,
       agentId = agent.id,
-      pageRequestBase = pageParams.toPageRequestBase(),
+      pageParams = pageParams,
       productId = productId,
     )
+
     return ResponseEntity.ok(overrides.map { it.toDto() })
   }
 

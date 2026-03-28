@@ -1,8 +1,8 @@
 package com.pt.ordersystem.ordersystem.domains.productOverrides
 
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.*
-import com.pt.ordersystem.ordersystem.utils.PageRequestBase
-import com.pt.ordersystem.ordersystem.utils.PaginationUtils
+import com.pt.ordersystem.ordersystem.utils.PageRequestBaseExternal
+import com.pt.ordersystem.ordersystem.utils.toValidatedPageRequest
 import org.springframework.data.domain.Page
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,9 +19,9 @@ class ProductOverrideService(
     managerId: String,
     agentId: String?,
     productId: String?,
-    pageRequestBase: PageRequestBase,
+    pageParams: PageRequestBaseExternal,
   ): Page<ProductOverrideWithPrice> {
-    val pageRequest = PaginationUtils.getValidatedPageRequest(pageRequestBase)
+    val pageRequest = pageParams.toValidatedPageRequest()
     return productOverrideRepository.findOverridesWithPrice(
       managerId = managerId,
       agentId = agentId,

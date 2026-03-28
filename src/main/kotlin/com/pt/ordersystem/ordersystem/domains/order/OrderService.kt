@@ -6,9 +6,8 @@ import com.pt.ordersystem.ordersystem.domains.location.LocationRepository
 import com.pt.ordersystem.ordersystem.domains.order.helpers.OrderValidators
 import com.pt.ordersystem.ordersystem.domains.order.models.*
 import com.pt.ordersystem.ordersystem.utils.GeneralUtils
-import com.pt.ordersystem.ordersystem.utils.PageRequestBase
-import com.pt.ordersystem.ordersystem.utils.PaginationUtils
-import com.pt.ordersystem.ordersystem.utils.SortOrder
+import com.pt.ordersystem.ordersystem.utils.PageRequestBaseExternal
+import com.pt.ordersystem.ordersystem.utils.toValidatedPageRequest
 import org.springframework.data.domain.Page
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -31,13 +30,12 @@ class OrderService(
   fun getOrders(
     managerId: String,
     filters: OrderListFilters,
-    pageRequestBase: PageRequestBase,
+    pageParams: PageRequestBaseExternal,
   ): Page<Order> {
     if (filters.orderSource == OrderSource.AGENT && filters.customerId != null && filters.agentId != null) {
       customerRepository.findByManagerIdAndAgentIdAndId(managerId, filters.agentId, filters.customerId)
     }
-    val pageable = PaginationUtils.getValidatedPageRequest(
-      pageRequestBase = pageRequestBase,
+    val pageable = pageParams.toValidatedPageRequest(
       allowedSortFields = ORDER_ALLOWED_SORT_FIELDS,
       defaultSortBy = ORDER_DEFAULT_SORT_FIELD,
     )

@@ -33,12 +33,14 @@ class ProductOverrideManagerController(
     @RequestParam(required = false) productId: String?,
     pageParams: PageRequestBaseExternal,
   ): ResponseEntity<Page<ProductOverrideWithPriceDto>> {
+
     val overrides = productOverrideService.getOverrides(
       managerId = manager.id,
       agentId = null,
-      pageRequestBase = pageParams.toPageRequestBase(),
+      pageParams = pageParams,
       productId = productId,
     )
+
     return ResponseEntity.ok(overrides.map { it.toDto() })
   }
 

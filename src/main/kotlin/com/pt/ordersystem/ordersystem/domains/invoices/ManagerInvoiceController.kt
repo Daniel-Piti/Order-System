@@ -90,7 +90,7 @@ class ManagerInvoiceController(
       managerId = manager.id,
       fromDate = fromDate,
       toDate = toDate,
-      pageRequestBase = pageParams.toPageRequestBase(),
+      pageParams = pageParams,
     )
     return ResponseEntity.ok(page)
   }

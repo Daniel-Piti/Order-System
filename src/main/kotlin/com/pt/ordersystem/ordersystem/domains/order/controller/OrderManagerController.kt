@@ -2,7 +2,6 @@ package com.pt.ordersystem.ordersystem.domains.order.controller
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole
 import com.pt.ordersystem.ordersystem.auth.AuthUser
-import com.pt.ordersystem.ordersystem.domains.order.OrderListFilters
 import com.pt.ordersystem.ordersystem.domains.order.OrderListFiltersExternal
 import com.pt.ordersystem.ordersystem.domains.order.OrderService
 import com.pt.ordersystem.ordersystem.domains.order.models.CreateOrderRequest
@@ -25,7 +24,6 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @Tag(name = "Orders", description = "Order management API")
@@ -47,7 +45,7 @@ class OrderManagerController(
     val orders = orderService.getOrders(
       managerId = manager.id,
       filters = domainFilters,
-      pageRequestBase = pageParams.toPageRequestBase(),
+      pageParams = pageParams,
     )
     return ResponseEntity.ok(orders.map { it.toDto() })
   }

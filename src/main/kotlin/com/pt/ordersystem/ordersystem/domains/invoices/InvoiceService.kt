@@ -17,8 +17,8 @@ import com.pt.ordersystem.ordersystem.domains.order.models.toEntity
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.storage.S3StorageService
-import com.pt.ordersystem.ordersystem.utils.PageRequestBase
-import com.pt.ordersystem.ordersystem.utils.PaginationUtils
+import com.pt.ordersystem.ordersystem.utils.PageRequestBaseExternal
+import com.pt.ordersystem.ordersystem.utils.toValidatedPageRequest
 import org.springframework.data.domain.Page
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.http.HttpStatus
@@ -205,7 +205,7 @@ class InvoiceService(
     managerId: String,
     fromDate: LocalDate,
     toDate: LocalDate,
-    pageRequestBase: PageRequestBase,
+    pageParams: PageRequestBaseExternal,
   ): Page<InvoiceWithOrderTotal> {
     if (toDate.isBefore(fromDate)) {
       throw ServiceException(
@@ -218,8 +218,7 @@ class InvoiceService(
 
     val from = fromDate.atStartOfDay()
     val to = toDate.atTime(LocalTime.MAX)
-    val pageable = PaginationUtils.getValidatedPageRequest(
-      pageRequestBase = pageRequestBase,
+    val pageable = pageParams.toValidatedPageRequest(
       allowedSortFields = INVOICE_ALLOWED_SORT_FIELDS,
       defaultSortBy = "createdAt",
     )

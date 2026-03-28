@@ -55,7 +55,7 @@ class OrderAgentController(
     val orders = orderService.getOrders(
       managerId = agent.managerId,
       filters = filters,
-      pageRequestBase = pageParams.toPageRequestBase(),
+      pageParams = pageParams,
     )
     return ResponseEntity.ok(orders.map { it.toDto() })
   }
