@@ -38,11 +38,10 @@ class ProductOverrideAgentController(
   ): ResponseEntity<Page<ProductOverrideWithPriceDto>> {
 
     val agent = agentService.getAgent(agent.id)
-    val validatedPageRequest = pageParams.toValidatedPageRequest()
     val overrides = productOverrideService.getOverrides(
       managerId = agent.managerId,
       agentId = agent.id,
-      validatedPageParams = validatedPageRequest,
+      validatedPageParams = pageParams.toValidatedPageRequest(),
       productId = productId,
     )
 
