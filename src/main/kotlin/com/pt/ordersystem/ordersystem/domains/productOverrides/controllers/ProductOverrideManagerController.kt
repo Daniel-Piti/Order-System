@@ -9,6 +9,7 @@ import com.pt.ordersystem.ordersystem.domains.productOverrides.models.ProductOve
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.UpdateProductOverrideRequest
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.toDto
 import com.pt.ordersystem.ordersystem.utils.PageRequestBaseExternal
+import com.pt.ordersystem.ordersystem.utils.toValidatedPageRequest
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
@@ -37,7 +38,7 @@ class ProductOverrideManagerController(
     val overrides = productOverrideService.getOverrides(
       managerId = manager.id,
       agentId = null,
-      pageParams = pageParams,
+      validatedPageParams = pageParams.toValidatedPageRequest(),
       productId = productId,
     )
 

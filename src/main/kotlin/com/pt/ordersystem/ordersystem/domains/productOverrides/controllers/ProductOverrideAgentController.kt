@@ -10,6 +10,7 @@ import com.pt.ordersystem.ordersystem.domains.productOverrides.models.ProductOve
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.UpdateProductOverrideRequest
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.toDto
 import com.pt.ordersystem.ordersystem.utils.PageRequestBaseExternal
+import com.pt.ordersystem.ordersystem.utils.toValidatedPageRequest
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
@@ -37,10 +38,11 @@ class ProductOverrideAgentController(
   ): ResponseEntity<Page<ProductOverrideWithPriceDto>> {
 
     val agent = agentService.getAgent(agent.id)
+    val validatedPageRequest = pageParams.toValidatedPageRequest()
     val overrides = productOverrideService.getOverrides(
       managerId = agent.managerId,
       agentId = agent.id,
-      pageParams = pageParams,
+      validatedPageParams = validatedPageRequest,
       productId = productId,
     )
 

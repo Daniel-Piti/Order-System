@@ -1,9 +1,8 @@
 package com.pt.ordersystem.ordersystem.domains.productOverrides
 
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.*
-import com.pt.ordersystem.ordersystem.utils.PageRequestBaseExternal
-import com.pt.ordersystem.ordersystem.utils.toValidatedPageRequest
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
@@ -19,16 +18,14 @@ class ProductOverrideService(
     managerId: String,
     agentId: String?,
     productId: String?,
-    pageParams: PageRequestBaseExternal,
-  ): Page<ProductOverrideWithPrice> {
-    val pageRequest = pageParams.toValidatedPageRequest()
-    return productOverrideRepository.findOverridesWithPrice(
+    validatedPageParams: PageRequest,
+  ): Page<ProductOverrideWithPrice> =
+    productOverrideRepository.findOverridesWithPrice(
       managerId = managerId,
       agentId = agentId,
       productId = productId,
-      pageable = pageRequest,
+      pageable = validatedPageParams,
     )
-  }
 
   @Transactional
   fun createProductOverride(managerId: String, agentId: String?, request: CreateProductOverrideRequest): ProductOverride {
