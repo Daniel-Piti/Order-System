@@ -224,7 +224,6 @@ class InvoiceService(
     val to = toDate.atTime(LocalTime.MAX)
     val pageable = pageParams.toValidatedPageRequest(
       allowedSortFields = INVOICE_ALLOWED_SORT_FIELDS,
-      defaultSortBy = "createdAt",
     )
 
     val invoicesPage = invoiceRepository.findByManagerIdAndCreatedAtBetween(managerId, from, to, pageable)

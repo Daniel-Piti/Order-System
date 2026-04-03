@@ -2,6 +2,7 @@ package com.pt.ordersystem.ordersystem.domains.productOverrides.controllers
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
+import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideListSortFields
 import com.pt.ordersystem.ordersystem.domains.productOverrides.ProductOverrideService
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.CreateProductOverrideRequest
 import com.pt.ordersystem.ordersystem.domains.productOverrides.models.ProductOverrideDto
@@ -39,7 +40,7 @@ class ProductOverrideManagerController(
     val overrides = productOverrideService.getOverrides(
       managerId = manager.id,
       agentId = null,
-      validatedPageParams = pageParams.toValidatedPageRequest(),
+      validatedPageParams = pageParams.toValidatedPageRequest(ProductOverrideListSortFields.ALLOWED),
       productId = productId,
       customerId = customerId,
     )

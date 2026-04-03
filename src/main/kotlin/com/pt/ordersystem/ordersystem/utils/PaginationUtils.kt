@@ -30,12 +30,12 @@ data class PageRequestBaseExternal(
 )
 
 /**
- * Parses query params, validates max page size and sort order, optionally clamps [sortBy] to [allowedSortFields],
- * and returns a Spring [PageRequest].
+ * Parses query params, validates max page size and sort order, and returns a Spring [PageRequest].
+ *
+ * [sortBy] must be one of [allowedSortFields] or an [IllegalArgumentException] is thrown.
  */
 fun PageRequestBaseExternal.toValidatedPageRequest(
-    allowedSortFields: Set<String>? = null,
-    defaultSortBy: String? = null,
+    allowedSortFields: Set<String>,
 ): PageRequest {
     if (pageSize > PaginationUtils.MAX_PAGE_SIZE) {
         throw IllegalArgumentException("Max page size is ${PaginationUtils.MAX_PAGE_SIZE}")
@@ -43,15 +43,15 @@ fun PageRequestBaseExternal.toValidatedPageRequest(
 
     val sortOrderEnum = SortOrder.fromString(sortOrder)
 
-    val safeSortBy = when {
-        allowedSortFields != null && defaultSortBy != null ->
-            if (sortBy in allowedSortFields) sortBy else defaultSortBy
-        else -> sortBy
+    if (sortBy !in allowedSortFields) {
+        throw IllegalArgumentException(
+            "Invalid sortBy: '$sortBy'. Allowed values: ${allowedSortFields.sorted().joinToString(", ")}",
+        )
     }
 
     val sort = when (sortOrderEnum) {
-        SortOrder.ASC -> Sort.by(safeSortBy).ascending()
-        SortOrder.DESC -> Sort.by(safeSortBy).descending()
+        SortOrder.ASC -> Sort.by(sortBy).ascending()
+        SortOrder.DESC -> Sort.by(sortBy).descending()
     }
 
     return PageRequest.of(pageNumber, pageSize, sort)

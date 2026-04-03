@@ -24,7 +24,6 @@ class OrderService(
 
   companion object {
     private val ORDER_ALLOWED_SORT_FIELDS = setOf("createdAt", "updatedAt", "placedAt", "doneAt", "totalPrice")
-    private const val ORDER_DEFAULT_SORT_FIELD = "createdAt"
   }
 
   fun getOrders(
@@ -37,7 +36,6 @@ class OrderService(
     }
     val pageable = pageParams.toValidatedPageRequest(
       allowedSortFields = ORDER_ALLOWED_SORT_FIELDS,
-      defaultSortBy = ORDER_DEFAULT_SORT_FIELD,
     )
     return orderRepository.findAll(filters.toSpecification(), pageable)
   }
