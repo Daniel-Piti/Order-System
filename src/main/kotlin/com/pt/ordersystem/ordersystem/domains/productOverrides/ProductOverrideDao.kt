@@ -38,7 +38,7 @@ interface ProductOverrideDao : JpaRepository<ProductOverrideDbEntity, Long> {
   ): Int
 
   @Query("""
-    SELECT po.id, po.product_id, po.manager_id, po.agent_id, po.customer_id, po.override_price, p.price as product_price, p.minimum_price as product_minimum_price
+    SELECT po.id, po.product_id, po.manager_id, po.agent_id, po.customer_id, po.override_price, p.price as product_price, p.minimum_price as product_minimum_price, po.updated_at AS updated_at
     FROM product_overrides po
     JOIN products p ON po.product_id = p.id
     WHERE po.manager_id = :managerId

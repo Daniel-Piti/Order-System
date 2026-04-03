@@ -15,6 +15,7 @@ CREATE INDEX idx_product_overrides_manager_id ON product_overrides (manager_id);
 CREATE INDEX idx_product_overrides_agent_id ON product_overrides (agent_id);
 CREATE INDEX idx_product_overrides_customer_id ON product_overrides (customer_id);
 CREATE INDEX idx_product_overrides_manager_customer ON product_overrides (manager_id, customer_id);
+CREATE INDEX idx_product_overrides_updated_at ON product_overrides (updated_at);
 
 -- PRODUCT OVERRIDES HISTORY TABLE
 CREATE TABLE product_overrides_history (
