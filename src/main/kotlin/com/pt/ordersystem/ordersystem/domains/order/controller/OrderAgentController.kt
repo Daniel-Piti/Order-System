@@ -3,8 +3,6 @@ package com.pt.ordersystem.ordersystem.domains.order.controller
 import com.pt.ordersystem.ordersystem.auth.AuthRole
 import com.pt.ordersystem.ordersystem.auth.AuthUser
 import com.pt.ordersystem.ordersystem.domains.agent.AgentService
-import com.pt.ordersystem.ordersystem.domains.order.OrderListFilters
-import com.pt.ordersystem.ordersystem.domains.order.OrderListFiltersExternal
 import com.pt.ordersystem.ordersystem.domains.order.OrderService
 import com.pt.ordersystem.ordersystem.domains.order.models.CreateOrderRequest
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDto
@@ -26,6 +24,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @Tag(name = "Agent Orders", description = "Agent order management API")
@@ -41,20 +40,17 @@ class OrderAgentController(
   @GetMapping
   fun getAllOrders(
       @AuthenticationPrincipal agentAuthUser: AuthUser,
-      filters: OrderListFiltersExternal,
+      @RequestParam(required = false) status: String?,
+      @RequestParam(required = false) customerId: String?,
       pageParams: PageRequestBaseExternal,
   ): ResponseEntity<Page<OrderDto>> {
     val agent = agentService.getAgent(agentAuthUser.id)
-    val filters = OrderListFilters(
+    val orders = orderService.getOrders(
       managerId = agent.managerId,
       orderSource = OrderSource.AGENT,
       agentId = agent.id,
-      status = filters.status,
-      customerId = filters.customerId,
-    )
-    val orders = orderService.getOrders(
-      managerId = agent.managerId,
-      filters = filters,
+      status = status,
+      customerId = customerId,
       pageParams = pageParams,
     )
     return ResponseEntity.ok(orders.map { it.toDto() })
@@ -63,9 +59,9 @@ class OrderAgentController(
   @GetMapping("/{orderId}")
   fun getOrderById(
       @PathVariable orderId: String,
-      @AuthenticationPrincipal agent: AuthUser
+      @AuthenticationPrincipal agentAuthUser: AuthUser
   ): ResponseEntity<OrderDto> {
-    val agent = agentService.getAgent(agent.id)
+    val agent = agentService.getAgent(agentAuthUser.id)
     val order = orderService.getOrderById(orderId = orderId, managerId = agent.managerId, agentId = agent.id)
     return ResponseEntity.ok(order.toDto())
   }

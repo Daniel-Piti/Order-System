@@ -2,7 +2,6 @@ package com.pt.ordersystem.ordersystem.domains.order.controller
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole
 import com.pt.ordersystem.ordersystem.auth.AuthUser
-import com.pt.ordersystem.ordersystem.domains.order.OrderListFiltersExternal
 import com.pt.ordersystem.ordersystem.domains.order.OrderService
 import com.pt.ordersystem.ordersystem.domains.order.models.CreateOrderRequest
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDto
@@ -24,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @Tag(name = "Orders", description = "Order management API")
@@ -38,13 +38,22 @@ class OrderManagerController(
   @GetMapping
   fun getAllOrders(
       @AuthenticationPrincipal manager: AuthUser,
-      filters: OrderListFiltersExternal,
+      @RequestParam(required = false) status: String?,
+      @RequestParam(required = false) orderSource: OrderSource?,
+      @RequestParam(required = false) agentId: String?,
+      @RequestParam(required = false) customerId: String?,
       pageParams: PageRequestBaseExternal,
   ): ResponseEntity<Page<OrderDto>> {
-    val domainFilters = filters.toDomain(manager.id)
+    val resolvedAgentId = when (orderSource) {
+      OrderSource.AGENT -> requireNotNull(agentId) { "agentId is required when orderSource is AGENT" }
+      else -> null
+    }
     val orders = orderService.getOrders(
       managerId = manager.id,
-      filters = domainFilters,
+      orderSource = orderSource,
+      agentId = resolvedAgentId,
+      status = status,
+      customerId = customerId,
       pageParams = pageParams,
     )
     return ResponseEntity.ok(orders.map { it.toDto() })

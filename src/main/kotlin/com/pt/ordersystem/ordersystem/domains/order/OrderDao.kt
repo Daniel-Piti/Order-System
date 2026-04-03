@@ -2,8 +2,9 @@ package com.pt.ordersystem.ordersystem.domains.order
 
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDbEntity
 
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -12,7 +13,7 @@ import java.math.BigDecimal
 import java.time.LocalDateTime
 
 @Repository
-interface OrderDao : JpaRepository<OrderDbEntity, String>, JpaSpecificationExecutor<OrderDbEntity> {
+interface OrderDao : JpaRepository<OrderDbEntity, String> {
   @Query(
     "SELECT o FROM OrderDbEntity o WHERE o.id = :id AND o.managerId = :managerId AND (:agentId IS NULL OR o.agentId = :agentId)"
   )
@@ -21,6 +22,38 @@ interface OrderDao : JpaRepository<OrderDbEntity, String>, JpaSpecificationExecu
     @Param("managerId") managerId: String,
     @Param("agentId") agentId: String?,
   ): OrderDbEntity?
+
+  @Query(
+    """
+    SELECT o FROM OrderDbEntity o
+    WHERE o.managerId = :managerId
+    AND (
+      :orderSource IS NULL
+      OR (o.orderSource = :orderSource AND (o.orderSource <> 'AGENT' OR o.agentId = :agentId)
+      )
+    )
+    AND (:status IS NULL OR o.status = :status)
+    AND (:customerId IS NULL OR o.customerId = :customerId)
+    """,
+    countQuery = """
+    SELECT COUNT(o) FROM OrderDbEntity o
+    WHERE o.managerId = :managerId
+    AND (
+      :orderSource IS NULL
+      OR (o.orderSource = :orderSource AND (o.orderSource <> 'AGENT' OR o.agentId = :agentId))
+    )
+    AND (:status IS NULL OR o.status = :status)
+    AND (:customerId IS NULL OR o.customerId = :customerId)
+    """,
+  )
+  fun searchOrdersForManager(
+    @Param("managerId") managerId: String,
+    @Param("orderSource") orderSource: String?,
+    @Param("agentId") agentId: String?,
+    @Param("status") status: String?,
+    @Param("customerId") customerId: String?,
+    pageable: Pageable,
+  ): Page<OrderDbEntity>
 
   fun findByIdInAndManagerId(ids: List<String>, managerId: String): List<OrderDbEntity>
 

@@ -28,16 +28,27 @@ class OrderService(
 
   fun getOrders(
     managerId: String,
-    filters: OrderListFilters,
+    orderSource: OrderSource?,
+    agentId: String?,
+    status: String?,
+    customerId: String?,
     pageParams: PageRequestBaseExternal,
   ): Page<Order> {
-    if (filters.orderSource == OrderSource.AGENT && filters.customerId != null && filters.agentId != null) {
-      customerRepository.findByManagerIdAndAgentIdAndId(managerId, filters.agentId, filters.customerId)
+    require(orderSource != OrderSource.AGENT || agentId != null) { "agentId is required when orderSource is AGENT" }
+    if (orderSource == OrderSource.AGENT && customerId != null && agentId != null) {
+      customerRepository.findByManagerIdAndAgentIdAndId(managerId, agentId, customerId)
     }
     val pageable = pageParams.toValidatedPageRequest(
       allowedSortFields = ORDER_ALLOWED_SORT_FIELDS,
     )
-    return orderRepository.findAll(filters.toSpecification(), pageable)
+    return orderRepository.searchOrders(
+      managerId = managerId,
+      orderSource = orderSource,
+      agentId = agentId,
+      status = status,
+      customerId = customerId,
+      pageable = pageable,
+    )
   }
 
   fun getOrderById(orderId: String, managerId: String, agentId: String? = null): Order =

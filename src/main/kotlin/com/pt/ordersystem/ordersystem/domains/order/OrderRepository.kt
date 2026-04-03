@@ -3,12 +3,12 @@ package com.pt.ordersystem.ordersystem.domains.order
 import com.pt.ordersystem.ordersystem.domains.order.models.Order
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderDbEntity
 import com.pt.ordersystem.ordersystem.domains.order.models.OrderFailureReason
+import com.pt.ordersystem.ordersystem.domains.order.models.OrderSource
 import com.pt.ordersystem.ordersystem.domains.order.models.toModel
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
-import org.springframework.data.jpa.domain.Specification
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Repository
 import java.math.BigDecimal
@@ -19,8 +19,22 @@ class OrderRepository(
   private val orderDao: OrderDao,
 ) {
 
-  fun findAll(spec: Specification<OrderDbEntity>, pageable: Pageable): Page<Order> =
-    orderDao.findAll(spec, pageable).map { it.toModel() }
+  fun searchOrders(
+    managerId: String,
+    orderSource: OrderSource?,
+    agentId: String?,
+    status: String?,
+    customerId: String?,
+    pageable: Pageable,
+  ): Page<Order> =
+    orderDao.searchOrdersForManager(
+      managerId = managerId,
+      orderSource = orderSource?.name,
+      agentId = agentId,
+      status = status?.takeIf { it.isNotBlank() },
+      customerId = customerId,
+      pageable = pageable,
+    ).map { it.toModel() }
 
   fun findByIdAndManagerIdAndAgentId(orderId: String, managerId: String, agentId: String?): Order =
     orderDao.findByIdAndManagerIdAndAgentId(orderId, managerId, agentId)?.toModel() ?: throw ServiceException(
@@ -37,9 +51,6 @@ class OrderRepository(
       technicalMessage = OrderFailureReason.NOT_FOUND.technical + "orderId=$orderId",
       severity = SeverityLevel.WARN
     )
-
-  fun findByIdInAndManagerId(orderIds: List<String>, managerId: String): List<Order> =
-    orderDao.findByIdInAndManagerId(orderIds, managerId).map { it.toModel() }
 
   fun save(entity: OrderDbEntity): Order = orderDao.save(entity).toModel()
 
