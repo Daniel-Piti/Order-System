@@ -18,9 +18,8 @@ import com.pt.ordersystem.ordersystem.domains.order.models.toEntity
 import com.pt.ordersystem.ordersystem.exception.ServiceException
 import com.pt.ordersystem.ordersystem.exception.SeverityLevel
 import com.pt.ordersystem.ordersystem.storage.S3StorageService
-import com.pt.ordersystem.ordersystem.utils.PageRequestBaseExternal
-import com.pt.ordersystem.ordersystem.utils.toValidatedPageRequest
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -41,7 +40,6 @@ class InvoiceService(
 
   companion object {
     private const val MAX_BATCH_SIZE = 100
-    private val INVOICE_ALLOWED_SORT_FIELDS = setOf("createdAt", "invoiceSequenceNumber")
   }
 
   @Transactional
@@ -172,7 +170,7 @@ class InvoiceService(
 
     // Find all invoices for the given order IDs that belong to the manager
     val invoices = invoiceRepository.findByOrderIdInAndManagerId(orderIds, managerId)
-    
+
     // Build the map from invoices to S3 URLs, filtering out nulls in a single pass
     return invoices.mapNotNull { invoice ->
         s3StorageService.getPublicUrl(invoice.s3Key)?.let { invoice.orderId to it }
@@ -209,7 +207,8 @@ class InvoiceService(
     managerId: String,
     fromDate: LocalDate,
     toDate: LocalDate,
-    pageParams: PageRequestBaseExternal,
+    customerId: String?,
+    validatedPageParams: PageRequest,
   ): Page<InvoiceDto> {
     if (toDate.isBefore(fromDate)) {
       throw ServiceException(
@@ -222,11 +221,14 @@ class InvoiceService(
 
     val from = fromDate.atStartOfDay()
     val to = toDate.atTime(LocalTime.MAX)
-    val pageable = pageParams.toValidatedPageRequest(
-      allowedSortFields = INVOICE_ALLOWED_SORT_FIELDS,
-    )
 
-    val invoicesPage = invoiceRepository.findByManagerIdAndCreatedAtBetween(managerId, from, to, pageable)
+    val invoicesPage = invoiceRepository.searchInvoicesForManager(
+      managerId = managerId,
+      from = from,
+      to = to,
+      customerId = customerId,
+      pageable = validatedPageParams,
+    )
 
     return invoicesPage.map { entity -> entity.toModel().toDto() }
   }

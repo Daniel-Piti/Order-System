@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import com.pt.ordersystem.ordersystem.utils.PageRequestBaseExternal
+import com.pt.ordersystem.ordersystem.utils.toValidatedPageRequest
 import java.time.LocalDate
 
 @Tag(name = "Invoices", description = "Manager invoice management API")
@@ -82,15 +83,19 @@ class ManagerInvoiceController(
     @AuthenticationPrincipal manager: AuthUser,
     @RequestParam from: String,
     @RequestParam to: String,
+    @RequestParam(required = false) customerId: String?,
     pageParams: PageRequestBaseExternal,
   ): ResponseEntity<Page<InvoiceDto>> {
     val fromDate = LocalDate.parse(from)
     val toDate = LocalDate.parse(to)
+
+    val validatedPageRequest = pageParams.toValidatedPageRequest(InvoiceListSortFields.ALLOWED)
     val page = invoiceService.searchInvoices(
       managerId = manager.id,
       fromDate = fromDate,
       toDate = toDate,
-      pageParams = pageParams,
+      customerId = customerId,
+      validatedPageParams = validatedPageRequest,
     )
     return ResponseEntity.ok(page)
   }
