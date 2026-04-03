@@ -18,12 +18,14 @@ class ProductOverrideService(
     managerId: String,
     agentId: String?,
     productId: String?,
+    customerId: String?,
     validatedPageParams: PageRequest,
   ): Page<ProductOverrideWithPrice> =
     productOverrideRepository.findOverridesWithPrice(
       managerId = managerId,
       agentId = agentId,
       productId = productId,
+      customerId = customerId,
       pageable = validatedPageParams,
     )
 

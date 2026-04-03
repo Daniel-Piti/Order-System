@@ -32,6 +32,7 @@ class ProductOverrideManagerController(
   fun getAllOverrides(
     @AuthenticationPrincipal manager: AuthUser,
     @RequestParam(required = false) productId: String?,
+    @RequestParam(required = false) customerId: String?,
     pageParams: PageRequestBaseExternal,
   ): ResponseEntity<Page<ProductOverrideWithPriceDto>> {
 
@@ -40,6 +41,7 @@ class ProductOverrideManagerController(
       agentId = null,
       validatedPageParams = pageParams.toValidatedPageRequest(),
       productId = productId,
+      customerId = customerId,
     )
 
     return ResponseEntity.ok(overrides.map { it.toDto() })

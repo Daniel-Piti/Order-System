@@ -44,6 +44,7 @@ interface ProductOverrideDao : JpaRepository<ProductOverrideDbEntity, Long> {
     WHERE po.manager_id = :managerId
     AND (:agentId IS NULL OR po.agent_id = :agentId)
     AND (:productId IS NULL OR po.product_id = :productId)
+    AND (:customerId IS NULL OR po.customer_id = :customerId)
   """,
     countQuery = """
     SELECT COUNT(*)
@@ -52,12 +53,14 @@ interface ProductOverrideDao : JpaRepository<ProductOverrideDbEntity, Long> {
     WHERE po.manager_id = :managerId
     AND (:agentId IS NULL OR po.agent_id = :agentId)
     AND (:productId IS NULL OR po.product_id = :productId)
+    AND (:customerId IS NULL OR po.customer_id = :customerId)
   """,
     nativeQuery = true)
   fun findOverridesWithPrice(
     @Param("managerId") managerId: String,
     @Param("agentId") agentId: String?,
     @Param("productId") productId: String?,
+    @Param("customerId") customerId: String?,
     pageable: Pageable
   ): Page<Array<Any>>
 }
