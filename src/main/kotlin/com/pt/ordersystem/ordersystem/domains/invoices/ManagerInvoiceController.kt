@@ -52,10 +52,9 @@ class ManagerInvoiceController(
   fun getInvoicesByOrderIds(
     @AuthenticationPrincipal manager: AuthUser,
     @RequestBody orderIds: List<String>
-  ): ResponseEntity<Map<String, String>> {
-    val invoiceMap = invoiceService.getInvoicesByOrderIds(manager.id, orderIds)
-    return ResponseEntity.ok(invoiceMap)
-  }
+  ): ResponseEntity<Map<String, List<InvoiceDto>>> =
+    ResponseEntity.ok(invoiceService.getInvoicesByOrderIds(manager.id, orderIds))
+
 
   /**
    * Returns an Excel (.xlsx) file with clickable invoice links (e.g. "invoice-1.pdf") and order totals

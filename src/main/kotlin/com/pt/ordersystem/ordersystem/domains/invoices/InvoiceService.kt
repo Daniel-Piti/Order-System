@@ -9,6 +9,7 @@ import com.pt.ordersystem.ordersystem.domains.invoices.signing.InvoicePdfSigner
 import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceResponse
 import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceDbEntity
 import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceDto
+import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceType
 import com.pt.ordersystem.ordersystem.domains.invoices.models.toDto
 import com.pt.ordersystem.ordersystem.domains.invoices.models.toModel
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerRepository
@@ -72,7 +73,7 @@ class InvoiceService(
       managerId = manager.id,
       orderId = order.id,
       customerId = order.customerId,
-      orderTotalPrice = order.totalPrice,
+      totalAmount = order.totalPrice,
       invoiceSequenceNumber = invoiceSequenceNumber,
       paymentMethod = createInvoiceRequest.paymentMethod.name,
       paymentProof = createInvoiceRequest.paymentProof,
@@ -87,7 +88,7 @@ class InvoiceService(
     managerId: String,
     orderId: String,
     customerId: String?,
-    orderTotalPrice: BigDecimal,
+    totalAmount: BigDecimal,
     invoiceSequenceNumber: Int,
     paymentMethod: String,
     paymentProof: String,
@@ -116,7 +117,8 @@ class InvoiceService(
       managerId = managerId,
       orderId = orderId,
       customerId = customerId,
-      orderTotalPrice = orderTotalPrice,
+      totalAmount = totalAmount,
+      invoiceType = InvoiceType.INVOICE.name,
       invoiceSequenceNumber = invoiceSequenceNumber,
       paymentMethod = paymentMethod,
       paymentProof = paymentProof,
@@ -141,8 +143,8 @@ class InvoiceService(
   private fun validateInvoiceRequest(order: Order, createInvoiceRequest: CreateInvoiceRequest) {
     InvoiceHelper.validateOrderEligibilityForInvoice(order.toEntity())
 
-    // Check if invoice already exists for this order (UNIQUE constraint will also catch this, but better to fail fast)
-    if (invoiceRepository.findByOrderId(order.id) != null) {
+    // At most one regular invoice per order (credit notes share order_id and use CREDIT_NOTE type)
+    if (invoiceRepository.findByOrderIdAndInvoiceType(order.id, InvoiceType.INVOICE.name) != null) {
       throw ServiceException(
         status = HttpStatus.CONFLICT,
         userMessage = "Invoice already exists for this order",
@@ -155,7 +157,7 @@ class InvoiceService(
   }
 
   @Transactional(readOnly = true)
-  fun getInvoicesByOrderIds(managerId: String, orderIds: List<String>): Map<String, String> {
+  fun getInvoicesByOrderIds(managerId: String, orderIds: List<String>): Map<String, List<InvoiceDto>> {
     if (orderIds.isEmpty()) return emptyMap()
 
     // Limit batch size to prevent performance issues
@@ -168,13 +170,10 @@ class InvoiceService(
       )
     }
 
-    // Find all invoices for the given order IDs that belong to the manager
-    val invoices = invoiceRepository.findByOrderIdInAndManagerId(orderIds, managerId)
-
-    // Build the map from invoices to S3 URLs, filtering out nulls in a single pass
-    return invoices.mapNotNull { invoice ->
-        s3StorageService.getPublicUrl(invoice.s3Key)?.let { invoice.orderId to it }
-      }.toMap()
+    val invoicesMap = invoiceRepository.findByOrderIdInAndManagerId(orderIds, managerId)
+      .map { it.toModel().toDto() }
+      .groupBy { it.orderId }
+    return orderIds.distinct().associateWith { orderId -> invoicesMap[orderId] ?: emptyList() }
   }
 
   @Transactional(readOnly = true)
@@ -196,9 +195,9 @@ class InvoiceService(
     val entries = invoices.mapNotNull { invoice ->
       val url = s3StorageService.getPublicUrl(invoice.s3Key) ?: return@mapNotNull null
       val displayName = invoice.fileName ?: "invoice-${invoice.invoiceSequenceNumber}.pdf"
-      InvoiceAggregatorHelper.InvoiceLinkEntry(invoice.orderId, url, displayName, invoice.orderTotalPrice)
+      InvoiceAggregatorHelper.InvoiceLinkEntry(invoice.orderId, url, displayName, invoice.totalAmount)
     }
-    val totalAmount = entries.fold(BigDecimal.ZERO) { acc, e -> acc.add(e.totalPrice) }
+    val totalAmount = entries.fold(BigDecimal.ZERO) { acc, e -> acc.add(e.totalAmount) }
     return InvoiceAggregatorHelper.buildInvoiceLinksXlsx(fromDate, toDate, entries, totalAmount)
   }
 

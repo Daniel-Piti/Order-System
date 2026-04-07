@@ -4,5 +4,5 @@ data class ManagerCreateInvoiceRequest(
   val orderId: String,
   val paymentMethod: PaymentMethod,
   val paymentProof: String,
-  val allocationNumber: String? = null
+  val allocationNumber: String?
 )

@@ -12,7 +12,7 @@ import java.time.LocalDateTime
 
 interface InvoiceRepository : JpaRepository<InvoiceDbEntity, Long> {
   fun findByManagerId(managerId: String): List<InvoiceDbEntity>
-  fun findByOrderId(orderId: String): InvoiceDbEntity?
+  fun findByOrderIdAndInvoiceType(orderId: String, invoiceType: String): InvoiceDbEntity?
   fun findByOrderIdInAndManagerId(orderIds: List<String>, managerId: String): List<InvoiceDbEntity>
   fun findByManagerIdAndCreatedAtBetween(
     managerId: String,

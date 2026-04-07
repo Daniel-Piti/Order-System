@@ -2,9 +2,11 @@
 CREATE TABLE invoices (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     manager_id VARCHAR(255) NOT NULL,
-    order_id VARCHAR(255) NOT NULL UNIQUE,
+    order_id VARCHAR(255) NOT NULL,
     customer_id VARCHAR(255) NULL,
-    order_total_price DECIMAL(10, 2) NOT NULL CHECK (order_total_price >= 0),
+    total_amount DECIMAL(10, 2) NOT NULL CHECK (total_amount >= 0),
+    invoice_type VARCHAR(50) NOT NULL,
+    linked_invoice_id BIGINT NULL,
     invoice_sequence_number INT NOT NULL,
     payment_method VARCHAR(50) NOT NULL,
     payment_proof VARCHAR(512) NOT NULL,
@@ -18,11 +20,11 @@ CREATE TABLE invoices (
     
     INDEX idx_invoices_manager_id (manager_id),
     INDEX idx_invoices_order_id (order_id),
+    INDEX idx_invoices_linked_invoice_id (linked_invoice_id),
     INDEX idx_invoices_customer_id (customer_id),
     INDEX idx_invoices_manager_sequence (manager_id, invoice_sequence_number),
     INDEX idx_invoices_manager_created_at (manager_id, created_at),
-    INDEX idx_invoices_manager_updated_at (manager_id, updated_at),
-    UNIQUE KEY uk_invoices_order_id (order_id)
+    INDEX idx_invoices_manager_updated_at (manager_id, updated_at)
 ) AUTO_INCREMENT = 1000;
 
 -- INVOICES HISTORY TABLE
@@ -32,7 +34,9 @@ CREATE TABLE invoices_history (
     manager_id VARCHAR(255) NOT NULL,
     order_id VARCHAR(255) NOT NULL,
     customer_id VARCHAR(255) NULL,
-    order_total_price DECIMAL(10, 2) NOT NULL,
+    total_amount DECIMAL(10, 2) NOT NULL,
+    invoice_type VARCHAR(50) NOT NULL,
+    linked_invoice_id BIGINT NULL,
     invoice_sequence_number INT NOT NULL,
     payment_method VARCHAR(50) NOT NULL,
     payment_proof VARCHAR(512) NOT NULL,
@@ -49,13 +53,13 @@ CREATE TABLE invoices_history (
 CREATE TRIGGER trg_invoices_after_insert
 AFTER INSERT ON invoices FOR EACH ROW
 INSERT INTO invoices_history (
-    id, manager_id, order_id, customer_id, order_total_price, invoice_sequence_number,
+    id, manager_id, order_id, customer_id, total_amount, invoice_type, linked_invoice_id, invoice_sequence_number,
     payment_method, payment_proof, allocation_number,
     s3_key, file_name, file_size_bytes, mime_type,
     created_at, updated_at
 )
 VALUES (
-    NEW.id, NEW.manager_id, NEW.order_id, NEW.customer_id, NEW.order_total_price, NEW.invoice_sequence_number,
+    NEW.id, NEW.manager_id, NEW.order_id, NEW.customer_id, NEW.total_amount, NEW.invoice_type, NEW.linked_invoice_id, NEW.invoice_sequence_number,
     NEW.payment_method, NEW.payment_proof, NEW.allocation_number,
     NEW.s3_key, NEW.file_name, NEW.file_size_bytes, NEW.mime_type,
     NEW.created_at, NEW.updated_at
@@ -65,13 +69,13 @@ VALUES (
 CREATE TRIGGER trg_invoices_after_update
 AFTER UPDATE ON invoices FOR EACH ROW
 INSERT INTO invoices_history (
-    id, manager_id, order_id, customer_id, order_total_price, invoice_sequence_number,
+    id, manager_id, order_id, customer_id, total_amount, invoice_type, linked_invoice_id, invoice_sequence_number,
     payment_method, payment_proof, allocation_number,
     s3_key, file_name, file_size_bytes, mime_type,
     created_at, updated_at
 )
 VALUES (
-    NEW.id, NEW.manager_id, NEW.order_id, NEW.customer_id, NEW.order_total_price, NEW.invoice_sequence_number,
+    NEW.id, NEW.manager_id, NEW.order_id, NEW.customer_id, NEW.total_amount, NEW.invoice_type, NEW.linked_invoice_id, NEW.invoice_sequence_number,
     NEW.payment_method, NEW.payment_proof, NEW.allocation_number,
     NEW.s3_key, NEW.file_name, NEW.file_size_bytes, NEW.mime_type,
     NEW.created_at, NEW.updated_at

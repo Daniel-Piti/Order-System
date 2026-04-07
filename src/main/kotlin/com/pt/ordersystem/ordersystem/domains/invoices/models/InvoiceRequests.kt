@@ -5,11 +5,11 @@ data class CreateInvoiceRequest(
   val orderId: String,
   val paymentMethod: PaymentMethod,
   val paymentProof: String,
-  val allocationNumber: String? = null
+  val allocationNumber: String?,
 )
 
 data class CreateInvoiceResponse(
   val invoiceId: Long,
   val invoiceName: String,
-  val pdfUrl: String
+  val pdfUrl: String,
 )

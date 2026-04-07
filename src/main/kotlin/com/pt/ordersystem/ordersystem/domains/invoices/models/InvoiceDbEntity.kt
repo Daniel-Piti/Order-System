@@ -20,8 +20,14 @@ data class InvoiceDbEntity(
   @Column(name = "customer_id", length = 255)
   val customerId: String? = null,
 
-  @Column(name = "order_total_price", nullable = false, precision = 10, scale = 2)
-  val orderTotalPrice: BigDecimal,
+  @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
+  val totalAmount: BigDecimal,
+
+  @Column(name = "invoice_type", nullable = false, length = 50)
+  val invoiceType: String = InvoiceType.INVOICE.name,
+
+  @Column(name = "linked_invoice_id")
+  val linkedInvoiceId: Long? = null,
 
   @Column(name = "invoice_sequence_number", nullable = false)
   val invoiceSequenceNumber: Int,

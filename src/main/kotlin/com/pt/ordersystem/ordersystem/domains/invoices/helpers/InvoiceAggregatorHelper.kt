@@ -112,7 +112,7 @@ object InvoiceAggregatorHelper {
                 linkCell.hyperlink = hyperlink
                 linkCell.cellStyle = linkStyle
                 row.createCell(2).apply {
-                    setCellValue(e.totalPrice.toDouble())
+                    setCellValue(e.totalAmount.toDouble())
                     cellStyle = dataTextStyle
                 }
             }
@@ -152,6 +152,6 @@ object InvoiceAggregatorHelper {
         val orderId: String,
         val url: String,
         val displayName: String,
-        val totalPrice: BigDecimal
+        val totalAmount: BigDecimal
     )
 }
