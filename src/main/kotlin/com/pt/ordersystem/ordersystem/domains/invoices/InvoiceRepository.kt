@@ -1,43 +1,51 @@
 package com.pt.ordersystem.ordersystem.domains.invoices
 
+import com.pt.ordersystem.ordersystem.domains.invoices.models.Invoice
 import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceDbEntity
-import jakarta.persistence.LockModeType
-import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.data.jpa.repository.Lock
-import org.springframework.data.jpa.repository.Query
-import org.springframework.data.repository.query.Param
+import com.pt.ordersystem.ordersystem.domains.invoices.models.toModel
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 
-interface InvoiceRepository : JpaRepository<InvoiceDbEntity, Long> {
-  fun findByManagerId(managerId: String): List<InvoiceDbEntity>
-  fun findByOrderIdAndInvoiceType(orderId: String, invoiceType: String): InvoiceDbEntity?
-  fun findByOrderIdInAndManagerId(orderIds: List<String>, managerId: String): List<InvoiceDbEntity>
+@Repository
+class InvoiceRepository(
+  private val invoiceDao: InvoiceDao,
+) {
+  fun findByManagerId(managerId: String): List<Invoice> =
+    invoiceDao.findByManagerId(managerId).map { it.toModel() }
+
+  fun findByOrderIdAndInvoiceType(orderId: String, invoiceType: String): Invoice? =
+    invoiceDao.findByOrderIdAndInvoiceType(orderId, invoiceType)?.toModel()
+
+  fun findByOrderIdInAndManagerId(orderIds: List<String>, managerId: String): List<Invoice> =
+    invoiceDao.findByOrderIdInAndManagerId(orderIds, managerId).map { it.toModel() }
+
   fun findByManagerIdAndCreatedAtBetween(
     managerId: String,
     from: LocalDateTime,
-    to: LocalDateTime
-  ): List<InvoiceDbEntity>
+    to: LocalDateTime,
+  ): List<Invoice> =
+    invoiceDao.findByManagerIdAndCreatedAtBetween(managerId, from, to).map { it.toModel() }
 
-  @Query(
-    """
-    SELECT i FROM InvoiceDbEntity i
-    WHERE i.managerId = :managerId
-    AND i.createdAt >= :from AND i.createdAt <= :to
-    AND (:customerId IS NULL OR i.customerId = :customerId)
-    """,
-  )
   fun searchInvoicesForManager(
-    @Param("managerId") managerId: String,
-    @Param("from") from: LocalDateTime,
-    @Param("to") to: LocalDateTime,
-    @Param("customerId") customerId: String?,
+    managerId: String,
+    from: LocalDateTime,
+    to: LocalDateTime,
+    customerId: String?,
     pageable: Pageable,
-  ): Page<InvoiceDbEntity>
+  ): Page<Invoice> =
+    invoiceDao.searchInvoicesForManager(
+      managerId = managerId,
+      from = from,
+      to = to,
+      customerId = customerId,
+      pageable = pageable,
+    ).map { it.toModel() }
 
-  @Lock(LockModeType.PESSIMISTIC_WRITE)
-  @Query("SELECT COALESCE(MAX(i.invoiceSequenceNumber), 0) FROM InvoiceDbEntity i WHERE i.managerId = :managerId")
-  fun findMaxSequenceNumberByManagerId(@Param("managerId") managerId: String): Int?
+  fun findMaxSequenceNumberByManagerId(managerId: String): Int =
+    invoiceDao.findMaxSequenceNumberByManagerId(managerId)
+
+  fun save(entity: InvoiceDbEntity): Invoice = invoiceDao.save(entity).toModel()
 }
 

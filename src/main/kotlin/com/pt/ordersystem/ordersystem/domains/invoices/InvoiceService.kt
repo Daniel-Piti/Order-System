@@ -8,10 +8,8 @@ import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceReque
 import com.pt.ordersystem.ordersystem.domains.invoices.signing.InvoicePdfSigner
 import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceResponse
 import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceDbEntity
-import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceDto
+import com.pt.ordersystem.ordersystem.domains.invoices.models.Invoice
 import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceType
-import com.pt.ordersystem.ordersystem.domains.invoices.models.toDto
-import com.pt.ordersystem.ordersystem.domains.invoices.models.toModel
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerRepository
 import com.pt.ordersystem.ordersystem.domains.order.OrderRepository
 import com.pt.ordersystem.ordersystem.domains.order.models.Order
@@ -53,7 +51,7 @@ class InvoiceService(
 
     // Generate next invoice sequence number for manager (with proper locking for race condition)
     // Using SELECT FOR UPDATE through transaction isolation to prevent race conditions
-    val maxSequence = invoiceRepository.findMaxSequenceNumberByManagerId(createInvoiceRequest.managerId) ?: 0
+    val maxSequence = invoiceRepository.findMaxSequenceNumberByManagerId(createInvoiceRequest.managerId)
     val invoiceSequenceNumber = maxSequence + 1
 
     val manager = managerRepository.findById(order.managerId)
@@ -157,7 +155,7 @@ class InvoiceService(
   }
 
   @Transactional(readOnly = true)
-  fun getInvoicesByOrderIds(managerId: String, orderIds: List<String>): Map<String, List<InvoiceDto>> {
+  fun getInvoicesByOrderIds(managerId: String, orderIds: List<String>): Map<String, List<Invoice>> {
     if (orderIds.isEmpty()) return emptyMap()
 
     // Limit batch size to prevent performance issues
@@ -170,10 +168,9 @@ class InvoiceService(
       )
     }
 
-    val invoicesMap = invoiceRepository.findByOrderIdInAndManagerId(orderIds, managerId)
-      .map { it.toModel().toDto() }
-      .groupBy { it.orderId }
-    return orderIds.distinct().associateWith { orderId -> invoicesMap[orderId] ?: emptyList() }
+    val invoices = invoiceRepository.findByOrderIdInAndManagerId(orderIds, managerId)
+    val byOrderId = invoices.groupBy { it.orderId }
+    return orderIds.distinct().associateWith { orderId -> byOrderId[orderId] ?: emptyList() }
   }
 
   @Transactional(readOnly = true)
@@ -208,7 +205,7 @@ class InvoiceService(
     toDate: LocalDate,
     customerId: String?,
     validatedPageParams: PageRequest,
-  ): Page<InvoiceDto> {
+  ): Page<Invoice> {
     if (toDate.isBefore(fromDate)) {
       throw ServiceException(
         status = HttpStatus.BAD_REQUEST,
@@ -229,7 +226,7 @@ class InvoiceService(
       pageable = validatedPageParams,
     )
 
-    return invoicesPage.map { entity -> entity.toModel().toDto() }
+    return invoicesPage
   }
 
 }

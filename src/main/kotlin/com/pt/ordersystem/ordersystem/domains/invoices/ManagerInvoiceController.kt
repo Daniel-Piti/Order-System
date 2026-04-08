@@ -6,6 +6,7 @@ import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceReque
 import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceResponse
 import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceDto
 import com.pt.ordersystem.ordersystem.domains.invoices.models.ManagerCreateInvoiceRequest
+import com.pt.ordersystem.ordersystem.domains.invoices.models.toDto
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Page
@@ -52,9 +53,10 @@ class ManagerInvoiceController(
   fun getInvoicesByOrderIds(
     @AuthenticationPrincipal manager: AuthUser,
     @RequestBody orderIds: List<String>
-  ): ResponseEntity<Map<String, List<InvoiceDto>>> =
-    ResponseEntity.ok(invoiceService.getInvoicesByOrderIds(manager.id, orderIds))
-
+  ): ResponseEntity<Map<String, List<InvoiceDto>>> {
+    val invoicesByOrderId = invoiceService.getInvoicesByOrderIds(manager.id, orderIds)
+    return ResponseEntity.ok(invoicesByOrderId.mapValues { (_, invoices) -> invoices.map { it.toDto() } })
+  }
 
   /**
    * Returns an Excel (.xlsx) file with clickable invoice links (e.g. "invoice-1.pdf") and order totals
@@ -96,6 +98,6 @@ class ManagerInvoiceController(
       customerId = customerId,
       validatedPageParams = validatedPageRequest,
     )
-    return ResponseEntity.ok(page)
+    return ResponseEntity.ok(page.map { it.toDto() })
   }
 }
