@@ -41,6 +41,13 @@ class InvoiceService(
     private const val MAX_BATCH_SIZE = 100
   }
 
+  private data class UploadedInvoiceFile(
+    val fileName: String,
+    val s3Key: String,
+    val fileSizeBytes: Long,
+    val pdfUrl: String,
+  )
+
   @Transactional
   fun createInvoice(createInvoiceRequest: CreateInvoiceRequest): CreateInvoiceResponse {
     // Validate order exists and belongs to manager (repository throws if not found)
@@ -49,9 +56,12 @@ class InvoiceService(
 
     val allocationNumber = InvoiceHelper.validateAndPrepareAllocationNumber(order.toEntity(), createInvoiceRequest.allocationNumber)
 
-    // Generate next invoice sequence number for manager (with proper locking for race condition)
+    // Generate next sequence number per manager + invoice type (separate counters for INVOICE/CREDIT_NOTE)
     // Using SELECT FOR UPDATE through transaction isolation to prevent race conditions
-    val maxSequence = invoiceRepository.findMaxSequenceNumberByManagerId(createInvoiceRequest.managerId)
+    val maxSequence = invoiceRepository.findMaxSequenceNumberByManagerIdAndInvoiceType(
+      createInvoiceRequest.managerId,
+      InvoiceType.INVOICE.name,
+    )
     val invoiceSequenceNumber = maxSequence + 1
 
     val manager = managerRepository.findById(order.managerId)
@@ -67,32 +77,44 @@ class InvoiceService(
     )
     val pdfBytes = invoicePdfSigner.sign(unsignedPdfBytes, business.name)
 
-    val uploadData = uploadInvoice(
+    val uploadedFile = uploadInvoicePdf(
+      managerId = manager.id,
+      invoiceSequenceNumber = invoiceSequenceNumber,
+      pdfBytes = pdfBytes,
+    )
+
+    val now = LocalDateTime.now()
+    val invoice = InvoiceDbEntity(
       managerId = manager.id,
       orderId = order.id,
       customerId = order.customerId,
       totalAmount = order.totalPrice,
+      invoiceType = InvoiceType.INVOICE.name,
       invoiceSequenceNumber = invoiceSequenceNumber,
       paymentMethod = createInvoiceRequest.paymentMethod.name,
       paymentProof = createInvoiceRequest.paymentProof,
       allocationNumber = allocationNumber,
-      pdfBytes = pdfBytes,
+      s3Key = uploadedFile.s3Key,
+      fileName = uploadedFile.fileName,
+      fileSizeBytes = uploadedFile.fileSizeBytes,
+      mimeType = "application/pdf",
+      createdAt = now,
+      updatedAt = now,
     )
 
-    return uploadData
+    val savedInvoice = invoiceRepository.save(invoice)
+    return CreateInvoiceResponse(
+      invoiceId = savedInvoice.id,
+      invoiceName = uploadedFile.fileName,
+      pdfUrl = uploadedFile.pdfUrl,
+    )
   }
 
-  private fun uploadInvoice(
+  private fun uploadInvoicePdf(
     managerId: String,
-    orderId: String,
-    customerId: String?,
-    totalAmount: BigDecimal,
     invoiceSequenceNumber: Int,
-    paymentMethod: String,
-    paymentProof: String,
-    allocationNumber: String?,
     pdfBytes: ByteArray,
-  ): CreateInvoiceResponse {
+  ): UploadedInvoiceFile {
     // Build S3 key using generateS3Key (includes UUID prefix for uniqueness and sanitization)
     val fileName = "invoice-$invoiceSequenceNumber.pdf"
     val s3Key = s3StorageService.generateS3Key("managers/$managerId/invoices", fileName)
@@ -109,32 +131,11 @@ class InvoiceService(
         severity = SeverityLevel.ERROR
       )
 
-    // Save invoice record to database (within transaction - if save fails, S3 file will be orphaned but that's acceptable)
-    val now = LocalDateTime.now()
-    val invoice = InvoiceDbEntity(
-      managerId = managerId,
-      orderId = orderId,
-      customerId = customerId,
-      totalAmount = totalAmount,
-      invoiceType = InvoiceType.INVOICE.name,
-      invoiceSequenceNumber = invoiceSequenceNumber,
-      paymentMethod = paymentMethod,
-      paymentProof = paymentProof,
-      allocationNumber = allocationNumber,
-      s3Key = s3Key,
+    return UploadedInvoiceFile(
       fileName = fileName,
+      s3Key = s3Key,
       fileSizeBytes = pdfBytes.size.toLong(),
-      mimeType = "application/pdf",
-      createdAt = now,
-      updatedAt = now,
-    )
-
-    val savedInvoice = invoiceRepository.save(invoice)
-
-    return CreateInvoiceResponse(
-      invoiceId = savedInvoice.id,
-      invoiceName = fileName,
-      pdfUrl = pdfUrl
+      pdfUrl = pdfUrl,
     )
   }
 

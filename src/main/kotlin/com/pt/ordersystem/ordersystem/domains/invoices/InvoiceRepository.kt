@@ -43,8 +43,8 @@ class InvoiceRepository(
       pageable = pageable,
     ).map { it.toModel() }
 
-  fun findMaxSequenceNumberByManagerId(managerId: String): Int =
-    invoiceDao.findMaxSequenceNumberByManagerId(managerId)
+  fun findMaxSequenceNumberByManagerIdAndInvoiceType(managerId: String, invoiceType: String): Int =
+    invoiceDao.findMaxSequenceNumberByManagerIdAndInvoiceType(managerId, invoiceType)
 
   fun save(entity: InvoiceDbEntity): Invoice = invoiceDao.save(entity).toModel()
 }

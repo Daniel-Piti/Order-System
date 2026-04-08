@@ -39,6 +39,16 @@ interface InvoiceDao : JpaRepository<InvoiceDbEntity, Long> {
   ): Page<InvoiceDbEntity>
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
-  @Query("SELECT COALESCE(MAX(i.invoiceSequenceNumber), 0) FROM InvoiceDbEntity i WHERE i.managerId = :managerId")
-  fun findMaxSequenceNumberByManagerId(@Param("managerId") managerId: String): Int
+  @Query(
+    """
+    SELECT COALESCE(MAX(i.invoiceSequenceNumber), 0)
+    FROM InvoiceDbEntity i
+    WHERE i.managerId = :managerId
+    AND i.invoiceType = :invoiceType
+    """,
+  )
+  fun findMaxSequenceNumberByManagerIdAndInvoiceType(
+    @Param("managerId") managerId: String,
+    @Param("invoiceType") invoiceType: String,
+  ): Int
 }
