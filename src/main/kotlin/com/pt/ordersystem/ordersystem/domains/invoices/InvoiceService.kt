@@ -4,12 +4,14 @@ import com.pt.ordersystem.ordersystem.domains.business.BusinessService
 import com.pt.ordersystem.ordersystem.domains.invoices.helpers.InvoiceAggregatorHelper
 import com.pt.ordersystem.ordersystem.domains.invoices.helpers.InvoiceHelper
 import com.pt.ordersystem.ordersystem.domains.invoices.helpers.InvoiceRenderHelper
+import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateCreditNoteByAmountResponse
 import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceRequest
 import com.pt.ordersystem.ordersystem.domains.invoices.signing.InvoicePdfSigner
 import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceResponse
 import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceDbEntity
 import com.pt.ordersystem.ordersystem.domains.invoices.models.Invoice
 import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceType
+import com.pt.ordersystem.ordersystem.domains.invoices.models.PaymentMethod
 import com.pt.ordersystem.ordersystem.domains.manager.ManagerRepository
 import com.pt.ordersystem.ordersystem.domains.order.OrderRepository
 import com.pt.ordersystem.ordersystem.domains.order.models.Order
@@ -23,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -110,6 +113,108 @@ class InvoiceService(
     )
   }
 
+  @Transactional
+  fun createCreditNoteByAmount(
+    managerId: String,
+    invoiceId: Long,
+    amount: BigDecimal,
+    allocationNumber: String?,
+  ): CreateCreditNoteByAmountResponse {
+    val primaryInvoice = invoiceRepository.findByIdAndManagerId(invoiceId, managerId)
+      ?: throw ServiceException(
+        status = HttpStatus.NOT_FOUND,
+        userMessage = "Invoice not found",
+        technicalMessage = "createCreditNoteByAmount: no invoice id=$invoiceId for manager $managerId",
+        severity = SeverityLevel.INFO,
+      )
+
+    if (primaryInvoice.invoiceType != InvoiceType.INVOICE) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Credit note must reference the original sales invoice",
+        technicalMessage = "createCreditNoteByAmount: invoice ${primaryInvoice.id} has type ${primaryInvoice.invoiceType}",
+        severity = SeverityLevel.INFO,
+      )
+    }
+
+    val order = orderRepository.findByIdAndManagerIdAndAgentId(primaryInvoice.orderId, managerId, null)
+    InvoiceHelper.validateOrderEligibilityForInvoice(order.toEntity())
+
+    InvoiceHelper.validateCreditNoteAllocationNumber(
+      primaryInvoice.allocationNumber,
+      allocationNumber,
+    )
+    val creditAllocationNumber = allocationNumber?.trim()?.takeIf { it.isNotEmpty() }
+
+    if (amount.scale() > 2) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Credit amount must have at most two decimal places",
+        technicalMessage = "createCreditNoteByAmount: amount scale ${amount.scale()} for invoice $invoiceId",
+        severity = SeverityLevel.WARN,
+      )
+    }
+    if (amount <= BigDecimal.ZERO) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Credit amount must be greater than zero",
+        technicalMessage = "createCreditNoteByAmount: non-positive amount for invoice $invoiceId",
+        severity = SeverityLevel.WARN,
+      )
+    }
+
+    val creditAmount = amount.setScale(2, RoundingMode.HALF_UP)
+
+    val creditedSoFar = invoiceRepository.sumTotalAmountByOrderIdAndInvoiceType(
+      order.id,
+      InvoiceType.CREDIT_NOTE.name,
+    )
+    val cap = minOf(order.totalPrice, primaryInvoice.totalAmount)
+    val newTotalCredited = creditedSoFar.add(creditAmount)
+    if (newTotalCredited > cap) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = "Credit amount exceeds remaining refundable total for this order",
+        technicalMessage = "createCreditNoteByAmount: creditedSoFar=$creditedSoFar + amount=$creditAmount > cap=$cap for order ${order.id}",
+        severity = SeverityLevel.INFO,
+      )
+    }
+
+    val maxSequence = invoiceRepository.findMaxSequenceNumberByManagerIdAndInvoiceType(
+      managerId,
+      InvoiceType.CREDIT_NOTE.name,
+    )
+    val creditSequenceNumber = maxSequence + 1
+
+    val now = LocalDateTime.now()
+    val creditEntity = InvoiceDbEntity(
+      managerId = order.managerId,
+      orderId = order.id,
+      customerId = order.customerId,
+      totalAmount = creditAmount,
+      invoiceType = InvoiceType.CREDIT_NOTE.name,
+      linkedInvoiceId = primaryInvoice.id,
+      invoiceSequenceNumber = creditSequenceNumber,
+      paymentMethod = PaymentMethod.CASH.name,
+      paymentProof = "CREDIT_NOTE",
+      allocationNumber = creditAllocationNumber,
+      s3Key = null,
+      fileName = null,
+      fileSizeBytes = null,
+      mimeType = null,
+      createdAt = now,
+      updatedAt = now,
+    )
+
+    val saved = invoiceRepository.save(creditEntity)
+    orderRepository.addTotalCreditedAmount(order.id, creditAmount)
+
+    return CreateCreditNoteByAmountResponse(
+      invoiceId = saved.id,
+      invoiceSequenceNumber = saved.invoiceSequenceNumber,
+    )
+  }
+
   private fun uploadInvoicePdf(
     managerId: String,
     invoiceSequenceNumber: Int,
@@ -143,7 +248,7 @@ class InvoiceService(
     InvoiceHelper.validateOrderEligibilityForInvoice(order.toEntity())
 
     // At most one regular invoice per order (credit notes share order_id and use CREDIT_NOTE type)
-    if (invoiceRepository.findByOrderIdAndInvoiceType(order.id, InvoiceType.INVOICE.name) != null) {
+    if (invoiceRepository.existsByOrderIdAndInvoiceType(order.id, InvoiceType.INVOICE.name)) {
       throw ServiceException(
         status = HttpStatus.CONFLICT,
         userMessage = "Invoice already exists for this order",

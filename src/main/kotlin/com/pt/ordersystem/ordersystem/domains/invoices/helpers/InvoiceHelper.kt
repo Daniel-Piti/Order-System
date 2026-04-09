@@ -48,6 +48,31 @@ object InvoiceHelper {
     } else null
   }
 
+  /** Credit note allocation must be present iff the original invoice had one; same 9-digit rules when present. */
+  fun validateCreditNoteAllocationNumber(
+    primaryInvoiceAllocationNumber: String?,
+    requestedAllocationNumber: String?,
+  ) {
+    val primaryHas = !primaryInvoiceAllocationNumber.isNullOrBlank()
+    val requestedTrimmed = requestedAllocationNumber?.trim().orEmpty()
+    val requestedHas = requestedTrimmed.isNotEmpty()
+    if (primaryHas != requestedHas) {
+      throw ServiceException(
+        status = HttpStatus.BAD_REQUEST,
+        userMessage = if (primaryHas) {
+          "Allocation number is required for this credit note because the original invoice has one"
+        } else {
+          "Allocation number is not applicable when the original invoice has none"
+        },
+        technicalMessage = "Credit note allocation mismatch: primaryHas=$primaryHas requestedHas=$requestedHas",
+        severity = SeverityLevel.INFO,
+      )
+    }
+    if (primaryHas) {
+      FieldValidators.validateNumericString(requestedTrimmed, 9, "Allocation number")
+    }
+  }
+
   private fun isRequiredAllocationNumber(order: OrderDbEntity): Boolean {
     val totalPrice = order.totalPrice
     val orderDate = order.doneAt!!

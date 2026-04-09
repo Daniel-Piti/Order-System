@@ -6,6 +6,7 @@ import com.pt.ordersystem.ordersystem.domains.invoices.models.toModel
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Repository
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 @Repository
@@ -15,8 +16,14 @@ class InvoiceRepository(
   fun findByManagerId(managerId: String): List<Invoice> =
     invoiceDao.findByManagerId(managerId).map { it.toModel() }
 
-  fun findByOrderIdAndInvoiceType(orderId: String, invoiceType: String): Invoice? =
-    invoiceDao.findByOrderIdAndInvoiceType(orderId, invoiceType)?.toModel()
+  fun existsByOrderIdAndInvoiceType(orderId: String, invoiceType: String): Boolean =
+    invoiceDao.existsByOrderIdAndInvoiceType(orderId, invoiceType)
+
+  fun findByIdAndManagerId(id: Long, managerId: String): Invoice? =
+    invoiceDao.findByIdAndManagerId(id, managerId)?.toModel()
+
+  fun sumTotalAmountByOrderIdAndInvoiceType(orderId: String, invoiceType: String): BigDecimal =
+    invoiceDao.sumTotalAmountByOrderIdAndInvoiceType(orderId, invoiceType)
 
   fun findByOrderIdInAndManagerId(orderIds: List<String>, managerId: String): List<Invoice> =
     invoiceDao.findByOrderIdInAndManagerId(orderIds, managerId).map { it.toModel() }

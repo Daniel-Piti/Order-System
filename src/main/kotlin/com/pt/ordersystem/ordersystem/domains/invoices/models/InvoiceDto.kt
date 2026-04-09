@@ -13,6 +13,7 @@ data class InvoiceDto(
   val linkedInvoiceId: Long?,
   val invoiceSequenceNumber: Int,
   val paymentMethod: PaymentMethod,
+  val allocationNumber: String?,
   val createdAt: LocalDateTime,
   val pdfUrl: String,
 )
@@ -26,6 +27,7 @@ fun Invoice.toDto(): InvoiceDto = InvoiceDto(
   linkedInvoiceId = linkedInvoiceId,
   invoiceSequenceNumber = invoiceSequenceNumber,
   paymentMethod = paymentMethod,
+  allocationNumber = allocationNumber,
   createdAt = createdAt,
   pdfUrl = S3Helper.getPublicUrl(s3Key) ?: "",
 )

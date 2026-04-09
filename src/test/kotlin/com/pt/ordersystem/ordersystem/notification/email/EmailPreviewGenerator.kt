@@ -104,6 +104,7 @@ object EmailPreviewGenerator {
       ),
       productsVersion = 1,
       totalPrice = BigDecimal("336.70"), // (89.90 * 2) + 45.50 + (32.00 * 3)
+      totalCreditedAmount = BigDecimal.ZERO,
       discount = BigDecimal.ZERO,
       vat = TaxConstants.VAT_PERCENTAGE,
       linkExpiresAt = now.plusDays(7),
@@ -119,7 +120,7 @@ object EmailPreviewGenerator {
   private fun findProjectRoot(): File {
     // Start from current working directory and look for build.gradle.kts
     var current = File(System.getProperty("user.dir"))
-    while (current != null && current.exists()) {
+    while (current.exists()) {
       if (File(current, "build.gradle.kts").exists()) {
         return current
       }

@@ -25,6 +25,8 @@ data class OrderDto(
   val products: List<ProductDataForOrder>,
   val productsVersion: Int,
   val totalPrice: BigDecimal,
+  val totalCreditedAmount: BigDecimal,
+  val netTotal: BigDecimal,
   val discount: BigDecimal,
   val vat: BigDecimal,
   val linkExpiresAt: LocalDateTime,

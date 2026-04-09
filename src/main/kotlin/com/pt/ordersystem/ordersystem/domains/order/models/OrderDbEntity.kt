@@ -71,6 +71,9 @@ data class OrderDbEntity(
   @Column(name = "total_price", nullable = false)
   val totalPrice: BigDecimal,
 
+  @Column(name = "total_credited_amount", nullable = false)
+  val totalCreditedAmount: BigDecimal = BigDecimal.ZERO,
+
   @Column(name = "discount", nullable = false)
   val discount: BigDecimal = BigDecimal.ZERO,
 

@@ -143,6 +143,7 @@ object InvoiceRenderHelperPreviewGenerator {
       ),
       productsVersion = 1,
       totalPrice = totalWithVat,
+      totalCreditedAmount = BigDecimal.ZERO,
       discount = discount,
       vat = TaxConstants.VAT_PERCENTAGE,
       linkExpiresAt = now.plusDays(7),

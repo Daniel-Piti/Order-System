@@ -9,19 +9,32 @@ import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 @Repository
 interface InvoiceDao : JpaRepository<InvoiceDbEntity, Long> {
   fun findByManagerId(managerId: String): List<InvoiceDbEntity>
-  fun findByOrderIdAndInvoiceType(orderId: String, invoiceType: String): InvoiceDbEntity?
   fun findByOrderIdInAndManagerId(orderIds: List<String>, managerId: String): List<InvoiceDbEntity>
   fun findByManagerIdAndCreatedAtBetween(
     managerId: String,
     from: LocalDateTime,
     to: LocalDateTime,
   ): List<InvoiceDbEntity>
+  fun existsByOrderIdAndInvoiceType(orderId: String, invoiceType: String): Boolean
+  fun findByIdAndManagerId(id: Long, managerId: String): InvoiceDbEntity?
 
+  @Query(
+    """
+    SELECT COALESCE(SUM(i.totalAmount), 0)
+    FROM InvoiceDbEntity i
+    WHERE i.orderId = :orderId AND i.invoiceType = :invoiceType
+    """,
+  )
+  fun sumTotalAmountByOrderIdAndInvoiceType(
+    @Param("orderId") orderId: String,
+    @Param("invoiceType") invoiceType: String,
+  ): BigDecimal
   @Query(
     """
     SELECT i FROM InvoiceDbEntity i

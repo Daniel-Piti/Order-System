@@ -13,3 +13,10 @@ data class CreateInvoiceResponse(
   val invoiceName: String,
   val pdfUrl: String,
 )
+
+data class CreateCreditNoteByAmountResponse(
+  val invoiceId: Long,
+  val invoiceSequenceNumber: Int,
+  val pdfUrl: String? = null,
+  val invoiceName: String? = null,
+)

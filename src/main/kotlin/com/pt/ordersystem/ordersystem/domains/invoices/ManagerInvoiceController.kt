@@ -2,9 +2,11 @@ package com.pt.ordersystem.ordersystem.domains.invoices
 
 import com.pt.ordersystem.ordersystem.auth.AuthRole.AUTH_MANAGER
 import com.pt.ordersystem.ordersystem.auth.AuthUser
+import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateCreditNoteByAmountResponse
 import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceRequest
 import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateInvoiceResponse
 import com.pt.ordersystem.ordersystem.domains.invoices.models.InvoiceDto
+import com.pt.ordersystem.ordersystem.domains.invoices.models.CreateCreditNoteByAmountRequest
 import com.pt.ordersystem.ordersystem.domains.invoices.models.ManagerCreateInvoiceRequest
 import com.pt.ordersystem.ordersystem.domains.invoices.models.toDto
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
@@ -46,6 +48,20 @@ class ManagerInvoiceController(
       allocationNumber = createInvoiceRequest.allocationNumber
     )
     val response = invoiceService.createInvoice(request)
+    return ResponseEntity.ok(response)
+  }
+
+  @PostMapping("/credit-notes/by-amount")
+  fun createCreditNoteByAmount(
+    @AuthenticationPrincipal manager: AuthUser,
+    @RequestBody body: CreateCreditNoteByAmountRequest,
+  ): ResponseEntity<CreateCreditNoteByAmountResponse> {
+    val response = invoiceService.createCreditNoteByAmount(
+      managerId = manager.id,
+      invoiceId = body.invoiceId,
+      amount = body.amount,
+      allocationNumber = body.allocationNumber,
+    )
     return ResponseEntity.ok(response)
   }
 

@@ -54,6 +54,22 @@ class OrderRepository(
 
   fun save(entity: OrderDbEntity): Order = orderDao.save(entity).toModel()
 
+  fun addTotalCreditedAmount(orderId: String, amount: BigDecimal) {
+    val entity = orderDao.findById(orderId).orElse(null)
+      ?: throw ServiceException(
+        status = HttpStatus.NOT_FOUND,
+        userMessage = OrderFailureReason.NOT_FOUND.userMessage,
+        technicalMessage = "addTotalCreditedAmount: orderId=$orderId",
+        severity = SeverityLevel.WARN,
+      )
+    orderDao.save(
+      entity.copy(
+        totalCreditedAmount = entity.totalCreditedAmount.add(amount),
+        updatedAt = LocalDateTime.now(),
+      ),
+    )
+  }
+
   fun bulkExpireEmptyOrders(currentTime: LocalDateTime, updatedAt: LocalDateTime): Int =
     orderDao.bulkExpireEmptyOrders(currentTime, updatedAt)
 
